@@ -156,7 +156,11 @@ input::placeholder {
     box-shadow: 0 18px 28px rgba(15, 23, 42, 0.3);
     background: var(--accent-dark);
 }
-
+.hint {
+    font-size: 0.85rem;
+    color: rgba(248, 250, 252, 0.72);
+    line-height: 1.4;
+}
 .auxiliary {
     display: flex;
     flex-direction: column;

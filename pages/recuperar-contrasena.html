@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>AutoServ · Recuperar contraseña</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Recupera el acceso a tu cuenta de AutoServ solicitando un enlace de restablecimiento de contraseña."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../Styles/auth.css" />
+    </head>
+    <body>
+        <main>
+            <section class="auth-card" aria-labelledby="recovery-title">
+                <div class="brand" aria-label="AutoServ">
+                    <div class="brand-icon" aria-hidden="true"></div>
+                    <span>AutoServ</span>
+                </div>
+
+                <header class="auth-header">
+                    <h1 id="recovery-title">Recupera tu acceso</h1>
+                    <p>
+                        Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para crear una nueva
+                        contraseña.
+                    </p>
+                </header>
+
+                <form>
+                    <div class="field">
+                        <label for="recovery-email">Correo electrónico</label>
+                        <input
+                            type="email"
+                            id="recovery-email"
+                            name="email"
+                            placeholder="nombre@correo.com"
+                            autocomplete="email"
+                            required
+                        />
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="button">Enviar instrucciones</button>
+                        <p class="hint">
+                            Al enviar la solicitud recibirás un correo con los pasos para restablecer tu contraseña.
+                        </p>
+                    </div>
+                </form>
+
+                <div class="auxiliary">
+                    <a href="./login.html">Volver a iniciar sesión</a>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>
