@@ -1,15 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
     <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title></title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="">
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>AutoServ · Inicio</title>
+        <meta name="description" content="Servicio automotriz profesional." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../Styles/paginainicio.css" />
     </head>
     <body>
-     
-        <script src="" async defer></script>
+        <header class="site-header">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true"></div>
+                <span class="brand-name">AutoServ</span>
+            </div>
+            <nav class="main-nav" aria-label="Principal">
+                <a href="#inicio" class="nav-link active">Inicio</a>
+                <a href="#citas" class="nav-link">Citas</a>
+                <a href="#mensajes" class="nav-link">Mensajes</a>
+                <a href="#perfil" class="nav-link">Perfil</a>
+            </nav>
+            <a href="#agendar" class="button button-primary">Agendar Cita</a>
+        </header>
+
+        <main>
+            <section class="hero" id="inicio">
+                <div class="hero-image" role="img" aria-label="Taller mecánico"></div>
+                <div class="hero-content">
+                    <span class="hero-tag">Tus Técnicos</span>
+                    <h1>Confianza en Cada Reparación</h1>
+                    <p>Tu Solución para el Mantenimiento Automotriz.</p>
+                    <a class="button" href="#perfil">Ver Perfil</a>
+                </div>
+            </section>
+
+            <section class="card-grid" aria-labelledby="especialistas">
+                <div class="section-header">
+                    <div>
+                        <h2 id="especialistas">Nuestros Especialistas</h2>
+                        <p>Profesionales certificados listos para ayudarte.</p>
+                    </div>
+                    <a class="button" href="#especialistas">Ver Todos</a>
+                </div>
+
+                <div class="grid">
+                    <article class="card">
+                        <div class="avatar" aria-hidden="true">JS</div>
+                        <div class="card-body">
+                            <h3>John Smith</h3>
+                            <p class="role">Especialista en motores</p>
+                            <div class="rating" aria-label="4.9 estrellas">
+                                <span class="stars" aria-hidden="true">★★★★★</span>
+                                <span>4.9/5 (230 Reseñas)</span>
+                            </div>
+                        </div>
+                        <a class="button" href="#">Ver Perfil</a>
+                    </article>
+                    <article class="card">
+                        <div class="avatar" aria-hidden="true">JS</div>
+                        <div class="card-body">
+                            <h3>John Smith</h3>
+                            <p class="role">Especialista en transmisiones</p>
+                            <div class="rating" aria-label="4.8 estrellas">
+                                <span class="stars" aria-hidden="true">★★★★★</span>
+                                <span>4.8/5 (189 Reseñas)</span>
+                            </div>
+                        </div>
+                        <a class="button" href="#">Ver Perfil</a>
+                    </article>
+                    <article class="card">
+                        <div class="avatar" aria-hidden="true">JS</div>
+                        <div class="card-body">
+                            <h3>John Smith</h3>
+                            <p class="role">Especialista en frenos</p>
+                            <div class="rating" aria-label="4.7 estrellas">
+                                <span class="stars" aria-hidden="true">★★★★★</span>
+                                <span>4.7/5 (156 Reseñas)</span>
+                            </div>
+                        </div>
+                        <a class="button" href="#">Ver Perfil</a>
+                    </article>
+                </div>
+            </section>
+
+            <section class="services" id="citas" aria-labelledby="servicios">
+                <div class="section-header">
+                    <div>
+                        <h2 id="servicios">Servicios Populares</h2>
+                        <p>Agenda los servicios más solicitados por nuestros clientes.</p>
+                    </div>
+                    <a class="button" href="#citas">Explorar</a>
+                </div>
+                <div class="grid">
+                    <article class="service-card">
+                        <div class="service-icon" aria-hidden="true"></div>
+                        <div>
+                            <h3>Mantenimiento General</h3>
+                            <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
+                        </div>
+                        <a class="button ghost" href="#">Próximas Citas</a>
+                    </article>
+                    <article class="service-card">
+                        <div class="service-icon" aria-hidden="true"></div>
+                        <div>
+                            <h3>Diagnóstico Eléctrico</h3>
+                            <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
+                        </div>
+                        <a class="button ghost" href="#">Próximas Citas</a>
+                    </article>
+                    <article class="service-card">
+                        <div class="service-icon" aria-hidden="true"></div>
+                        <div>
+                            <h3>Alineación y Balanceo</h3>
+                            <p>Mejora el rendimiento y la seguridad en carretera.</p>
+                        </div>
+                        <a class="button ghost" href="#">Próximas Citas</a>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer" id="mensajes">
+            <div class="footer-column">
+                <h4>Citas Directas</h4>
+                <p>Atención personalizada para empresas y flotas.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Servicios Adicionales</h4>
+                <ul>
+                    <li>Mantenimiento Preventivo</li>
+                    <li>Inspecciones Técnicas</li>
+                    <li>Reemplazo de Partes</li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Contacto</h4>
+                <p>+34 900 123 456</p>
+                <p>soporte@autoserv.com</p>
+            </div>
+        </footer>
     </body>
 </html>
