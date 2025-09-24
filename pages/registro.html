@@ -72,6 +72,24 @@
                             required
                         />
                     </div>
+                    <div class="field">
+                        <label for="account-type">Tipo de cuenta</label>
+                        <select id="account-type" name="account-type" required>
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            <option value="cliente">Cliente</option>
+                            <option value="mecanico">Mecánico</option>
+                        </select>
+                    </div>
+                    <div class="field hidden" id="certificate-field">
+                        <label for="certificate">Certificado profesional (foto)</label>
+                        <input
+                            type="file"
+                            id="certificate"
+                            name="certificate"
+                            accept="image/*"
+                        />
+                        <p class="hint">Sube una foto legible de tu certificación como mecánico.</p>
+                    </div>
                     <div class="actions">
                         <button type="submit" class="button">Registrarme</button>
                     </div>
@@ -83,5 +101,27 @@
                 </div>
             </section>
         </main>
+
+        <script>
+            const accountType = document.getElementById("account-type");
+            const certificateField = document.getElementById("certificate-field");
+            const certificateInput = document.getElementById("certificate");
+
+            if (accountType) {
+                accountType.addEventListener("change", () => {
+                    const isMechanic = accountType.value === "mecanico";
+
+                    certificateField?.classList.toggle("hidden", !isMechanic);
+
+                    if (certificateInput) {
+                        certificateInput.required = isMechanic;
+
+                        if (!isMechanic) {
+                            certificateInput.value = "";
+                        }
+                    }
+                });
+            }
+        </script>
     </body>
 </html>
