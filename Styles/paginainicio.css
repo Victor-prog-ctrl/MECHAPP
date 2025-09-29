@@ -80,6 +80,16 @@ main {
     justify-content: center;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-actions .button {
+    white-space: nowrap;
+}
+
 .nav-link {
     color: rgba(255, 255, 255, 0.72);
     text-decoration: none;
@@ -338,6 +348,17 @@ main {
     .main-nav {
         justify-content: flex-start;
         flex-wrap: wrap;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .header-actions .button {
+        flex: 1 1 160px;
     }
 
     .section-header {
