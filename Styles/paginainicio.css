@@ -200,6 +200,117 @@ main {
     color: #6366f1;
 }
 
+.search-section,
+.location-section {
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    margin-bottom: 32px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+    position: relative;
+}
+
+.search-section::after,
+.location-section::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    pointer-events: none;
+}
+
+.search-control {
+    margin-bottom: 24px;
+}
+
+.search-control input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: var(--surface-alt);
+    font-size: 1rem;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-control input:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.6);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.search-results {
+    display: grid;
+    gap: 16px;
+}
+
+.result-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    background: var(--surface-alt);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.result-type {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #4f46e5;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.result-content h3 {
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+}
+
+.result-content p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.empty-results {
+    color: var(--text-muted);
+    background: var(--surface-alt);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    border: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
+.map-container {
+    width: 100%;
+    height: 320px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    margin-top: 16px;
+}
+
+.location-status {
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -368,7 +479,9 @@ main {
 
     .hero,
     .card-grid,
-    .services {
+    .services,
+    .search-section,
+    .location-section {
         padding: 28px;
     }
 
