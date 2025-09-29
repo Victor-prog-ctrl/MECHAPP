@@ -13,6 +13,12 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="../Styles/paginainicio.css" />
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
+            crossorigin=""
+        />
     </head>
     <body>
         <header class="site-header">
@@ -24,6 +30,7 @@
                 <a href="#inicio" class="nav-link active">Inicio</a>
                 <a href="#citas" class="nav-link">Citas</a>
                 <a href="#mensajes" class="nav-link">Mensajes</a>
+                <a href="#ubicacion" class="nav-link">Ubicación</a>
                 <a href="./perfil.html" class="nav-link">Perfil</a>
                 <a href="./registro-taller.html" class="nav-link">Registrar Taller</a>
             </nav>
@@ -43,6 +50,25 @@
                     <p>Tu Solución para el Mantenimiento Automotriz.</p>
                     <a class="button" href="./perfil.html">Ver Perfil</a>
                 </div>
+            </section>
+
+            <section class="search-section" aria-labelledby="buscador">
+                <div class="section-header">
+                    <div>
+                        <h2 id="buscador">Encuentra tu taller o servicio</h2>
+                        <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+                    </div>
+                </div>
+                <div class="search-control">
+                    <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
+                    <input
+                        type="search"
+                        id="search-input"
+                        placeholder="Ej. frenos, eléctrico, mantenimiento"
+                        autocomplete="off"
+                    />
+                </div>
+                <div class="search-results" id="search-results" aria-live="polite"></div>
             </section>
 
             <section class="card-grid" aria-labelledby="especialistas">
@@ -129,6 +155,20 @@
                     </article>
                 </div>
             </section>
+
+            <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
+                <div class="section-header">
+                    <div>
+                        <h2 id="geolocalizacion">Talleres cerca de ti</h2>
+                        <p>Activa tu ubicación para descubrir los talleres más próximos.</p>
+                    </div>
+                    <button class="button ghost" type="button" id="locate-btn">Usar mi ubicación</button>
+                </div>
+                <p class="location-status" id="location-status" aria-live="polite">
+                    Para comenzar, pulsa "Usar mi ubicación" o permite el acceso a la localización del navegador.
+                </p>
+                <div id="map" class="map-container" role="region" aria-label="Mapa de talleres cercanos"></div>
+            </section>
         </main>
 
         <footer class="site-footer" id="mensajes">
@@ -150,5 +190,181 @@
                 <p>soporte@autoserv.com</p>
             </div>
         </footer>
+        <script
+            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
+            crossorigin=""
+        ></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const searchInput = document.getElementById("search-input");
+                const searchResults = document.getElementById("search-results");
+
+                const especialistas = [
+                    {
+                        nombre: "John Smith",
+                        especialidad: "Especialista en motores",
+                        enlace: "#",
+                        tipo: "Taller"
+                    },
+                    {
+                        nombre: "John Smith",
+                        especialidad: "Especialista en transmisiones",
+                        enlace: "#",
+                        tipo: "Taller"
+                    },
+                    {
+                        nombre: "John Smith",
+                        especialidad: "Especialista en frenos",
+                        enlace: "#",
+                        tipo: "Taller"
+                    }
+                ];
+
+                const servicios = [
+                    {
+                        nombre: "Mantenimiento General",
+                        descripcion: "Incluye revisión completa de fluidos y ajustes básicos.",
+                        enlace: "#",
+                        tipo: "Servicio"
+                    },
+                    {
+                        nombre: "Diagnóstico Eléctrico",
+                        descripcion: "Soluciones precisas para problemas eléctricos del vehículo.",
+                        enlace: "#",
+                        tipo: "Servicio"
+                    },
+                    {
+                        nombre: "Alineación y Balanceo",
+                        descripcion: "Mejora el rendimiento y la seguridad en carretera.",
+                        enlace: "#",
+                        tipo: "Servicio"
+                    }
+                ];
+
+                const datosBusqueda = [...especialistas, ...servicios];
+
+                const renderResultados = (items) => {
+                    if (!items.length) {
+                        searchResults.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>';
+                        return;
+                    }
+
+                    const fragment = document.createDocumentFragment();
+
+                    items.forEach((item) => {
+                        const article = document.createElement("article");
+                        article.className = "result-item";
+                        article.innerHTML = `
+                            <div class="result-type" aria-hidden="true">${item.tipo}</div>
+                            <div class="result-content">
+                                <h3>${item.nombre}</h3>
+                                <p>${item.especialidad || item.descripcion}</p>
+                            </div>
+                            <a class="button ghost" href="${item.enlace}">Ver más</a>
+                        `;
+                        fragment.appendChild(article);
+                    });
+
+                    searchResults.innerHTML = "";
+                    searchResults.appendChild(fragment);
+                };
+
+                renderResultados(datosBusqueda.slice(0, 3));
+
+                searchInput.addEventListener("input", (event) => {
+                    const termino = event.target.value.trim().toLowerCase();
+
+                    if (!termino) {
+                        renderResultados(datosBusqueda.slice(0, 3));
+                        return;
+                    }
+
+                    const filtrados = datosBusqueda.filter((item) => {
+                        const texto = `${item.nombre} ${item.especialidad || ""} ${item.descripcion || ""}`.toLowerCase();
+                        return texto.includes(termino);
+                    });
+
+                    renderResultados(filtrados);
+                });
+
+                const locateBtn = document.getElementById("locate-btn");
+                const locationStatus = document.getElementById("location-status");
+                const mapContainer = document.getElementById("map");
+                let mapa;
+                let marcador;
+                let areaCercana;
+
+                const inicializarMapa = (latitud, longitud) => {
+                    if (!mapa) {
+                        mapa = L.map(mapContainer).setView([latitud, longitud], 13);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            maxZoom: 19,
+                            attribution: "&copy; OpenStreetMap"
+                        }).addTo(mapa);
+                    } else {
+                        mapa.setView([latitud, longitud], 13);
+                    }
+
+                    if (marcador) {
+                        marcador.setLatLng([latitud, longitud]);
+                    } else {
+                        marcador = L.marker([latitud, longitud]).addTo(mapa);
+                    }
+
+                    marcador.bindPopup("Estás aquí").openPopup();
+
+                    if (areaCercana) {
+                        areaCercana.setLatLng([latitud, longitud]);
+                    } else {
+                        areaCercana = L.circle([latitud, longitud], {
+                            radius: 1500,
+                            color: "#38bdf8",
+                            fillColor: "#38bdf8",
+                            fillOpacity: 0.15
+                        }).addTo(mapa);
+                    }
+                };
+
+                const mostrarUbicacionPredeterminada = () => {
+                    const madrid = { lat: 40.4168, lng: -3.7038 };
+                    locationStatus.textContent = "No pudimos acceder a tu ubicación. Mostramos talleres destacados en Madrid.";
+                    inicializarMapa(madrid.lat, madrid.lng);
+                };
+
+                const obtenerUbicacion = () => {
+                    if (!navigator.geolocation) {
+                        locationStatus.textContent = "Tu navegador no soporta geolocalización. Mostramos una ubicación de referencia.";
+                        mostrarUbicacionPredeterminada();
+                        return;
+                    }
+
+                    locationStatus.textContent = "Obteniendo tu ubicación…";
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+                            locationStatus.textContent = "¡Ubicación detectada! Estos son los talleres más cercanos.";
+                            inicializarMapa(latitude, longitude);
+                        },
+                        (error) => {
+                            console.error(error);
+                            locationStatus.textContent = "No pudimos obtener tu ubicación automáticamente.";
+                            mostrarUbicacionPredeterminada();
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                };
+
+                locateBtn.addEventListener("click", obtenerUbicacion);
+
+                // Intentar cargar la ubicación por defecto una vez que el mapa sea visible
+                setTimeout(() => {
+                    if (!mapa) {
+                        mostrarUbicacionPredeterminada();
+                    }
+                }, 1500);
+            });
+        </script>
     </body>
 </html>
