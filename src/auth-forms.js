@@ -254,6 +254,13 @@ function setupForm(form) {
         if (invalidFields.length > 0) {
             event.preventDefault();
             invalidFields[0]?.focus();
+            return;
+        }
+
+        if (formType === "login") {
+            event.preventDefault();
+            alert("Bienvenido");
+            window.location.href = "./paginainicio.html";
         }
     });
 
