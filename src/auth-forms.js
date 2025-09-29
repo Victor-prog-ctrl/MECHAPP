@@ -259,7 +259,6 @@ function setupForm(form) {
 
         if (formType === "login") {
             event.preventDefault();
-            alert("Bienvenido");
             window.location.href = "./paginainicio.html";
         }
     });
