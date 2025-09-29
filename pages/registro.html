@@ -27,7 +27,7 @@
                     <p>Completa tus datos para empezar a agendar servicios y recibir soporte personalizado.</p>
                 </header>
 
-                <form>
+                <form id="register-form" data-form="register" novalidate>
                     <div class="field">
                         <label for="name">Nombre completo</label>
                         <input
@@ -37,7 +37,9 @@
                             placeholder="Tu nombre"
                             autocomplete="name"
                             required
+                            aria-describedby="register-name-error"
                         />
+                        <p class="error-message" id="register-name-error" aria-live="polite"></p>
                     </div>
                     <div class="field">
                         <label for="email">Correo electrónico</label>
@@ -48,7 +50,9 @@
                             placeholder="nombre@correo.com"
                             autocomplete="email"
                             required
+                            aria-describedby="register-email-error"
                         />
+                        <p class="error-message" id="register-email-error" aria-live="polite"></p>
                     </div>
                     <div class="field">
                         <label for="password">Contraseña</label>
@@ -59,7 +63,15 @@
                             placeholder="Crea una contraseña"
                             autocomplete="new-password"
                             required
+                            aria-describedby="register-password-error"
                         />
+                        <ul class="password-rules" aria-live="polite">
+                            <li data-password-rule="length">Al menos 8 caracteres.</li>
+                            <li data-password-rule="uppercase">Incluye una letra mayúscula.</li>
+                            <li data-password-rule="lowercase">Incluye una letra minúscula.</li>
+                            <li data-password-rule="numberOrSymbol">Incluye un número o símbolo.</li>
+                        </ul>
+                        <p class="error-message" id="register-password-error" aria-live="polite"></p>
                     </div>
                     <div class="field">
                         <label for="confirm-password">Confirmar contraseña</label>
@@ -70,15 +82,18 @@
                             placeholder="Repite tu contraseña"
                             autocomplete="new-password"
                             required
+                            aria-describedby="register-confirm-password-error"
                         />
+                        <p class="error-message" id="register-confirm-password-error" aria-live="polite"></p>
                     </div>
                     <div class="field">
                         <label for="account-type">Tipo de cuenta</label>
-                        <select id="account-type" name="account-type" required>
+                        <select id="account-type" name="account-type" required aria-describedby="register-account-type-error">
                             <option value="" disabled selected>Selecciona una opción</option>
                             <option value="cliente">Cliente</option>
                             <option value="mecanico">Mecánico</option>
                         </select>
+                        <p class="error-message" id="register-account-type-error" aria-live="polite"></p>
                     </div>
                     <div class="field hidden" id="certificate-field">
                         <label for="certificate">Certificado profesional (foto)</label>
@@ -87,11 +102,13 @@
                             id="certificate"
                             name="certificate"
                             accept="image/*"
+                            aria-describedby="register-certificate-error"
                         />
                         <p class="hint">Sube una foto legible de tu certificación como mecánico.</p>
+                        <p class="error-message" id="register-certificate-error" aria-live="polite"></p>
                     </div>
                     <div class="actions">
-                        <button type="submit" class="button">Registrarme</button>
+                        <button type="submit" class="button" disabled aria-disabled="true">Registrarme</button>
                     </div>
                 </form>
 
@@ -102,26 +119,6 @@
             </section>
         </main>
 
-        <script>
-            const accountType = document.getElementById("account-type");
-            const certificateField = document.getElementById("certificate-field");
-            const certificateInput = document.getElementById("certificate");
-
-            if (accountType) {
-                accountType.addEventListener("change", () => {
-                    const isMechanic = accountType.value === "mecanico";
-
-                    certificateField?.classList.toggle("hidden", !isMechanic);
-
-                    if (certificateInput) {
-                        certificateInput.required = isMechanic;
-
-                        if (!isMechanic) {
-                            certificateInput.value = "";
-                        }
-                    }
-                });
-            }
-        </script>
+        <script src="../src/auth-forms.js" defer></script>
     </body>
 </html>
