@@ -50,11 +50,38 @@ main {
 .brand {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 14px;
     font-weight: 700;
     font-size: 1.35rem;
     letter-spacing: 0.01em;
     color: #fff;
+    width: 100%;
+}
+
+.brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.brand-link:hover,
+.brand-link:focus {
+    text-decoration: underline;
+}
+
+.back-home {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #38bdf8;
+    text-decoration: none;
+}
+
+.back-home:hover,
+.back-home:focus {
+    text-decoration: underline;
 }
 
 .brand-icon {

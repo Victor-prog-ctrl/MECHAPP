@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Mechapp · Perfil de Usuario</title>
+        <meta name="description" content="Consulta los datos de tu cuenta y el historial de talleres visitados." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../Styles/perfil.css" />
+    </head>
+    <body>
+        <header class="site-header">
+            <a class="brand" href="./paginainicio.html" aria-label="Volver al inicio">
+                <div class="brand-icon" aria-hidden="true"></div>
+                <span class="brand-name">Mechapp</span>
+            </a>
+            <div class="header-actions">
+                <a href="./paginainicio.html" class="button ghost">Inicio</a>
+                <a href="./login.html" class="button">Cerrar sesión</a>
+            </div>
+        </header>
+
+        <main>
+            <section class="profile-summary" aria-labelledby="profile-title">
+                <div class="user-card">
+                    <div class="avatar" aria-hidden="true">AR</div>
+                    <div class="user-details">
+                        <span class="label">Perfil</span>
+                        <h1 id="profile-title">Andrea Ramírez</h1>
+                        <p class="role">Cliente Premium</p>
+                        <dl class="user-meta">
+                            <div>
+                                <dt>Correo</dt>
+                                <dd>andrea.ramirez@email.com</dd>
+                            </div>
+                            <div>
+                                <dt>Teléfono</dt>
+                                <dd>+34 600 123 456</dd>
+                            </div>
+                            <div>
+                                <dt>Miembro desde</dt>
+                                <dd>Marzo 2021</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+                <div class="metrics" aria-label="Indicadores de la cuenta">
+                    <article class="metric-card">
+                        <span class="metric-label">Citas completadas</span>
+                        <strong class="metric-value">28</strong>
+                        <span class="metric-caption">En los últimos 12 meses</span>
+                    </article>
+                    <article class="metric-card">
+                        <span class="metric-label">Puntuación promedio</span>
+                        <strong class="metric-value">4.9</strong>
+                        <span class="metric-caption">Basado en 18 reseñas</span>
+                    </article>
+                    <article class="metric-card">
+                        <span class="metric-label">Vehículos registrados</span>
+                        <strong class="metric-value">2</strong>
+                        <span class="metric-caption">Sedán 2020 · SUV 2022</span>
+                    </article>
+                </div>
+            </section>
+
+            <section class="history" id="historial" aria-labelledby="historial-title">
+                <div class="section-header">
+                    <div>
+                        <h2 id="historial-title">Historial de talleres visitados</h2>
+                        <p>Resumen de tus últimas experiencias en el taller.</p>
+                    </div>
+                    <a class="button ghost" href="#">Descargar historial</a>
+                </div>
+                <div class="history-list">
+                    <article class="history-item">
+                        <div>
+                            <h3>AutoMasters · Centro</h3>
+                            <p class="item-meta">Revisión general · 12 de abril de 2024</p>
+                        </div>
+                        <span class="status success">Completado</span>
+                    </article>
+                    <article class="history-item">
+                        <div>
+                            <h3>Taller Ruiz</h3>
+                            <p class="item-meta">Alineación y balanceo · 22 de febrero de 2024</p>
+                        </div>
+                        <span class="status success">Completado</span>
+                    </article>
+                    <article class="history-item">
+                        <div>
+                            <h3>ElectroAuto Norte</h3>
+                            <p class="item-meta">Diagnóstico eléctrico · 15 de enero de 2024</p>
+                        </div>
+                        <span class="status pending">Seguimiento</span>
+                    </article>
+                </div>
+            </section>
+
+            <section class="scores" id="puntuaciones" aria-labelledby="scores-title">
+                <div class="section-header">
+                    <div>
+                        <h2 id="scores-title">Puntuaciones y comentarios</h2>
+                        <p>Consulta las valoraciones que has dejado a los talleres.</p>
+                    </div>
+                    <a class="button ghost" href="#">Nueva reseña</a>
+                </div>
+                <div class="scores-table" role="table" aria-label="Historial de puntuaciones">
+                    <div class="table-header" role="row">
+                        <span role="columnheader">Taller</span>
+                        <span role="columnheader">Servicio</span>
+                        <span role="columnheader">Fecha</span>
+                        <span role="columnheader">Puntuación</span>
+                    </div>
+                    <div class="table-row" role="row">
+                        <span role="cell">AutoMasters · Centro</span>
+                        <span role="cell">Revisión general</span>
+                        <span role="cell">12/04/2024</span>
+                        <span role="cell" class="rating">5.0</span>
+                    </div>
+                    <div class="table-row" role="row">
+                        <span role="cell">Taller Ruiz</span>
+                        <span role="cell">Alineación y balanceo</span>
+                        <span role="cell">22/02/2024</span>
+                        <span role="cell" class="rating">4.8</span>
+                    </div>
+                    <div class="table-row" role="row">
+                        <span role="cell">ElectroAuto Norte</span>
+                        <span role="cell">Diagnóstico eléctrico</span>
+                        <span role="cell">15/01/2024</span>
+                        <span role="cell" class="rating">4.7</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
+        </footer>
+    </body>
+</html>
