@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Mechapp · Registrar Taller</title>
+        <meta name="description" content="Formulario para registrar talleres mecánicos en Mechapp." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../Styles/registro-taller.css" />
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="brand">
+                <a class="brand-link" href="./paginainicio.html">
+                    <span class="brand-icon" aria-hidden="true"></span>
+                    <span class="brand-name">Mechapp</span>
+                </a>
+            </div>
+            <a class="back-link" href="./paginainicio.html">Volver al inicio</a>
+        </header>
+        <main>
+            <section class="intro">
+                <span class="tag">Registro de Taller</span>
+                <h1>Comparte tu experiencia como mecánico</h1>
+                <p>
+                    Ingresa los detalles de tu taller para que los clientes puedan conocer tus servicios,
+                    especialidades y la manera de contactarte.
+                </p>
+            </section>
+            <section class="form-section">
+                <form class="workshop-form" action="#" method="post" enctype="multipart/form-data">
+                    <fieldset>
+                        <legend>Información general</legend>
+                        <div class="field">
+                            <label for="workshop-name">Nombre del taller</label>
+                            <input
+                                type="text"
+                                id="workshop-name"
+                                name="workshop-name"
+                                placeholder="Ej. Taller Mecánico García"
+                                required
+                            />
+                        </div>
+                        <div class="field">
+                            <label for="workshop-description">¿Qué hace tu taller?</label>
+                            <textarea
+                                id="workshop-description"
+                                name="workshop-description"
+                                rows="4"
+                                placeholder="Describe tus servicios principales y experiencia."
+                                required
+                            ></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="services">Servicios destacados</label>
+                            <textarea
+                                id="services"
+                                name="services"
+                                rows="3"
+                                placeholder="Mantenimiento preventivo, reparación de motor, diagnósticos eléctricos, etc."
+                            ></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="experience-years">Años de experiencia</label>
+                            <input
+                                type="number"
+                                id="experience-years"
+                                name="experience-years"
+                                min="0"
+                                placeholder="Ej. 10"
+                            />
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Ubicación y contacto</legend>
+                        <div class="field">
+                            <label for="address">Dirección del taller</label>
+                            <input
+                                type="text"
+                                id="address"
+                                name="address"
+                                placeholder="Calle, número, ciudad"
+                                required
+                            />
+                        </div>
+                        <div class="field">
+                            <label for="schedule">Horario de atención</label>
+                            <input
+                                type="text"
+                                id="schedule"
+                                name="schedule"
+                                placeholder="Lunes a viernes de 9:00 a 18:00"
+                            />
+                        </div>
+                        <div class="field-group">
+                            <div class="field">
+                                <label for="contact-phone">Teléfono de contacto</label>
+                                <input
+                                    type="tel"
+                                    id="contact-phone"
+                                    name="contact-phone"
+                                    placeholder="Ej. +34 600 000 000"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="contact-email">Correo electrónico</label>
+                                <input
+                                    type="email"
+                                    id="contact-email"
+                                    name="contact-email"
+                                    placeholder="taller@ejemplo.com"
+                                />
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Presentación</legend>
+                        <div class="field">
+                            <label for="workshop-photo">Fotografía del taller</label>
+                            <input type="file" id="workshop-photo" name="workshop-photo" accept="image/*" />
+                            <p class="help-text">Carga una imagen en formato JPG o PNG (máx. 5 MB).</p>
+                        </div>
+                        <div class="field">
+                            <label for="certifications">Certificaciones y reconocimientos</label>
+                            <textarea
+                                id="certifications"
+                                name="certifications"
+                                rows="3"
+                                placeholder="Ej. ASE Master Technician, Bosch Service Partner"
+                            ></textarea>
+                        </div>
+                        <div class="field checkbox-field">
+                            <input type="checkbox" id="privacy" name="privacy" required />
+                            <label for="privacy">Acepto compartir la información de mi taller en Mechapp.</label>
+                        </div>
+                    </fieldset>
+                    <div class="form-actions">
+                        <button type="submit" class="button button-primary">Guardar taller</button>
+                        <a class="button ghost" href="./paginainicio.html">Cancelar</a>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </body>
+</html>
