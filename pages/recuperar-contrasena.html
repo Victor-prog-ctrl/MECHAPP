@@ -33,7 +33,7 @@
                     </p>
                 </header>
 
-                <form>
+                <form id="recovery-form" data-form="recovery" novalidate>
                     <div class="field">
                         <label for="recovery-email">Correo electrónico</label>
                         <input
@@ -43,10 +43,12 @@
                             placeholder="nombre@correo.com"
                             autocomplete="email"
                             required
+                            aria-describedby="recovery-email-error"
                         />
+                        <p class="error-message" id="recovery-email-error" aria-live="polite"></p>
                     </div>
                     <div class="actions">
-                        <button type="submit" class="button">Enviar instrucciones</button>
+                        <button type="submit" class="button" disabled aria-disabled="true">Enviar instrucciones</button>
                         <p class="hint">
                             Al enviar la solicitud recibirás un correo con los pasos para restablecer tu contraseña.
                         </p>
@@ -58,5 +60,6 @@
                 </div>
             </section>
         </main>
+        <script src="../src/auth-forms.js" defer></script>
     </body>
 </html>
