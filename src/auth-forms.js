@@ -382,6 +382,25 @@ function collectFormData(fields) {
     }, {});
 }
 
+async function parseJsonResponse(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        try {
+            return await response.json();
+        } catch (error) {
+            return { error: "Error al procesar la respuesta." };
+        }
+    }
+
+    try {
+        const text = await response.text();
+        return { error: text || "Error al procesar la respuesta." };
+    } catch (error) {
+        return { error: "Error al procesar la respuesta." };
+    }
+}
+
 async function submitRegister(formData, setStatus) {
     const payload = {
         name: formData.name,
@@ -397,7 +416,7 @@ async function submitRegister(formData, setStatus) {
         body: JSON.stringify(payload),
     });
 
-    const result = await response.json().catch(() => ({ error: "Error al procesar la respuesta." }));
+    const result = await parseJsonResponse(response);
 
     if (!response.ok) {
         setStatus(result?.error || "No se pudo registrar al usuario.");
@@ -422,7 +441,7 @@ async function submitLogin(formData, setStatus) {
         body: JSON.stringify(payload),
     });
 
-    const result = await response.json().catch(() => ({ error: "Error al procesar la respuesta." }));
+    const result = await parseJsonResponse(response);
 
     if (!response.ok) {
         setStatus(result?.error || "No se pudo iniciar sesión.");
