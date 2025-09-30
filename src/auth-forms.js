@@ -313,16 +313,26 @@ async function handleFormSubmit({ form, formType, submitButton, fields, updateSu
         return;
     }
 
+    const statusElement = form.querySelector("[data-form-status]");
+
     const setStatus = (message, type = "error") => {
-        const statusElement = form.querySelector("[data-form-status]");
         if (!statusElement) {
             return;
         }
 
-        statusElement.textContent = message || "";
-        statusElement.dataset.statusType = type;
-        statusElement.hidden = !message;
+        const safeMessage = message || "";
+        statusElement.textContent = safeMessage;
+
+        if (safeMessage) {
+            statusElement.dataset.statusType = type;
+        } else {
+            delete statusElement.dataset.statusType;
+        }
+
+        statusElement.hidden = !safeMessage;
     };
+
+    const clearStatus = () => setStatus("");
 
     const formData = collectFormData(fields);
 
@@ -332,7 +342,7 @@ async function handleFormSubmit({ form, formType, submitButton, fields, updateSu
             submitButton.setAttribute("aria-disabled", "true");
         }
 
-        setStatus("");
+        clearStatus();
 
         if (formType === "register") {
             await submitRegister(formData, setStatus);
@@ -343,7 +353,10 @@ async function handleFormSubmit({ form, formType, submitButton, fields, updateSu
         }
     } catch (error) {
         console.error(error);
-        setStatus("No se pudo completar la solicitud. Intenta nuevamente.");
+        const hasCustomStatus = Boolean(statusElement && statusElement.textContent.trim());
+        if (!hasCustomStatus) {
+            setStatus("No se pudo completar la solicitud. Intenta nuevamente.");
+        }
     } finally {
         if (submitButton) {
             if (typeof updateSubmitState === "function") {
