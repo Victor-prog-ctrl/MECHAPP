@@ -57,20 +57,11 @@ main {
     font-size: 1.25rem;
 }
 
-.brand-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #38bdf8, #6366f1);
-    position: relative;
-}
-
-.brand-icon::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    object-fit: contain;
 }
 
 .main-nav {
@@ -138,6 +129,17 @@ main {
 .button-primary:hover,
 .button-primary:focus {
     background: var(--accent-dark);
+}
+
+.button-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.button-secondary:hover,
+.button-secondary:focus {
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .button.ghost {
