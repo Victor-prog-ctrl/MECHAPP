@@ -248,7 +248,7 @@ function setupForm(form) {
 
     updateSubmitState();
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
         const invalidFields = fields.filter((field) => validateField(field, { force: true }).length > 0);
 
         if (invalidFields.length > 0) {
@@ -257,10 +257,9 @@ function setupForm(form) {
             return;
         }
 
-        if (formType === "login") {
-            event.preventDefault();
-            window.location.href = "./paginainicio.html";
-        }
+        event.preventDefault();
+
+        await handleFormSubmit({ form, formType, submitButton, fields, updateSubmitState });
     });
 
     if (formType === "register") {
@@ -308,3 +307,114 @@ document.addEventListener("DOMContentLoaded", () => {
     const forms = document.querySelectorAll("form[data-form]");
     forms.forEach((form) => setupForm(form));
 });
+
+async function handleFormSubmit({ form, formType, submitButton, fields, updateSubmitState }) {
+    if (!formType) {
+        return;
+    }
+
+    const setStatus = (message, type = "error") => {
+        const statusElement = form.querySelector("[data-form-status]");
+        if (!statusElement) {
+            return;
+        }
+
+        statusElement.textContent = message || "";
+        statusElement.dataset.statusType = type;
+        statusElement.hidden = !message;
+    };
+
+    const formData = collectFormData(fields);
+
+    try {
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.setAttribute("aria-disabled", "true");
+        }
+
+        setStatus("");
+
+        if (formType === "register") {
+            await submitRegister(formData, setStatus);
+        }
+
+        if (formType === "login") {
+            await submitLogin(formData, setStatus);
+        }
+    } catch (error) {
+        console.error(error);
+        setStatus("No se pudo completar la solicitud. Intenta nuevamente.");
+    } finally {
+        if (submitButton) {
+            if (typeof updateSubmitState === "function") {
+                updateSubmitState();
+            } else {
+                submitButton.disabled = false;
+            }
+            submitButton.setAttribute("aria-disabled", submitButton.disabled ? "true" : "false");
+        }
+    }
+}
+
+function collectFormData(fields) {
+    return fields.reduce((acc, field) => {
+        const name = field.getAttribute("name");
+        if (!name) {
+            return acc;
+        }
+
+        const value = getNormalizedValue(field);
+        acc[name] = value;
+        return acc;
+    }, {});
+}
+
+async function submitRegister(formData, setStatus) {
+    const payload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        accountType: formData["account-type"],
+        certificateProvided: Boolean(formData.certificate && formData.certificate.length),
+    };
+
+    const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => ({ error: "Error al procesar la respuesta." }));
+
+    if (!response.ok) {
+        setStatus(result?.error || "No se pudo registrar al usuario.");
+        throw new Error(result?.error || "Error en el registro");
+    }
+
+    setStatus("Registro exitoso. Redirigiendo al inicio de sesión...", "success");
+    setTimeout(() => {
+        window.location.href = "./login.html";
+    }, 1200);
+}
+
+async function submitLogin(formData, setStatus) {
+    const payload = {
+        email: formData.email,
+        password: formData.password,
+    };
+
+    const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => ({ error: "Error al procesar la respuesta." }));
+
+    if (!response.ok) {
+        setStatus(result?.error || "No se pudo iniciar sesión.");
+        throw new Error(result?.error || "Error en el inicio de sesión");
+    }
+
+    window.location.href = "./perfil.html";
+}

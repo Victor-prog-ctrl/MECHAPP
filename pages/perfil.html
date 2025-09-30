@@ -22,30 +22,26 @@
             </a>
             <div class="header-actions">
                 <a href="./paginainicio.html" class="button ghost">Inicio</a>
-                <a href="./login.html" class="button">Cerrar sesión</a>
+                <button type="button" class="button" id="logout-button">Cerrar sesión</button>
             </div>
         </header>
 
         <main>
             <section class="profile-summary" aria-labelledby="profile-title">
                 <div class="user-card">
-                    <div class="avatar" aria-hidden="true">AR</div>
+                    <div class="avatar" aria-hidden="true" data-profile-avatar></div>
                     <div class="user-details">
                         <span class="label">Perfil</span>
-                        <h1 id="profile-title">Andrea Ramírez</h1>
-                        <p class="role">Cliente Premium</p>
+                        <h1 id="profile-title" data-profile-name></h1>
+                        <p class="role" data-profile-role></p>
                         <dl class="user-meta">
                             <div>
                                 <dt>Correo</dt>
-                                <dd>andrea.ramirez@email.com</dd>
-                            </div>
-                            <div>
-                                <dt>Teléfono</dt>
-                                <dd>+34 600 123 456</dd>
+                                <dd data-profile-email></dd>
                             </div>
                             <div>
                                 <dt>Miembro desde</dt>
-                                <dd>Marzo 2021</dd>
+                                <dd data-profile-member-since></dd>
                             </div>
                         </dl>
                     </div>
@@ -142,5 +138,6 @@
         <footer class="site-footer">
             <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
         </footer>
+        <script src="../src/profile.js" defer></script>
     </body>
 </html>
