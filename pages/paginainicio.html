@@ -160,13 +160,26 @@
             <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
                 <div class="section-header">
                     <div>
-                        <h2 id="geolocalizacion">Talleres cerca de ti</h2>
-                        <p>Activa tu ubicación para descubrir los talleres más próximos.</p>
+                        <h2 id="geolocalizacion">Talleres por comuna</h2>
+                        <p>Escribe el nombre de una comuna para explorar los talleres disponibles en esa zona.</p>
                     </div>
-                    <button class="button ghost" type="button" id="locate-btn">Usar mi ubicación</button>
+                    <form class="comuna-form" id="comuna-form">
+                        <label class="visually-hidden" for="comuna-input">Buscar talleres por comuna</label>
+                        <input
+                            type="text"
+                            id="comuna-input"
+                            name="comuna"
+                            placeholder="Ej. Santiago"
+                            list="comunas-sugeridas"
+                            autocomplete="off"
+                            required
+                        />
+                        <datalist id="comunas-sugeridas"></datalist>
+                        <button class="button ghost" type="submit" id="comuna-btn">Buscar comuna</button>
+                    </form>
                 </div>
                 <p class="location-status" id="location-status" aria-live="polite">
-                    Para comenzar, pulsa "Usar mi ubicación" o permite el acceso a la localización del navegador.
+                    Ingresa una comuna para ver los talleres disponibles en el mapa.
                 </p>
                 <div id="map" class="map-container" role="region" aria-label="Mapa de talleres cercanos"></div>
             </section>
@@ -289,82 +302,174 @@
                     renderResultados(filtrados);
                 });
 
-                const locateBtn = document.getElementById("locate-btn");
                 const locationStatus = document.getElementById("location-status");
                 const mapContainer = document.getElementById("map");
-                let mapa;
-                let marcador;
-                let areaCercana;
+                const comunaForm = document.getElementById("comuna-form");
+                const comunaInput = document.getElementById("comuna-input");
+                const comunasSugeridas = document.getElementById("comunas-sugeridas");
 
-                const inicializarMapa = (latitud, longitud) => {
-                    if (!mapa) {
-                        mapa = L.map(mapContainer).setView([latitud, longitud], 13);
-                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                            maxZoom: 19,
-                            attribution: "&copy; OpenStreetMap"
-                        }).addTo(mapa);
-                    } else {
-                        mapa.setView([latitud, longitud], 13);
+                const talleresPorComuna = [
+                    {
+                        nombre: "Taller MotorPlus",
+                        comuna: "Santiago",
+                        direccion: "Av. Libertador Bernardo O'Higgins 1345",
+                        lat: -33.4475,
+                        lng: -70.6736
+                    },
+                    {
+                        nombre: "Servicio Integral Centro",
+                        comuna: "Santiago",
+                        direccion: "San Diego 245",
+                        lat: -33.4558,
+                        lng: -70.6483
+                    },
+                    {
+                        nombre: "AutoFix Providencia",
+                        comuna: "Providencia",
+                        direccion: "Av. Providencia 1650",
+                        lat: -33.4258,
+                        lng: -70.6095
+                    },
+                    {
+                        nombre: "Mecánica Los Leones",
+                        comuna: "Providencia",
+                        direccion: "Los Leones 123",
+                        lat: -33.4212,
+                        lng: -70.6104
+                    },
+                    {
+                        nombre: "Garage Ñuñoa",
+                        comuna: "Ñuñoa",
+                        direccion: "Av. Irarrázaval 2890",
+                        lat: -33.4532,
+                        lng: -70.5986
+                    },
+                    {
+                        nombre: "ElectroCar Ñuñoa",
+                        comuna: "Ñuñoa",
+                        direccion: "José Domingo Cañas 1801",
+                        lat: -33.4615,
+                        lng: -70.6009
+                    },
+                    {
+                        nombre: "Taller Viña Autos",
+                        comuna: "Viña del Mar",
+                        direccion: "Av. Libertad 749",
+                        lat: -33.0245,
+                        lng: -71.5528
+                    },
+                    {
+                        nombre: "Servicio Marga Marga",
+                        comuna: "Viña del Mar",
+                        direccion: "Quillota 45",
+                        lat: -33.0351,
+                        lng: -71.5925
+                    },
+                    {
+                        nombre: "Puerto Motor",
+                        comuna: "Valparaíso",
+                        direccion: "Av. Argentina 1230",
+                        lat: -33.0472,
+                        lng: -71.6127
+                    },
+                    {
+                        nombre: "Mecánica Barón",
+                        comuna: "Valparaíso",
+                        direccion: "Av. España 2350",
+                        lat: -33.0468,
+                        lng: -71.6123
                     }
+                ];
 
-                    if (marcador) {
-                        marcador.setLatLng([latitud, longitud]);
-                    } else {
-                        marcador = L.marker([latitud, longitud]).addTo(mapa);
-                    }
+                const normalizarTexto = (texto) =>
+                    texto
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .toLowerCase();
 
-                    marcador.bindPopup("Estás aquí").openPopup();
+                const comunasDisponibles = Array.from(
+                    new Set(talleresPorComuna.map((taller) => taller.comuna))
+                ).sort((a, b) => a.localeCompare(b, "es"));
 
-                    if (areaCercana) {
-                        areaCercana.setLatLng([latitud, longitud]);
-                    } else {
-                        areaCercana = L.circle([latitud, longitud], {
-                            radius: 1500,
-                            color: "#38bdf8",
-                            fillColor: "#38bdf8",
-                            fillOpacity: 0.15
-                        }).addTo(mapa);
-                    }
-                };
+                comunasDisponibles.forEach((comuna) => {
+                    const option = document.createElement("option");
+                    option.value = comuna;
+                    comunasSugeridas.appendChild(option);
+                });
 
-                const mostrarUbicacionPredeterminada = () => {
-                    const madrid = { lat: 40.4168, lng: -3.7038 };
-                    locationStatus.textContent = "No pudimos acceder a tu ubicación. Mostramos talleres destacados en Madrid.";
-                    inicializarMapa(madrid.lat, madrid.lng);
-                };
+                const DEFAULT_CENTER = [-33.45, -70.66];
+                const DEFAULT_ZOOM = 11;
 
-                const obtenerUbicacion = () => {
-                    if (!navigator.geolocation) {
-                        locationStatus.textContent = "Tu navegador no soporta geolocalización. Mostramos una ubicación de referencia.";
-                        mostrarUbicacionPredeterminada();
+                const mapa = L.map(mapContainer).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    maxZoom: 19,
+                    attribution: "&copy; OpenStreetMap"
+                }).addTo(mapa);
+
+                const capaTalleres = L.layerGroup().addTo(mapa);
+
+                const mostrarTalleres = (comunaBuscada) => {
+                    const terminoNormalizado = normalizarTexto(comunaBuscada);
+
+                    capaTalleres.clearLayers();
+
+                    if (!terminoNormalizado) {
+                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
+                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
                         return;
                     }
 
-                    locationStatus.textContent = "Obteniendo tu ubicación…";
-
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const { latitude, longitude } = position.coords;
-                            locationStatus.textContent = "¡Ubicación detectada! Estos son los talleres más cercanos.";
-                            inicializarMapa(latitude, longitude);
-                        },
-                        (error) => {
-                            console.error(error);
-                            locationStatus.textContent = "No pudimos obtener tu ubicación automáticamente.";
-                            mostrarUbicacionPredeterminada();
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    const talleresEncontrados = talleresPorComuna.filter(
+                        (taller) => normalizarTexto(taller.comuna) === terminoNormalizado
                     );
+
+                    if (!talleresEncontrados.length) {
+                        locationStatus.textContent = "No hay talleres en esa zona.";
+                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                        return;
+                    }
+
+                    const limites = [];
+
+                    talleresEncontrados.forEach((taller) => {
+                        const marcador = L.marker([taller.lat, taller.lng]).addTo(capaTalleres);
+                        marcador.bindPopup(
+                            `<strong>${taller.nombre}</strong><br />${taller.direccion}<br />${taller.comuna}`
+                        );
+                        limites.push([taller.lat, taller.lng]);
+                    });
+
+                    if (limites.length === 1) {
+                        mapa.setView(limites[0], 14);
+                    } else {
+                        mapa.fitBounds(limites, { padding: [40, 40] });
+                    }
+
+                    const nombreComuna = talleresEncontrados[0].comuna;
+                    const cantidad = talleresEncontrados.length;
+                    const etiquetaTaller = cantidad === 1 ? "taller" : "talleres";
+                    locationStatus.textContent = `Mostrando ${cantidad} ${etiquetaTaller} en ${nombreComuna}.`;
+                    comunaInput.value = nombreComuna;
                 };
 
-                locateBtn.addEventListener("click", obtenerUbicacion);
+                comunaForm.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    mostrarTalleres(comunaInput.value);
+                });
 
-                // Intentar cargar la ubicación por defecto una vez que el mapa sea visible
-                setTimeout(() => {
-                    if (!mapa) {
-                        mostrarUbicacionPredeterminada();
+                comunaInput.addEventListener("change", (event) => {
+                    if (event.target.value) {
+                        mostrarTalleres(event.target.value);
                     }
-                }, 1500);
+                });
+
+                comunaInput.addEventListener("input", (event) => {
+                    if (!event.target.value.trim()) {
+                        capaTalleres.clearLayers();
+                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
+                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                    }
+                });
             });
         </script>
     </body>

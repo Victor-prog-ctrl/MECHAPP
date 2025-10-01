@@ -325,6 +325,29 @@ main {
     color: rgba(15, 23, 42, 0.6);
 }
 
+.comuna-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.comuna-form input {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: var(--surface-alt);
+    font-size: 1rem;
+    min-width: 220px;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.comuna-form input:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.6);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
 .card-grid,
 .services {
     background: var(--surface);
@@ -477,6 +500,17 @@ main {
     .section-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .comuna-form {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .comuna-form input,
+    .comuna-form .button {
+        width: 100%;
     }
 
     .hero,
