@@ -32,13 +32,17 @@
                 <a href="#mensajes" class="nav-link">Mensajes</a>
                 <a href="#ubicacion" class="nav-link">Ubicación</a>
                 <a href="./perfil.html" class="nav-link">Perfil</a>
-                <a href="./registro-taller.html" class="nav-link">Registrar Taller</a>
+                <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>
+                    Registrar Taller
+                </a>
             </nav>
             <div class="header-actions">
                 <a href="./login.html" class="button button-secondary">Iniciar sesión</a>
                 <a href="#agendar" class="button button-primary">Agendar Cita</a>
                 <a href="./perfil.html" class="button ghost">Mi Perfil</a>
-                <a href="./registro-taller.html" class="button ghost">Registrar Taller</a>
+                <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
+                    Registrar Taller
+                </a>
             </div>
         </header>
 
@@ -213,6 +217,41 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const searchInput = document.getElementById("search-input");
                 const searchResults = document.getElementById("search-results");
+
+                const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
+
+                const updateMechanicElementsVisibility = (shouldShow) => {
+                    mechanicOnlyElements.forEach((element) => {
+                        if (shouldShow) {
+                            element.removeAttribute("hidden");
+                        } else {
+                            element.setAttribute("hidden", "");
+                        }
+                    });
+                };
+
+                const verifyMechanicProfile = async () => {
+                    try {
+                        const response = await fetch("/api/profile");
+
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                updateMechanicElementsVisibility(false);
+                                return;
+                            }
+
+                            throw new Error("No se pudo obtener el perfil del usuario");
+                        }
+
+                        const profile = await response.json();
+                        updateMechanicElementsVisibility(profile?.accountType === "mecanico");
+                    } catch (error) {
+                        console.error(error);
+                        updateMechanicElementsVisibility(false);
+                    }
+                };
+
+                verifyMechanicProfile();
 
                 const especialistas = [
                     {
