@@ -37,7 +37,7 @@
                 </a>
             </nav>
             <div class="header-actions">
-                <a href="./login.html" class="button button-secondary">Iniciar sesión</a>
+                <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
                 <a href="#agendar" class="button button-primary">Agendar Cita</a>
                 <a href="./perfil.html" class="button ghost">Mi Perfil</a>
                 <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
@@ -74,55 +74,6 @@
                     />
                 </div>
                 <div class="search-results" id="search-results" aria-live="polite"></div>
-            </section>
-
-            <section class="card-grid" aria-labelledby="especialistas">
-                <div class="section-header">
-                    <div>
-                        <h2 id="especialistas">Nuestros Especialistas</h2>
-                        <p>Profesionales certificados listos para ayudarte.</p>
-                    </div>
-                    <a class="button" href="#especialistas">Ver Todos</a>
-                </div>
-
-                <div class="grid">
-                    <article class="card">
-                        <div class="avatar" aria-hidden="true">JS</div>
-                        <div class="card-body">
-                            <h3>John Smith</h3>
-                            <p class="role">Especialista en motores</p>
-                            <div class="rating" aria-label="4.9 estrellas">
-                                <span class="stars" aria-hidden="true">★★★★★</span>
-                                <span>4.9/5 (230 Reseñas)</span>
-                            </div>
-                        </div>
-                        <a class="button" href="#">Ver Perfil</a>
-                    </article>
-                    <article class="card">
-                        <div class="avatar" aria-hidden="true">JS</div>
-                        <div class="card-body">
-                            <h3>John Smith</h3>
-                            <p class="role">Especialista en transmisiones</p>
-                            <div class="rating" aria-label="4.8 estrellas">
-                                <span class="stars" aria-hidden="true">★★★★★</span>
-                                <span>4.8/5 (189 Reseñas)</span>
-                            </div>
-                        </div>
-                        <a class="button" href="#">Ver Perfil</a>
-                    </article>
-                    <article class="card">
-                        <div class="avatar" aria-hidden="true">JS</div>
-                        <div class="card-body">
-                            <h3>John Smith</h3>
-                            <p class="role">Especialista en frenos</p>
-                            <div class="rating" aria-label="4.7 estrellas">
-                                <span class="stars" aria-hidden="true">★★★★★</span>
-                                <span>4.7/5 (156 Reseñas)</span>
-                            </div>
-                        </div>
-                        <a class="button" href="#">Ver Perfil</a>
-                    </article>
-                </div>
             </section>
 
             <section class="services" id="citas" aria-labelledby="servicios">
@@ -219,6 +170,7 @@
                 const searchResults = document.getElementById("search-results");
 
                 const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
+                const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
 
                 const updateMechanicElementsVisibility = (shouldShow) => {
                     mechanicOnlyElements.forEach((element) => {
@@ -230,6 +182,16 @@
                     });
                 };
 
+                const updateAuthVisibility = (isAuthenticated) => {
+                    unauthenticatedOnlyElements.forEach((element) => {
+                        if (isAuthenticated) {
+                            element.setAttribute("hidden", "");
+                        } else {
+                            element.removeAttribute("hidden");
+                        }
+                    });
+                };
+
                 const verifyMechanicProfile = async () => {
                     try {
                         const response = await fetch("/api/profile");
@@ -237,6 +199,7 @@
                         if (!response.ok) {
                             if (response.status === 401) {
                                 updateMechanicElementsVisibility(false);
+                                updateAuthVisibility(false);
                                 return;
                             }
 
@@ -245,34 +208,15 @@
 
                         const profile = await response.json();
                         updateMechanicElementsVisibility(profile?.accountType === "mecanico");
+                        updateAuthVisibility(true);
                     } catch (error) {
                         console.error(error);
                         updateMechanicElementsVisibility(false);
+                        updateAuthVisibility(false);
                     }
                 };
 
                 verifyMechanicProfile();
-
-                const especialistas = [
-                    {
-                        nombre: "John Smith",
-                        especialidad: "Especialista en motores",
-                        enlace: "#",
-                        tipo: "Taller"
-                    },
-                    {
-                        nombre: "John Smith",
-                        especialidad: "Especialista en transmisiones",
-                        enlace: "#",
-                        tipo: "Taller"
-                    },
-                    {
-                        nombre: "John Smith",
-                        especialidad: "Especialista en frenos",
-                        enlace: "#",
-                        tipo: "Taller"
-                    }
-                ];
 
                 const servicios = [
                     {
@@ -295,7 +239,7 @@
                     }
                 ];
 
-                const datosBusqueda = [...especialistas, ...servicios];
+                const datosBusqueda = servicios;
 
                 const renderResultados = (items) => {
                     if (!items.length) {
