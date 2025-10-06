@@ -63,11 +63,11 @@ main {
 }
 
 .brand-icon {
-    width: 36px;
-    height: 36px;
+    width: 66px;
+    height: 66px;
     display: inline-block;
     border-radius: 10px;
-    background: #000 url("../assets/logo.svg") no-repeat center/contain;
+    background: #00000000 url("../assets/logo.png") no-repeat center/contain;
 }
 
 .header-actions {

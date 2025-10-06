@@ -85,11 +85,11 @@ main {
 }
 
 .brand-icon {
-    width: 40px;
-    height: 40px;
+    width: 80px;
+    height: 80px;
     display: inline-block;
-    border-radius: 12px;
-    background: #000 url("../assets/logo.svg") no-repeat center/contain;
+    border-radius: 10px;
+    background: #00000000 url("../assets/logo.png") no-repeat center/contain;
 }
 
 .auth-header {
