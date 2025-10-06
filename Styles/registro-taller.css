@@ -48,18 +48,9 @@ body {
 .brand-icon {
     width: 44px;
     height: 44px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #38bdf8, #6366f1);
     display: inline-block;
-    position: relative;
-}
-
-.brand-icon::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: 12px;
-    border: 2px solid rgba(255, 255, 255, 0.65);
+    border-radius: 14px;
+    background: #000 url("../assets/logo.svg") no-repeat center/contain;
 }
 
 .brand-name {

@@ -65,17 +65,9 @@ main {
 .brand-icon {
     width: 36px;
     height: 36px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #38bdf8, #6366f1);
-    position: relative;
-}
-
-.brand-icon::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    display: inline-block;
+    border-radius: 10px;
+    background: #000 url("../assets/logo.svg") no-repeat center/contain;
 }
 
 .header-actions {
