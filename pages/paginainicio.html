@@ -13,12 +13,6 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="../Styles/paginainicio.css" />
-        <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
-            crossorigin=""
-        />
     </head>
     <body>
         <header class="site-header">
@@ -159,12 +153,15 @@
                 <p>soporte@autoserv.com</p>
             </div>
         </footer>
-        <script
-            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
-            crossorigin=""
-        ></script>
         <script>
+            let inicializarMapaGoogle;
+
+            window.initMap = () => {
+                if (typeof inicializarMapaGoogle === "function") {
+                    inicializarMapaGoogle();
+                }
+            };
+
             document.addEventListener("DOMContentLoaded", () => {
                 const searchInput = document.getElementById("search-input");
                 const searchResults = document.getElementById("search-results");
@@ -380,25 +377,51 @@
                     comunasSugeridas.appendChild(option);
                 });
 
-                const DEFAULT_CENTER = [-33.45, -70.66];
+                const DEFAULT_CENTER = { lat: -33.45, lng: -70.66 };
                 const DEFAULT_ZOOM = 11;
+                let mapa;
+                let marcadores = [];
 
-                const mapa = L.map(mapContainer).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                    maxZoom: 19,
-                    attribution: "&copy; OpenStreetMap"
-                }).addTo(mapa);
+                inicializarMapaGoogle = () => {
+                    mapa = new google.maps.Map(mapContainer, {
+                        center: DEFAULT_CENTER,
+                        zoom: DEFAULT_ZOOM,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false
+                    });
+                };
 
-                const capaTalleres = L.layerGroup().addTo(mapa);
+                const obtenerMapa = () => {
+                    if (!window.google || !google.maps) {
+                        locationStatus.textContent =
+                            "El mapa de Google no se pudo cargar. Verifica tu conexión o la clave de API.";
+                        return null;
+                    }
+
+                    if (!mapa) {
+                        window.initMap();
+                    }
+
+                    return mapa;
+                };
 
                 const mostrarTalleres = (comunaBuscada) => {
                     const terminoNormalizado = normalizarTexto(comunaBuscada);
 
-                    capaTalleres.clearLayers();
+                    const mapaActual = obtenerMapa();
+
+                    if (!mapaActual) {
+                        return;
+                    }
+
+                    marcadores.forEach((marcador) => marcador.setMap(null));
+                    marcadores = [];
 
                     if (!terminoNormalizado) {
                         locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                        mapaActual.setZoom(DEFAULT_ZOOM);
+                        mapaActual.setCenter(DEFAULT_CENTER);
                         return;
                     }
 
@@ -408,24 +431,38 @@
 
                     if (!talleresEncontrados.length) {
                         locationStatus.textContent = "No hay talleres en esa zona.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                        mapaActual.setZoom(DEFAULT_ZOOM);
+                        mapaActual.setCenter(DEFAULT_CENTER);
                         return;
                     }
 
-                    const limites = [];
+                    const limites = new google.maps.LatLngBounds();
 
                     talleresEncontrados.forEach((taller) => {
-                        const marcador = L.marker([taller.lat, taller.lng]).addTo(capaTalleres);
-                        marcador.bindPopup(
-                            `<strong>${taller.nombre}</strong><br />${taller.direccion}<br />${taller.comuna}`
-                        );
-                        limites.push([taller.lat, taller.lng]);
+                        const posicion = { lat: taller.lat, lng: taller.lng };
+                        const marcador = new google.maps.Marker({
+                            map: mapaActual,
+                            position: posicion,
+                            title: `${taller.nombre} - ${taller.comuna}`
+                        });
+
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<strong>${taller.nombre}</strong><br />${taller.direccion}<br />${taller.comuna}`
+                        });
+
+                        marcador.addListener("click", () => {
+                            infoWindow.open({ anchor: marcador, map: mapaActual });
+                        });
+
+                        marcadores.push(marcador);
+                        limites.extend(posicion);
                     });
 
-                    if (limites.length === 1) {
-                        mapa.setView(limites[0], 14);
+                    if (talleresEncontrados.length === 1) {
+                        mapaActual.setCenter(limites.getCenter());
+                        mapaActual.setZoom(14);
                     } else {
-                        mapa.fitBounds(limites, { padding: [40, 40] });
+                        mapaActual.fitBounds(limites, { padding: 60 });
                     }
 
                     const nombreComuna = talleresEncontrados[0].comuna;
@@ -448,12 +485,28 @@
 
                 comunaInput.addEventListener("input", (event) => {
                     if (!event.target.value.trim()) {
-                        capaTalleres.clearLayers();
+                        const mapaActual = obtenerMapa();
+
+                        if (mapaActual) {
+                            marcadores.forEach((marcador) => marcador.setMap(null));
+                            marcadores = [];
+                            mapaActual.setZoom(DEFAULT_ZOOM);
+                            mapaActual.setCenter(DEFAULT_CENTER);
+                        }
+
                         locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
                     }
                 });
+
+                if (window.google && google.maps) {
+                    window.initMap();
+                }
             });
         </script>
+        <script
+            src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"
+            async
+            defer
+        ></script>
     </body>
 </html>
