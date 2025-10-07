@@ -32,35 +32,57 @@ db.prepare(`
     )
 `).run();
 
-// Middlewares
+// ===== Middlewares =====
+// Helmet con CSP ajustada para Leaflet + OSM y localhost (HTTP)
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
-      "default-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"], // ← habilita inline
-      "style-src": ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://fonts.googleapis.com"],
-      "img-src": ["'self'", "data:", "https://*.tile.openstreetmap.org", "https://*.openstreetmap.org"],
-      "font-src": ["'self'", "https://fonts.gstatic.com"],
-      "connect-src": ["'self'"], // para /data/comunas_cl.json
-    }
+      // Evitar forzar HTTPS en desarrollo
+      'upgrade-insecure-requests': null,
+      'block-all-mixed-content': null,
+
+      'default-src': ["'self'"],
+
+      // Scripts locales + unpkg (Leaflet) + inline (tu script en la página)
+      'script-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+
+      // Estilos locales + unpkg + Google Fonts; permitir inline para estilos embebidos
+      'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
+
+      // Imágenes locales, data URIs, íconos de Leaflet desde unpkg y tiles de OSM
+      'img-src': [
+        "'self'",
+        'data:',
+        'https://unpkg.com',
+        'https://*.tile.openstreetmap.org',
+        'https://*.openstreetmap.org'
+      ],
+
+      // Fuentes de Google
+      'font-src': ["'self'", 'https://fonts.gstatic.com'],
+
+      // Permitir fetch/XHR a tu propio servidor y (opcional) a unpkg (para sourcemaps)
+      'connect-src': ["'self'", 'https://unpkg.com'],
+    },
   },
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginEmbedderPolicy: false,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
-    session({
-        store: new SQLiteStore({ db: 'sessions.db', dir: dataDir }),
-        secret: process.env.SESSION_SECRET || 'mechapp-secret',
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            httpOnly: true,
-            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        },
-    })
+  session({
+    store: new SQLiteStore({ db: 'sessions.db', dir: dataDir }),
+    secret: process.env.SESSION_SECRET || 'mechapp-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
+  })
 );
 app.use(morgan('dev'));
 
@@ -73,109 +95,109 @@ app.use('/data', express.static(path.join(__dirname, 'public', 'data')));
 app.use('/', express.static(path.join(__dirname, 'pages')));
 
 function requireAuth(req, res, next) {
-    if (!req.session.userId) {
-        return res.status(401).json({ error: 'No autorizado' });
-    }
-    next();
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  next();
 }
 
 app.post('/api/register', async (req, res) => {
-    try {
-        const { name, email, password, accountType, certificateProvided } = req.body;
+  try {
+    const { name, email, password, accountType, certificateProvided } = req.body;
 
-        if (!name || !email || !password || !accountType) {
-            return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
-        }
-
-        const normalizedEmail = String(email).trim().toLowerCase();
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const insert = db.prepare(
-            `INSERT INTO users (name, email, password_hash, account_type, certificate_uploaded)
-             VALUES (?, ?, ?, ?, ?)`
-        );
-
-        insert.run(name.trim(), normalizedEmail, hashedPassword, accountType, certificateProvided ? 1 : 0);
-
-        return res.status(201).json({ message: 'Usuario registrado correctamente.' });
-    } catch (error) {
-        if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-            return res.status(409).json({ error: 'El correo ya está registrado.' });
-        }
-        console.error('Error registrando usuario', error);
-        return res.status(500).json({ error: 'Ocurrió un error al registrar el usuario.' });
+    if (!name || !email || !password || !accountType) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
     }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const insert = db.prepare(
+      `INSERT INTO users (name, email, password_hash, account_type, certificate_uploaded)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+
+    insert.run(name.trim(), normalizedEmail, hashedPassword, accountType, certificateProvided ? 1 : 0);
+
+    return res.status(201).json({ message: 'Usuario registrado correctamente.' });
+  } catch (error) {
+    if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: 'El correo ya está registrado.' });
+    }
+    console.error('Error registrando usuario', error);
+    return res.status(500).json({ error: 'Ocurrió un error al registrar el usuario.' });
+  }
 });
 
 app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Ingresa correo y contraseña.' });
-        }
-
-        const normalizedEmail = String(email).trim().toLowerCase();
-
-        const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(normalizedEmail);
-
-        if (!user) {
-            return res.status(401).json({ error: 'Credenciales inválidas.' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-
-        if (!isMatch) {
-            return res.status(401).json({ error: 'Credenciales inválidas.' });
-        }
-
-        req.session.userId = user.id;
-
-        res.json({ message: 'Inicio de sesión correcto.' });
-    } catch (error) {
-        console.error('Error al iniciar sesión', error);
-        res.status(500).json({ error: 'Ocurrió un error al iniciar sesión.' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Ingresa correo y contraseña.' });
     }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(normalizedEmail);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    req.session.userId = user.id;
+
+    res.json({ message: 'Inicio de sesión correcto.' });
+  } catch (error) {
+    console.error('Error al iniciar sesión', error);
+    res.status(500).json({ error: 'Ocurrió un error al iniciar sesión.' });
+  }
 });
 
 app.post('/api/logout', (req, res) => {
-    req.session.destroy((error) => {
-        if (error) {
-            console.error('Error al cerrar sesión', error);
-            return res.status(500).json({ error: 'No se pudo cerrar sesión.' });
-        }
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Sesión finalizada.' });
-    });
+  req.session.destroy((error) => {
+    if (error) {
+      console.error('Error al cerrar sesión', error);
+      return res.status(500).json({ error: 'No se pudo cerrar sesión.' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Sesión finalizada.' });
+  });
 });
 
 app.get('/api/profile', requireAuth, (req, res) => {
-    try {
-        const user = db.prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`).get(
-            req.session.userId
-        );
+  try {
+    const user = db.prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`).get(
+      req.session.userId
+    );
 
-        if (!user) {
-            return res.status(404).json({ error: 'Usuario no encontrado.' });
-        }
-
-        res.json({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            accountType: user.account_type,
-            createdAt: user.created_at,
-        });
-    } catch (error) {
-        console.error('Error obteniendo perfil', error);
-        res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      accountType: user.account_type,
+      createdAt: user.created_at,
+    });
+  } catch (error) {
+    console.error('Error obteniendo perfil', error);
+    res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+  }
 });
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'pages', 'paginainicio.html'));
+  res.sendFile(path.join(__dirname, 'pages', 'paginainicio.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });

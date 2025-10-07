@@ -16,12 +16,11 @@
     />
 
     <!-- Leaflet (CSS) -->
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <!-- Tus estilos -->
     <link rel="stylesheet" href="../Styles/paginainicio.css" />
 
-    <!-- Asegura altura del mapa (por si tu CSS no la tiene) -->
+    <!-- Asegura altura del mapa -->
     <style>
       .map-container { height: 420px; width: 100%; border-radius: 12px; }
       @media (max-width: 768px) { .map-container { height: 300px; } }
@@ -150,7 +149,6 @@
           Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.
         </p>
 
-        <!-- ALTURA explícita para que el mapa sea visible -->
         <div
           id="map"
           class="map-container"
@@ -183,11 +181,7 @@
     </footer>
 
     <!-- Leaflet (JS) -->
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-o9N1j6kPeE+YxBp2JgqS0hZ1uuQB3Lt1PPVPBJ3H+0o="
-      crossorigin=""
-    ></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
     <!-- Lógica de página (incluye mapa) -->
     <script>
@@ -343,18 +337,31 @@
           comunaSelect.appendChild(frag);
         };
 
+        /* ===== Icono personalizado (LOCAL) — pon tu imagen en /assets/markers/pin.png ===== */
+        const leafletIcon = L.icon({
+          iconUrl: '/assets/icono marcador mapa.png',      // <-- cambia el nombre si usas otro archivo
+          // iconRetinaUrl: '/assets/markers/pin@2x.png', // opcional si tienes 2x
+          iconSize:   [48, 48],   // ajusta al tamaño real de tu PNG
+          iconAnchor: [19, 48],   // mitad del ancho, base del alto (punta del pin)
+          popupAnchor:[0, -48],   // popup justo encima del pin
+          // shadowSize:[41, 41], shadowAnchor:[12, 41],
+        });
+
         const ensureMap = () => {
           if (mapInstance) return mapInstance;
           if (!window.L) {
             locationStatus.textContent = "No fue posible cargar el mapa interactivo. Intenta nuevamente más tarde.";
             disableControls(); return null;
           }
+
           mapInstance = L.map(mapContainer).setView([MAP_DEFAULT.lat, MAP_DEFAULT.lng], MAP_DEFAULT.zoom);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
           }).addTo(mapInstance);
 
-          comunaMarker = L.marker([MAP_DEFAULT.lat, MAP_DEFAULT.lng]).addTo(mapInstance);
+          // marcador inicial con icono local
+          comunaMarker = L.marker([MAP_DEFAULT.lat, MAP_DEFAULT.lng], { icon: leafletIcon })
+            .addTo(mapInstance);
           comunaMarker.bindPopup("Comuna: Santiago").openPopup();
 
           // Por si el contenedor refluye al primer render:
@@ -368,8 +375,11 @@
           const zoom = useDefaultZoom ? MAP_DEFAULT.zoom : MAP_DEFAULT.focusZoom;
 
           map.setView(pos, zoom);
-          if (!comunaMarker) comunaMarker = L.marker(pos).addTo(map);
-          else comunaMarker.setLatLng(pos);
+          if (!comunaMarker) {
+            comunaMarker = L.marker(pos, { icon: leafletIcon }).addTo(map);
+          } else {
+            comunaMarker.setLatLng(pos);
+          }
 
           comunaMarker.bindPopup(`Comuna: ${comuna.nombre}`);
           if (openPopup) comunaMarker.openPopup();
@@ -379,7 +389,6 @@
           comunaInput.value = comuna.nombre;
           comunaSelect.value = comuna.nombre;
 
-          // 🔧 fuerza recálculo de tamaño por si el contenedor cambió
           setTimeout(()=> map.invalidateSize(), 120);
         };
 
@@ -387,7 +396,6 @@
           const n = normalizeText(q);
           if (!n) return null;
           if (comunasIndex.has(n)) return comunasIndex.get(n);
-          // también aceptar "empieza con"
           for (const [key, comuna] of comunasIndex.entries()) {
             if (key.startsWith(n)) return comuna;
           }
@@ -440,7 +448,6 @@
             comunaError.textContent=""; locationStatus.textContent = "Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.";
           });
 
-          // Si cambia el tamaño de ventana, reajusta tamaño del mapa
           window.addEventListener("resize", () => mapInstance && mapInstance.invalidateSize());
         })();
       });
