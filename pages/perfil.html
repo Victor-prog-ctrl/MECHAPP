@@ -25,63 +25,79 @@
         </div>
     </header>
 
-        <main>
-            <section class="profile-summary" aria-labelledby="profile-title">
-                <div class="user-card">
-                    <div class="avatar" aria-hidden="true" data-profile-avatar></div>
-                    <div class="user-details">
-                        <span class="label">Perfil</span>
-                        <h1 id="profile-title" data-profile-name></h1>
-                        <p class="role" data-profile-role></p>
-                        <dl class="user-meta">
-                            <div>
-                                <dt>Correo</dt>
-                                <dd data-profile-email></dd>
-                            </div>
-                            <div>
-                                <dt>Miembro desde</dt>
-                                <dd data-profile-member-since></dd>
-                            </div>
-                        </dl>
-                    </div>
-                </div>
-                <div class="metrics" aria-label="Indicadores de la cuenta">
-                    <article class="metric-card">
-                        <span class="metric-label">Citas completadas</span>
-                        <strong class="metric-value">28</strong>
-                        <span class="metric-caption">En los últimos 12 meses</span>
-                    </article>
-                    <article class="metric-card">
-                        <span class="metric-label">Puntuación promedio</span>
-                        <strong class="metric-value">4.9</strong>
-                        <span class="metric-caption">Basado en 18 reseñas</span>
-                    </article>
-                    <article class="metric-card">
-                        <span class="metric-label">Vehículos registrados</span>
-                        <strong class="metric-value">2</strong>
-                        <span class="metric-caption">Sedán 2020 · SUV 2022</span>
-                    </article>
-                </div>
-                <aside class="subscription-card" aria-label="Formulario de suscripción a novedades">
-                    <h2>Suscríbete y recibe novedades</h2>
-                    <p>Mantente al día con promociones, recordatorios y novedades personalizadas.</p>
-                    <form class="subscription-form" action="#" method="post">
-                        <label class="subscription-label" for="subscription-email">Correo electrónico</label>
-                        <div class="subscription-input-group">
-                            <input
-                                type="email"
-                                id="subscription-email"
-                                name="subscription-email"
-                                placeholder="tucorreo@ejemplo.com"
-                                required
-                                autocomplete="email"
-                            />
-                            <button type="submit" class="button">Suscribirme</button>
+    <main>
+        <section class="profile-summary" aria-labelledby="profile-title">
+            <div class="user-card">
+                <div class="avatar" aria-hidden="true" data-profile-avatar></div>
+                <div class="user-details">
+                    <span class="label">Perfil</span>
+                    <h1 id="profile-title" data-profile-name></h1>
+                    <p class="role" data-profile-role></p>
+                    <dl class="user-meta">
+                        <div>
+                            <dt>Correo</dt>
+                            <dd data-profile-email></dd>
                         </div>
-                        <p class="subscription-note">Puedes darte de baja cuando quieras desde cualquier correo que recibas.</p>
-                    </form>
-                </aside>
-            </section>
+                        <div>
+                            <dt>Miembro desde</dt>
+                            <dd data-profile-member-since></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="metrics" aria-label="Indicadores de la cuenta">
+                <article class="metric-card">
+                    <span class="metric-label">Citas completadas</span>
+                    <strong class="metric-value">28</strong>
+                    <span class="metric-caption">En los últimos 12 meses</span>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Puntuación promedio</span>
+                    <strong class="metric-value">4.9</strong>
+                    <span class="metric-caption">Basado en 18 reseñas</span>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Vehículos registrados</span>
+                    <strong class="metric-value">2</strong>
+                    <span class="metric-caption">Sedán 2020 · SUV 2022</span>
+                </article>
+            </div>
+
+            <!-- ===== Suscripción (ajustada para profile.js) ===== -->
+            <aside class="subscription-card" aria-label="Formulario de suscripción a novedades">
+                <h2>Suscríbete y recibe novedades</h2>
+                <p>Mantente al día con promociones, recordatorios y novedades personalizadas.</p>
+
+                <form
+                    class="subscription-form"
+                    id="subscribe-form"
+                    action="#"
+                    method="post"
+                    data-emailjs-service-id="service_yn5lpjl"
+                    data-emailjs-template-id="template_gkufg9e"
+                    data-emailjs-public-key="uZw4YfdppiljaIHqe"
+                >
+                    <label class="subscription-label" for="subscription-email">Correo electrónico</label>
+                    <div class="subscription-input-group">
+                        <input
+                            type="email"
+                            id="subscription-email"
+                            name="subscriber_email"
+                            placeholder="tucorreo@ejemplo.com"
+                            required
+                            autocomplete="email"
+                        />
+                        <button type="submit" id="subscribe-btn" class="button">Suscribirme</button>
+                    </div>
+                    <p class="subscription-note">Puedes darte de baja cuando quieras desde cualquier correo que recibas.</p>
+                    <!-- feedback para profile.js -->
+                    <small id="subscribe-msg" data-subscription-feedback aria-live="polite" hidden></small>
+                </form>
+            </aside>
+            <!-- ===== Fin suscripción ===== -->
+
+        </section>
 
         <section class="history" id="historial" aria-labelledby="historial-title">
             <div class="section-header">
@@ -153,9 +169,14 @@
         </section>
     </main>
 
-        <footer class="site-footer">
-            <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
-        </footer>
-        <script src="../src/profile.js" defer></script>
-    </body>
+    <footer class="site-footer">
+        <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
+    </footer>
+
+    <!-- Cargar EmailJS ANTES de profile.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+
+    <!-- Tu JS de la página (usa EmailJS y lee los data-atributos del form) -->
+    <script src="../src/profile.js" defer></script>
+</body>
 </html>
