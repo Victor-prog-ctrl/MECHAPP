@@ -1,0 +1,123 @@
+.about-main {
+  width: min(960px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  margin-bottom: 64px;
+}
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.about-hero {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.about-hero h1 {
+  font-size: clamp(2.1rem, 3vw, 2.8rem);
+  line-height: 1.2;
+}
+
+.about-hero p {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  max-width: 64ch;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.about-narrative {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 40px 44px;
+  box-shadow: 0 20px 36px rgba(15, 23, 42, 0.16);
+}
+
+.about-narrative p {
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.9;
+  font-size: 1.05rem;
+  text-align: justify;
+  text-wrap: balance;
+}
+
+.about-narrative strong {
+  color: #fff;
+  font-weight: 600;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.about-footer {
+  width: min(960px, 100%);
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+
+.footer-content h4 {
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.footer-content p,
+.footer-note {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.footer-content a {
+  color: inherit;
+}
+
+.footer-note {
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 24px 16px 48px;
+  }
+
+  .about-hero {
+    padding: 32px;
+  }
+
+  .about-narrative {
+    padding: 32px;
+  }
+}
