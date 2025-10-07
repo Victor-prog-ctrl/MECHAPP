@@ -33,7 +33,21 @@ db.prepare(`
 `).run();
 
 // Middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"], // ← habilita inline
+      "style-src": ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://fonts.googleapis.com"],
+      "img-src": ["'self'", "data:", "https://*.tile.openstreetmap.org", "https://*.openstreetmap.org"],
+      "font-src": ["'self'", "https://fonts.gstatic.com"],
+      "connect-src": ["'self'"], // para /data/comunas_cl.json
+    }
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
