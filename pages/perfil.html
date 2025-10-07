@@ -66,7 +66,14 @@
                 <aside class="subscription-card" aria-label="Formulario de suscripción a novedades">
                     <h2>Suscríbete y recibe novedades</h2>
                     <p>Mantente al día con promociones, recordatorios y novedades personalizadas.</p>
-                    <form class="subscription-form" action="#" method="post">
+                    <form
+                        class="subscription-form"
+                        action="#"
+                        method="post"
+                        data-emailjs-service-id=""
+                        data-emailjs-template-id=""
+                        data-emailjs-public-key=""
+                    >
                         <label class="subscription-label" for="subscription-email">Correo electrónico</label>
                         <div class="subscription-input-group">
                             <input
@@ -79,6 +86,7 @@
                             />
                             <button type="submit" class="button">Suscribirme</button>
                         </div>
+                        <p class="subscription-feedback" data-subscription-feedback role="status" hidden></p>
                         <p class="subscription-note">Puedes darte de baja cuando quieras desde cualquier correo que recibas.</p>
                     </form>
                 </aside>
@@ -157,6 +165,7 @@
         <footer class="site-footer">
             <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
         </footer>
+        <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
         <script src="../src/profile.js" defer></script>
     </body>
 </html>

@@ -45,7 +45,7 @@ app.use(helmet({
       'default-src': ["'self'"],
 
       // Scripts locales + unpkg (Leaflet) + inline (tu script en la página)
-      'script-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
 
       // Estilos locales + unpkg + Google Fonts; permitir inline para estilos embebidos
       'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
@@ -63,7 +63,7 @@ app.use(helmet({
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
 
       // Permitir fetch/XHR a tu propio servidor y (opcional) a unpkg (para sourcemaps)
-      'connect-src': ["'self'", 'https://unpkg.com'],
+      'connect-src': ["'self'", 'https://unpkg.com', 'https://api.emailjs.com'],
     },
   },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
