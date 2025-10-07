@@ -63,19 +63,11 @@ main {
 }
 
 .brand-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #38bdf8, #6366f1);
-    position: relative;
-}
-
-.brand-icon::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    width: 66px;
+    height: 66px;
+    display: inline-block;
+    border-radius: 10px;
+    background: #00000000 url("../assets/logo.png") no-repeat center/contain;
 }
 
 .header-actions {
@@ -117,9 +109,11 @@ main {
     border-radius: var(--radius-lg);
     padding: 40px;
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 28px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
     position: relative;
+    align-items: stretch;
 }
 
 .profile-summary::after {
@@ -135,6 +129,7 @@ main {
     display: flex;
     gap: 24px;
     align-items: center;
+    grid-column: 1 / -1;
 }
 
 .avatar {
@@ -189,6 +184,64 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
+}
+
+.subscription-card {
+    background: var(--surface-alt);
+    border-radius: var(--radius-md);
+    padding: 50px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    justify-content: center;
+}
+
+.subscription-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.subscription-card p {
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.subscription-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.subscription-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.subscription-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.subscription-input-group input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.subscription-input-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.subscription-note {
+    font-size: 0.85rem;
 }
 
 .metric-card {
@@ -374,5 +427,14 @@ main {
     .table-header,
     .table-row {
         grid-template-columns: 1fr;
+    }
+
+    .subscription-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .subscription-input-group .button {
+        width: 100%;
     }
 }

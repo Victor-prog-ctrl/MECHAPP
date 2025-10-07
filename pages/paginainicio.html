@@ -1,459 +1,456 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <title>Mechapp · Inicio</title>
-        <meta name="description" content="Servicio automotriz profesional." />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="../Styles/paginainicio.css" />
-        <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
-            crossorigin=""
-        />
-    </head>
-    <body>
-        <header class="site-header">
-            <div class="brand">
-                <img src="../assets/logo.svg" alt="Mechapp" class="brand-logo" />
-                <span class="brand-name">Mechapp</span>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mechapp · Inicio</title>
+    <meta name="description" content="Servicio automotriz profesional." />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet (CSS) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <!-- Tus estilos -->
+    <link rel="stylesheet" href="../Styles/paginainicio.css" />
+
+    <!-- Asegura altura del mapa -->
+    <style>
+      .map-container { height: 420px; width: 100%; border-radius: 12px; }
+      @media (max-width: 768px) { .map-container { height: 300px; } }
+      .map-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+      .map-controls input { flex:1; min-width:220px; padding:8px; }
+      .map-controls button, .map-controls select { padding:8px 12px; }
+      .form-feedback { color:#b45454; margin-top:6px; }
+    </style>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+        <span class="brand-name">Mechapp</span>
+      </div>
+      <nav class="main-nav" aria-label="Principal">
+        <a href="#inicio" class="nav-link active">Inicio</a>
+        <a href="#citas" class="nav-link">Citas</a>
+        <a href="#mensajes" class="nav-link">Mensajes</a>
+        <a href="#ubicacion" class="nav-link">Ubicación</a>
+        <a href="./perfil.html" class="nav-link">Perfil</a>
+        <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>
+          Registrar Taller
+        </a>
+      </nav>
+      <div class="header-actions">
+        <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
+        <a href="#agendar" class="button button-primary">Agendar Cita</a>
+        <a href="./perfil.html" class="button ghost">Mi Perfil</a>
+        <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
+          Registrar Taller
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-image" role="img" aria-label="Taller mecánico"></div>
+        <div class="hero-content">
+          <span class="hero-tag">Tus Técnicos</span>
+          <h1>Confianza en Cada Reparación</h1>
+          <p>Tu Solución para el Mantenimiento Automotriz.</p>
+          <a class="button" href="./perfil.html">Ver Perfil</a>
+        </div>
+      </section>
+
+      <section class="search-section" aria-labelledby="buscador">
+        <div class="section-header">
+          <div>
+            <h2 id="buscador">Encuentra tu taller o servicio</h2>
+            <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+          </div>
+        </div>
+        <div class="search-control">
+          <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
+          <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
+        </div>
+        <div class="search-results" id="search-results" aria-live="polite"></div>
+      </section>
+
+      <section class="services" id="citas" aria-labelledby="servicios">
+        <div class="section-header">
+          <div>
+            <h2 id="servicios">Servicios Populares</h2>
+            <p>Agenda los servicios más solicitados por nuestros clientes.</p>
+          </div>
+          <a class="button" href="#citas">Explorar</a>
+        </div>
+        <div class="grid">
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true"></div>
+            <div>
+              <h3>Mantenimiento General</h3>
+              <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
             </div>
-            <nav class="main-nav" aria-label="Principal">
-                <a href="#inicio" class="nav-link active">Inicio</a>
-                <a href="#citas" class="nav-link">Citas</a>
-                <a href="#mensajes" class="nav-link">Mensajes</a>
-                <a href="#ubicacion" class="nav-link">Ubicación</a>
-                <a href="./perfil.html" class="nav-link">Perfil</a>
-                <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>
-                    Registrar Taller
-                </a>
-            </nav>
-            <div class="header-actions">
-                <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
-                <a href="#agendar" class="button button-primary">Agendar Cita</a>
-                <a href="./perfil.html" class="button ghost">Mi Perfil</a>
-                <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
-                    Registrar Taller
-                </a>
+            <a class="button ghost" href="#">Próximas Citas</a>
+          </article>
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true"></div>
+            <div>
+              <h3>Diagnóstico Eléctrico</h3>
+              <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
             </div>
-        </header>
-
-        <main>
-            <section class="hero" id="inicio">
-                <div class="hero-image" role="img" aria-label="Taller mecánico"></div>
-                <div class="hero-content">
-                    <span class="hero-tag">Tus Técnicos</span>
-                    <h1>Confianza en Cada Reparación</h1>
-                    <p>Tu Solución para el Mantenimiento Automotriz.</p>
-                    <a class="button" href="./perfil.html">Ver Perfil</a>
-                </div>
-            </section>
-
-            <section class="search-section" aria-labelledby="buscador">
-                <div class="section-header">
-                    <div>
-                        <h2 id="buscador">Encuentra tu taller o servicio</h2>
-                        <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
-                    </div>
-                </div>
-                <div class="search-control">
-                    <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
-                    <input
-                        type="search"
-                        id="search-input"
-                        placeholder="Ej. frenos, eléctrico, mantenimiento"
-                        autocomplete="off"
-                    />
-                </div>
-                <div class="search-results" id="search-results" aria-live="polite"></div>
-            </section>
-
-            <section class="services" id="citas" aria-labelledby="servicios">
-                <div class="section-header">
-                    <div>
-                        <h2 id="servicios">Servicios Populares</h2>
-                        <p>Agenda los servicios más solicitados por nuestros clientes.</p>
-                    </div>
-                    <a class="button" href="#citas">Explorar</a>
-                </div>
-                <div class="grid">
-                    <article class="service-card">
-                        <div class="service-icon" aria-hidden="true"></div>
-                        <div>
-                            <h3>Mantenimiento General</h3>
-                            <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
-                        </div>
-                        <a class="button ghost" href="#">Próximas Citas</a>
-                    </article>
-                    <article class="service-card">
-                        <div class="service-icon" aria-hidden="true"></div>
-                        <div>
-                            <h3>Diagnóstico Eléctrico</h3>
-                            <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
-                        </div>
-                        <a class="button ghost" href="#">Próximas Citas</a>
-                    </article>
-                    <article class="service-card">
-                        <div class="service-icon" aria-hidden="true"></div>
-                        <div>
-                            <h3>Alineación y Balanceo</h3>
-                            <p>Mejora el rendimiento y la seguridad en carretera.</p>
-                        </div>
-                        <a class="button ghost" href="#">Próximas Citas</a>
-                    </article>
-                </div>
-            </section>
-
-            <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
-                <div class="section-header">
-                    <div>
-                        <h2 id="geolocalizacion">Talleres por comuna</h2>
-                        <p>Escribe el nombre de una comuna para explorar los talleres disponibles en esa zona.</p>
-                    </div>
-                    <form class="comuna-form" id="comuna-form">
-                        <label class="visually-hidden" for="comuna-input">Buscar talleres por comuna</label>
-                        <input
-                            type="text"
-                            id="comuna-input"
-                            name="comuna"
-                            placeholder="Ej. Santiago"
-                            list="comunas-sugeridas"
-                            autocomplete="off"
-                            required
-                        />
-                        <datalist id="comunas-sugeridas"></datalist>
-                        <button class="button ghost" type="submit" id="comuna-btn">Buscar comuna</button>
-                    </form>
-                </div>
-                <p class="location-status" id="location-status" aria-live="polite">
-                    Ingresa una comuna para ver los talleres disponibles en el mapa.
-                </p>
-                <div id="map" class="map-container" role="region" aria-label="Mapa de talleres cercanos"></div>
-            </section>
-        </main>
-
-        <footer class="site-footer" id="mensajes">
-            <div class="footer-column">
-                <h4>Citas Directas</h4>
-                <p>Atención personalizada para empresas y flotas.</p>
+            <a class="button ghost" href="#">Próximas Citas</a>
+          </article>
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true"></div>
+            <div>
+              <h3>Alineación y Balanceo</h3>
+              <p>Mejora el rendimiento y la seguridad en carretera.</p>
             </div>
-            <div class="footer-column">
-                <h4>Servicios Adicionales</h4>
-                <ul>
-                    <li>Mantenimiento Preventivo</li>
-                    <li>Inspecciones Técnicas</li>
-                    <li>Reemplazo de Partes</li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h4>Contacto</h4>
-                <p>+34 900 123 456</p>
-                <p>soporte@autoserv.com</p>
-            </div>
-        </footer>
-        <script
-            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-o9N1j8Mk54f9QxWdChg8YF2LKKPeLZC1hTU9QChQ0jk="
-            crossorigin=""
-        ></script>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const searchInput = document.getElementById("search-input");
-                const searchResults = document.getElementById("search-results");
+            <a class="button ghost" href="#">Próximas Citas</a>
+          </article>
+        </div>
+      </section>
 
-                const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
-                const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
+      <!-- ===== Mapa (Leaflet + OSM) ===== -->
+      <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
+        <div class="section-header">
+          <div>
+            <h2 id="geolocalizacion">Busca el taller de tu comuna</h2>
+            <p>Utiliza el buscador o selecciona una comuna para explorar el mapa interactivo.</p>
+          </div>
+        </div>
 
-                const updateMechanicElementsVisibility = (shouldShow) => {
-                    mechanicOnlyElements.forEach((element) => {
-                        if (shouldShow) {
-                            element.removeAttribute("hidden");
-                        } else {
-                            element.setAttribute("hidden", "");
-                        }
-                    });
-                };
+        <form class="comuna-form" id="comuna-form" novalidate>
+          <div class="map-controls">
+            <input
+              type="text"
+              id="comuna-input"
+              name="comuna"
+              placeholder="Ej. Santiago"
+              autocomplete="off"
+              aria-describedby="comuna-error"
+            />
+            <button class="button button-primary" type="submit" id="comuna-btn">Buscar comuna</button>
+            <select id="comuna-select" name="comuna-select" aria-label="Seleccionar comuna rápidamente">
+              <option value="">— Selecciona una comuna —</option>
+            </select>
+          </div>
+        </form>
 
-                const updateAuthVisibility = (isAuthenticated) => {
-                    unauthenticatedOnlyElements.forEach((element) => {
-                        if (isAuthenticated) {
-                            element.setAttribute("hidden", "");
-                        } else {
-                            element.removeAttribute("hidden");
-                        }
-                    });
-                };
+        <p class="form-feedback" id="comuna-error" aria-live="polite"></p>
+        <p class="location-status" id="location-status" aria-live="polite">
+          Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.
+        </p>
 
-                const verifyMechanicProfile = async () => {
-                    try {
-                        const response = await fetch("/api/profile");
+        <div
+          id="map"
+          class="map-container"
+          role="region"
+          aria-label="Mapa interactivo de comunas"
+          style="height:420px; width:100%; border-radius:12px;"
+        ></div>
+      </section>
+      <!-- ===== /Mapa ===== -->
+    </main>
 
-                        if (!response.ok) {
-                            if (response.status === 401) {
-                                updateMechanicElementsVisibility(false);
-                                updateAuthVisibility(false);
-                                return;
-                            }
+    <footer class="site-footer" id="mensajes">
+      <div class="footer-column">
+        <h4>Citas Directas</h4>
+        <p>Atención personalizada para empresas y flotas.</p>
+      </div>
+      <div class="footer-column">
+        <h4>Servicios Adicionales</h4>
+        <ul>
+          <li>Mantenimiento Preventivo</li>
+          <li>Inspecciones Técnicas</li>
+          <li>Reemplazo de Partes</li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Contacto</h4>
+        <p>+34 900 123 456</p>
+        <p>soporte@autoserv.com</p>
+      </div>
+    </footer>
 
-                            throw new Error("No se pudo obtener el perfil del usuario");
-                        }
+    <!-- Leaflet (JS) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-                        const profile = await response.json();
-                        updateMechanicElementsVisibility(profile?.accountType === "mecanico");
-                        updateAuthVisibility(true);
-                    } catch (error) {
-                        console.error(error);
-                        updateMechanicElementsVisibility(false);
-                        updateAuthVisibility(false);
-                    }
-                };
+    <!-- Lógica de página (incluye mapa) -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // ======= Barra superior (visibilidad, búsqueda de servicios) =======
+        const searchInput = document.getElementById("search-input");
+        const searchResults = document.getElementById("search-results");
+        const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
+        const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
 
-                verifyMechanicProfile();
+        const updateMechanicElementsVisibility = (shouldShow) => {
+          mechanicOnlyElements.forEach((el) => shouldShow ? el.removeAttribute("hidden") : el.setAttribute("hidden",""));
+        };
+        const updateAuthVisibility = (isAuthenticated) => {
+          unauthenticatedOnlyElements.forEach((el) => isAuthenticated ? el.setAttribute("hidden","") : el.removeAttribute("hidden"));
+        };
 
-                const servicios = [
-                    {
-                        nombre: "Mantenimiento General",
-                        descripcion: "Incluye revisión completa de fluidos y ajustes básicos.",
-                        enlace: "#",
-                        tipo: "Servicio"
-                    },
-                    {
-                        nombre: "Diagnóstico Eléctrico",
-                        descripcion: "Soluciones precisas para problemas eléctricos del vehículo.",
-                        enlace: "#",
-                        tipo: "Servicio"
-                    },
-                    {
-                        nombre: "Alineación y Balanceo",
-                        descripcion: "Mejora el rendimiento y la seguridad en carretera.",
-                        enlace: "#",
-                        tipo: "Servicio"
-                    }
-                ];
+        const verifyMechanicProfile = async () => {
+          try {
+            const response = await fetch("/api/profile");
+            if (!response.ok) {
+              if (response.status === 401) { updateMechanicElementsVisibility(false); updateAuthVisibility(false); return; }
+              throw new Error("No se pudo obtener el perfil del usuario");
+            }
+            const profile = await response.json();
+            updateMechanicElementsVisibility(profile?.accountType === "mecanico");
+            updateAuthVisibility(true);
+          } catch (e) {
+            console.error(e);
+            updateMechanicElementsVisibility(false);
+            updateAuthVisibility(false);
+          }
+        };
+        verifyMechanicProfile();
 
-                const datosBusqueda = servicios;
+        const servicios = [
+          { nombre:"Mantenimiento General", descripcion:"Incluye revisión completa de fluidos y ajustes básicos.", enlace:"#", tipo:"Servicio" },
+          { nombre:"Diagnóstico Eléctrico", descripcion:"Soluciones precisas para problemas eléctricos del vehículo.", enlace:"#", tipo:"Servicio" },
+          { nombre:"Alineación y Balanceo", descripcion:"Mejora el rendimiento y la seguridad en carretera.", enlace:"#", tipo:"Servicio" }
+        ];
+        const datosBusqueda = servicios;
 
-                const renderResultados = (items) => {
-                    if (!items.length) {
-                        searchResults.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>';
-                        return;
-                    }
+        const renderResultados = (items) => {
+          if (!items.length) { searchResults.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
+          const frag = document.createDocumentFragment();
+          items.forEach((item) => {
+            const article = document.createElement("article");
+            article.className = "result-item";
+            article.innerHTML = `
+              <div class="result-type" aria-hidden="true">${item.tipo}</div>
+              <div class="result-content">
+                <h3>${item.nombre}</h3>
+                <p>${item.especialidad || item.descripcion}</p>
+              </div>
+              <a class="button ghost" href="${item.enlace}">Ver más</a>
+            `;
+            frag.appendChild(article);
+          });
+          searchResults.innerHTML = "";
+          searchResults.appendChild(frag);
+        };
+        renderResultados(datosBusqueda.slice(0,3));
+        searchInput?.addEventListener("input", (e) => {
+          const termino = e.target.value.trim().toLowerCase();
+          if (!termino) { renderResultados(datosBusqueda.slice(0,3)); return; }
+          const filtrados = datosBusqueda.filter((it) => (`${it.nombre} ${it.especialidad||""} ${it.descripcion||""}`).toLowerCase().includes(termino));
+          renderResultados(filtrados);
+        });
 
-                    const fragment = document.createDocumentFragment();
+        // ======= Sección mapa (Leaflet + OSM) =======
+        const locationStatus = document.getElementById("location-status");
+        const mapContainer   = document.getElementById("map");
+        const comunaForm     = document.getElementById("comuna-form");
+        const comunaInput    = document.getElementById("comuna-input");
+        const comunaSelect   = document.getElementById("comuna-select");
+        const comunaBtn      = document.getElementById("comuna-btn");
+        const comunaError    = document.getElementById("comuna-error");
 
-                    items.forEach((item) => {
-                        const article = document.createElement("article");
-                        article.className = "result-item";
-                        article.innerHTML = `
-                            <div class="result-type" aria-hidden="true">${item.tipo}</div>
-                            <div class="result-content">
-                                <h3>${item.nombre}</h3>
-                                <p>${item.especialidad || item.descripcion}</p>
-                            </div>
-                            <a class="button ghost" href="${item.enlace}">Ver más</a>
-                        `;
-                        fragment.appendChild(article);
-                    });
+        if (!locationStatus || !mapContainer || !comunaForm || !comunaInput || !comunaSelect || !comunaBtn || !comunaError) {
+          return;
+        }
 
-                    searchResults.innerHTML = "";
-                    searchResults.appendChild(fragment);
-                };
+        const MAP_DEFAULT = { lat: -33.45, lng: -70.66, zoom: 12, focusZoom: 13 };
 
-                renderResultados(datosBusqueda.slice(0, 3));
+        // Fallback de comunas por si no existe /data/comunas_cl.json aún
+        const fallbackComunas = [
+          { nombre:"Santiago", lat:-33.45, lng:-70.66 },
+          { nombre:"Providencia", lat:-33.42628, lng:-70.60974 },
+          { nombre:"Ñuñoa", lat:-33.45694, lng:-70.59501 },
+          { nombre:"Las Condes", lat:-33.40835, lng:-70.56796 },
+          { nombre:"Vitacura", lat:-33.39971, lng:-70.60248 },
+          { nombre:"Lo Barnechea", lat:-33.35694, lng:-70.50528 },
+          { nombre:"Maipú", lat:-33.51645, lng:-70.76663 },
+          { nombre:"Puente Alto", lat:-33.6111, lng:-70.5758 },
+          { nombre:"La Florida", lat:-33.52192, lng:-70.60571 },
+          { nombre:"San Bernardo", lat:-33.59217, lng:-70.6996 },
+          { nombre:"Peñalolén", lat:-33.48235, lng:-70.54354 },
+          { nombre:"La Reina", lat:-33.44128, lng:-70.54999 },
+          { nombre:"Independencia", lat:-33.41989, lng:-70.65406 },
+          { nombre:"Recoleta", lat:-33.41529, lng:-70.64157 },
+          { nombre:"Estación Central", lat:-33.45152, lng:-70.6883 },
+          { nombre:"Quilicura", lat:-33.35739, lng:-70.7365 },
+          { nombre:"La Cisterna", lat:-33.54321, lng:-70.66046 },
+          { nombre:"La Pintana", lat:-33.5838, lng:-70.6265 }
+        ];
 
-                searchInput.addEventListener("input", (event) => {
-                    const termino = event.target.value.trim().toLowerCase();
+        let comunasData = [];
+        let comunasIndex = new Map();
+        let mapInstance;
+        let comunaMarker;
 
-                    if (!termino) {
-                        renderResultados(datosBusqueda.slice(0, 3));
-                        return;
-                    }
+        const normalizeText = (t="") => t.toString().trim().toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g,"n");
 
-                    const filtrados = datosBusqueda.filter((item) => {
-                        const texto = `${item.nombre} ${item.especialidad || ""} ${item.descripcion || ""}`.toLowerCase();
-                        return texto.includes(termino);
-                    });
+        const disableControls = () => { comunaInput.disabled = true; comunaSelect.disabled = true; comunaBtn.disabled = true; };
 
-                    renderResultados(filtrados);
-                });
+        const buildIndex = (comunas) => {
+          comunasIndex = new Map();
+          comunas.forEach((c) => {
+            const key = normalizeText(c.nombre);
+            if (!comunasIndex.has(key)) comunasIndex.set(key, c);
+          });
+        };
 
-                const locationStatus = document.getElementById("location-status");
-                const mapContainer = document.getElementById("map");
-                const comunaForm = document.getElementById("comuna-form");
-                const comunaInput = document.getElementById("comuna-input");
-                const comunasSugeridas = document.getElementById("comunas-sugeridas");
+        const populateSelect = (comunas) => {
+          while (comunaSelect.options.length > 1) comunaSelect.remove(1);
+          const byName = new Map(comunas.map(c => [c.nombre, c]));
+          const quick = [
+            "Santiago","Providencia","Ñuñoa","Las Condes","Vitacura","Lo Barnechea",
+            "Maipú","Puente Alto","La Florida","San Bernardo","Peñalolén","La Reina",
+            "Independencia","Recoleta","Estación Central","Quilicura","La Cisterna","La Pintana"
+          ];
+          const frag = document.createDocumentFragment();
 
-                const talleresPorComuna = [
-                    {
-                        nombre: "Taller MotorPlus",
-                        comuna: "Santiago",
-                        direccion: "Av. Libertador Bernardo O'Higgins 1345",
-                        lat: -33.4475,
-                        lng: -70.6736
-                    },
-                    {
-                        nombre: "Servicio Integral Centro",
-                        comuna: "Santiago",
-                        direccion: "San Diego 245",
-                        lat: -33.4558,
-                        lng: -70.6483
-                    },
-                    {
-                        nombre: "AutoFix Providencia",
-                        comuna: "Providencia",
-                        direccion: "Av. Providencia 1650",
-                        lat: -33.4258,
-                        lng: -70.6095
-                    },
-                    {
-                        nombre: "Mecánica Los Leones",
-                        comuna: "Providencia",
-                        direccion: "Los Leones 123",
-                        lat: -33.4212,
-                        lng: -70.6104
-                    },
-                    {
-                        nombre: "Garage Ñuñoa",
-                        comuna: "Ñuñoa",
-                        direccion: "Av. Irarrázaval 2890",
-                        lat: -33.4532,
-                        lng: -70.5986
-                    },
-                    {
-                        nombre: "ElectroCar Ñuñoa",
-                        comuna: "Ñuñoa",
-                        direccion: "José Domingo Cañas 1801",
-                        lat: -33.4615,
-                        lng: -70.6009
-                    },
-                    {
-                        nombre: "Taller Viña Autos",
-                        comuna: "Viña del Mar",
-                        direccion: "Av. Libertad 749",
-                        lat: -33.0245,
-                        lng: -71.5528
-                    },
-                    {
-                        nombre: "Servicio Marga Marga",
-                        comuna: "Viña del Mar",
-                        direccion: "Quillota 45",
-                        lat: -33.0351,
-                        lng: -71.5925
-                    },
-                    {
-                        nombre: "Puerto Motor",
-                        comuna: "Valparaíso",
-                        direccion: "Av. Argentina 1230",
-                        lat: -33.0472,
-                        lng: -71.6127
-                    },
-                    {
-                        nombre: "Mecánica Barón",
-                        comuna: "Valparaíso",
-                        direccion: "Av. España 2350",
-                        lat: -33.0468,
-                        lng: -71.6123
-                    }
-                ];
+          quick.forEach((n)=>{
+            if (!byName.has(n)) return;
+            const opt = document.createElement("option");
+            opt.value = n; opt.textContent = n;
+            frag.appendChild(opt);
+            byName.delete(n);
+          });
 
-                const normalizarTexto = (texto) =>
-                    texto
-                        .normalize("NFD")
-                        .replace(/[\u0300-\u036f]/g, "")
-                        .toLowerCase();
-
-                const comunasDisponibles = Array.from(
-                    new Set(talleresPorComuna.map((taller) => taller.comuna))
-                ).sort((a, b) => a.localeCompare(b, "es"));
-
-                comunasDisponibles.forEach((comuna) => {
-                    const option = document.createElement("option");
-                    option.value = comuna;
-                    comunasSugeridas.appendChild(option);
-                });
-
-                const DEFAULT_CENTER = [-33.45, -70.66];
-                const DEFAULT_ZOOM = 11;
-
-                const mapa = L.map(mapContainer).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                    maxZoom: 19,
-                    attribution: "&copy; OpenStreetMap"
-                }).addTo(mapa);
-
-                const capaTalleres = L.layerGroup().addTo(mapa);
-
-                const mostrarTalleres = (comunaBuscada) => {
-                    const terminoNormalizado = normalizarTexto(comunaBuscada);
-
-                    capaTalleres.clearLayers();
-
-                    if (!terminoNormalizado) {
-                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-                        return;
-                    }
-
-                    const talleresEncontrados = talleresPorComuna.filter(
-                        (taller) => normalizarTexto(taller.comuna) === terminoNormalizado
-                    );
-
-                    if (!talleresEncontrados.length) {
-                        locationStatus.textContent = "No hay talleres en esa zona.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-                        return;
-                    }
-
-                    const limites = [];
-
-                    talleresEncontrados.forEach((taller) => {
-                        const marcador = L.marker([taller.lat, taller.lng]).addTo(capaTalleres);
-                        marcador.bindPopup(
-                            `<strong>${taller.nombre}</strong><br />${taller.direccion}<br />${taller.comuna}`
-                        );
-                        limites.push([taller.lat, taller.lng]);
-                    });
-
-                    if (limites.length === 1) {
-                        mapa.setView(limites[0], 14);
-                    } else {
-                        mapa.fitBounds(limites, { padding: [40, 40] });
-                    }
-
-                    const nombreComuna = talleresEncontrados[0].comuna;
-                    const cantidad = talleresEncontrados.length;
-                    const etiquetaTaller = cantidad === 1 ? "taller" : "talleres";
-                    locationStatus.textContent = `Mostrando ${cantidad} ${etiquetaTaller} en ${nombreComuna}.`;
-                    comunaInput.value = nombreComuna;
-                };
-
-                comunaForm.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    mostrarTalleres(comunaInput.value);
-                });
-
-                comunaInput.addEventListener("change", (event) => {
-                    if (event.target.value) {
-                        mostrarTalleres(event.target.value);
-                    }
-                });
-
-                comunaInput.addEventListener("input", (event) => {
-                    if (!event.target.value.trim()) {
-                        capaTalleres.clearLayers();
-                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                        mapa.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-                    }
-                });
+          if (byName.size) {
+            const og = document.createElement("optgroup");
+            og.label = "Otras comunas";
+            Array.from(byName.keys()).sort((a,b)=>a.localeCompare(b,"es")).forEach((n)=>{
+              const opt = document.createElement("option");
+              opt.value = n; opt.textContent = n;
+              og.appendChild(opt);
             });
-        </script>
-    </body>
+            frag.appendChild(og);
+          }
+          comunaSelect.appendChild(frag);
+        };
+
+        /* ===== Icono personalizado (LOCAL) — pon tu imagen en /assets/markers/pin.png ===== */
+        const leafletIcon = L.icon({
+          iconUrl: '/assets/icono marcador mapa.png',      // <-- cambia el nombre si usas otro archivo
+          // iconRetinaUrl: '/assets/markers/pin@2x.png', // opcional si tienes 2x
+          iconSize:   [48, 48],   // ajusta al tamaño real de tu PNG
+          iconAnchor: [19, 48],   // mitad del ancho, base del alto (punta del pin)
+          popupAnchor:[0, -48],   // popup justo encima del pin
+          // shadowSize:[41, 41], shadowAnchor:[12, 41],
+        });
+
+        const ensureMap = () => {
+          if (mapInstance) return mapInstance;
+          if (!window.L) {
+            locationStatus.textContent = "No fue posible cargar el mapa interactivo. Intenta nuevamente más tarde.";
+            disableControls(); return null;
+          }
+
+          mapInstance = L.map(mapContainer).setView([MAP_DEFAULT.lat, MAP_DEFAULT.lng], MAP_DEFAULT.zoom);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+          }).addTo(mapInstance);
+
+          // marcador inicial con icono local
+          comunaMarker = L.marker([MAP_DEFAULT.lat, MAP_DEFAULT.lng], { icon: leafletIcon })
+            .addTo(mapInstance);
+          comunaMarker.bindPopup("Comuna: Santiago").openPopup();
+
+          // Por si el contenedor refluye al primer render:
+          setTimeout(()=> mapInstance.invalidateSize(), 150);
+          return mapInstance;
+        };
+
+        const focusComuna = (comuna, { openPopup = true, useDefaultZoom = false } = {}) => {
+          const map = ensureMap(); if (!map || !comuna) return;
+          const pos = [comuna.lat, comuna.lng];
+          const zoom = useDefaultZoom ? MAP_DEFAULT.zoom : MAP_DEFAULT.focusZoom;
+
+          map.setView(pos, zoom);
+          if (!comunaMarker) {
+            comunaMarker = L.marker(pos, { icon: leafletIcon }).addTo(map);
+          } else {
+            comunaMarker.setLatLng(pos);
+          }
+
+          comunaMarker.bindPopup(`Comuna: ${comuna.nombre}`);
+          if (openPopup) comunaMarker.openPopup();
+
+          locationStatus.textContent = `Mostrando comuna: ${comuna.nombre}.`;
+          comunaError.textContent = "";
+          comunaInput.value = comuna.nombre;
+          comunaSelect.value = comuna.nombre;
+
+          setTimeout(()=> map.invalidateSize(), 120);
+        };
+
+        const findComuna = (q) => {
+          const n = normalizeText(q);
+          if (!n) return null;
+          if (comunasIndex.has(n)) return comunasIndex.get(n);
+          for (const [key, comuna] of comunasIndex.entries()) {
+            if (key.startsWith(n)) return comuna;
+          }
+          return null;
+        };
+
+        const loadComunas = async () => {
+          try {
+            const res = await fetch("/data/comunas_cl.json");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (!Array.isArray(data) || !data.length) throw new Error("Listado de comunas no válido");
+            return data;
+          } catch (e) {
+            console.warn("Usando fallback de comunas:", e?.message || e);
+            return fallbackComunas;
+          }
+        };
+
+        (async function initLocationSection(){
+          comunasData = await loadComunas();
+          if (!comunasData.length) { locationStatus.textContent = "No hay comunas disponibles para mostrar en el mapa."; disableControls(); return; }
+          buildIndex(comunasData);
+          populateSelect(comunasData);
+
+          const defaultC = findComuna("Santiago") || comunasData[0];
+          if (defaultC) focusComuna(defaultC, { openPopup:true, useDefaultZoom:true });
+
+          comunaForm.addEventListener("submit", (ev)=>{
+            ev.preventDefault();
+            const raw = comunaInput.value.trim();
+            if (!raw) { comunaError.textContent = "Ingresa el nombre de una comuna."; locationStatus.textContent = "Ingresa una comuna para actualizar el mapa."; comunaInput.focus(); return; }
+            const c = findComuna(raw);
+            if (!c) { comunaError.textContent = "No encontramos la comuna ingresada. Intenta con otro nombre."; locationStatus.textContent = "No encontramos la comuna ingresada. Revisa el nombre e inténtalo nuevamente."; comunaSelect.value=""; return; }
+            focusComuna(c, { openPopup:true });
+            comunaInput.blur();
+          });
+
+          comunaSelect.addEventListener("change", (e)=>{
+            const v = e.target.value;
+            if (!v) { comunaError.textContent=""; return; }
+            const c = findComuna(v);
+            if (!c) { comunaError.textContent = "No encontramos la comuna seleccionada."; locationStatus.textContent = "No encontramos la comuna seleccionada. Elige otra opción."; return; }
+            comunaInput.value = c.nombre;
+            focusComuna(c, { openPopup:true });
+          });
+
+          comunaInput.addEventListener("input", (e)=>{
+            if (e.target.value.trim()) { comunaError.textContent=""; return; }
+            comunaError.textContent=""; locationStatus.textContent = "Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.";
+          });
+
+          window.addEventListener("resize", () => mapInstance && mapInstance.invalidateSize());
+        })();
+      });
+    </script>
+  </body>
 </html>
