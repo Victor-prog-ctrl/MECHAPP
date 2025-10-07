@@ -244,6 +244,19 @@ main {
     font-size: 0.85rem;
 }
 
+.subscription-feedback {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.subscription-feedback.success {
+    color: #16a34a;
+}
+
+.subscription-feedback.error {
+    color: #dc2626;
+}
+
 .metric-card {
     background: var(--surface-alt);
     border-radius: var(--radius-md);
