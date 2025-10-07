@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mechapp · Sobre nosotros</title>
+    <meta
+      name="description"
+      content="Conoce la misión, visión y valores del equipo detrás de Mechapp."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../Styles/paginainicio.css" />
+    <link rel="stylesheet" href="../Styles/sobre-nosotros.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+        <span class="brand-name">Mechapp</span>
+      </div>
+      <nav class="main-nav" aria-label="Principal">
+        <a href="./paginainicio.html" class="nav-link">Inicio</a>
+        <a href="./paginainicio.html#citas" class="nav-link">Citas</a>
+        <a href="./sobre-nosotros.html" class="nav-link active">Sobre nosotros</a>
+        <a href="./paginainicio.html#ubicacion" class="nav-link">Ubicación</a>
+        <a href="./perfil.html" class="nav-link">Perfil</a>
+        <a
+          href="./registro-taller.html"
+          class="nav-link"
+          data-visible-for="mecanico"
+          hidden
+        >
+          Registrar Taller
+        </a>
+      </nav>
+      <div class="header-actions">
+        <a
+          href="./login.html"
+          class="button button-secondary"
+          data-auth-visibility="unauthenticated"
+        >
+          Iniciar sesión
+        </a>
+        <a href="./paginainicio.html#citas" class="button button-primary">Agendar Cita</a>
+        <a href="./perfil.html" class="button ghost">Mi Perfil</a>
+        <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
+          Registrar Taller
+        </a>
+      </div>
+    </header>
+
+    <main class="about-main">
+      <section class="about-hero">
+        <span class="section-tag">Conoce nuestro propósito</span>
+        <h1>Impulsamos la confianza en cada reparación</h1>
+        <p>
+          Somos un equipo multidisciplinario dedicado a conectar conductores con
+          talleres confiables, transparentes y preparados para resolver cada
+          necesidad automotriz.
+        </p>
+        <div class="hero-actions">
+          <a class="button ghost" href="./paginainicio.html">Volver al inicio</a>
+        </div>
+      </section>
+
+      <section class="about-narrative" aria-label="Nuestra esencia">
+        <p>
+          <strong>Misión:</strong>
+          Facilitar el acceso a servicios automotrices de calidad mediante una plataforma
+          que promueve la comunicación clara y el seguimiento de cada cita.
+          <strong>Visión:</strong>
+          Convertirnos en el aliado tecnológico preferido por talleres y conductores,
+          elevando el estándar de atención en toda la industria.
+          <strong>Valores:</strong>
+          Sostenemos la transparencia en cada interacción, la innovación al servicio de las
+          personas y el compromiso con la seguridad y el bienestar de nuestra comunidad.
+          <strong>Qué hacemos:</strong>
+          Diseñamos herramientas digitales que permiten coordinar citas, seguir el avance de
+          cada reparación y mantener un historial completo del vehículo, además de apoyar a los
+          talleres con soluciones de gestión que optimizan su día a día.
+          <strong>Nuestro equipo:</strong>
+          Ingenieros, diseñadores y especialistas en servicio al cliente colaboran para brindar
+          una experiencia confiable desde el primer contacto, escuchando las necesidades de los
+          usuarios para mejorar continuamente la plataforma.
+          <strong>Compromiso con la comunidad:</strong>
+          Fomentamos alianzas con talleres certificados y programas de formación técnica que
+          fortalecen las habilidades de los mecánicos y elevan los estándares para todos.
+        </p>
+      </section>
+    </main>
+
+    <footer class="about-footer">
+      <div class="footer-content">
+        <div>
+          <h4>¿Quieres saber más?</h4>
+          <p>Escríbenos a <a href="mailto:contacto@mechapp.com">contacto@mechapp.com</a></p>
+        </div>
+        <a class="button" href="./paginainicio.html#ubicacion">Encuentra un taller cercano</a>
+      </div>
+      <p class="footer-note">© 2024 Mechapp. Todos los derechos reservados.</p>
+    </footer>
+  </body>
+</html>
