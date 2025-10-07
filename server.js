@@ -54,6 +54,8 @@ app.use(morgan('dev'));
 app.use('/Styles', express.static(path.join(__dirname, 'Styles')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/src', express.static(path.join(__dirname, 'src')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/data', express.static(path.join(__dirname, 'public', 'data')));
 app.use('/', express.static(path.join(__dirname, 'pages')));
 
 function requireAuth(req, res, next) {

@@ -12,6 +12,12 @@
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
             rel="stylesheet"
         />
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-sA+e2eT6Fv3YzZxbYlR5c+3F4iAfDdc0AG0eeYUIZ6A="
+            crossorigin=""
+        />
         <link rel="stylesheet" href="../Styles/paginainicio.css" />
     </head>
     <body>
@@ -109,28 +115,35 @@
             <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
                 <div class="section-header">
                     <div>
-                        <h2 id="geolocalizacion">Talleres por comuna</h2>
-                        <p>Escribe el nombre de una comuna para explorar los talleres disponibles en esa zona.</p>
+                        <h2 id="geolocalizacion">Busca el taller de tu comuna</h2>
+                        <p>Utiliza el buscador o selecciona una comuna para explorar el mapa interactivo.</p>
                     </div>
-                    <form class="comuna-form" id="comuna-form">
-                        <label class="visually-hidden" for="comuna-input">Buscar talleres por comuna</label>
+                </div>
+                <form class="comuna-form" id="comuna-form" novalidate>
+                    <div class="form-field">
+                        <label for="comuna-input">Nombre de la comuna</label>
                         <input
                             type="text"
                             id="comuna-input"
                             name="comuna"
                             placeholder="Ej. Santiago"
-                            list="comunas-sugeridas"
                             autocomplete="off"
-                            required
+                            aria-describedby="comuna-error"
                         />
-                        <datalist id="comunas-sugeridas"></datalist>
-                        <button class="button ghost" type="submit" id="comuna-btn">Buscar comuna</button>
-                    </form>
-                </div>
+                    </div>
+                    <button class="button button-primary" type="submit" id="comuna-btn">Buscar comuna</button>
+                    <div class="form-field">
+                        <label for="comuna-select">Atajo de comunas</label>
+                        <select id="comuna-select" name="comuna-select" aria-label="Seleccionar comuna rápidamente">
+                            <option value="">Selecciona una comuna</option>
+                        </select>
+                    </div>
+                </form>
+                <p class="form-feedback" id="comuna-error" aria-live="polite"></p>
                 <p class="location-status" id="location-status" aria-live="polite">
-                    Ingresa una comuna para ver los talleres disponibles en el mapa.
+                    Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.
                 </p>
-                <div id="map" class="map-container" role="region" aria-label="Mapa de talleres cercanos"></div>
+                <div id="map" class="map-container" role="region" aria-label="Mapa interactivo de comunas"></div>
             </section>
         </main>
 
@@ -153,15 +166,12 @@
                 <p>soporte@autoserv.com</p>
             </div>
         </footer>
+        <script
+            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-o9N1j6kPeE+YxBp2JgqS0hZ1uuQB3Lt1PPVPBJ3H+0o="
+            crossorigin=""
+        ></script>
         <script>
-            let inicializarMapaGoogle;
-
-            window.initMap = () => {
-                if (typeof inicializarMapaGoogle === "function") {
-                    inicializarMapaGoogle();
-                }
-            };
-
             document.addEventListener("DOMContentLoaded", () => {
                 const searchInput = document.getElementById("search-input");
                 const searchResults = document.getElementById("search-results");
@@ -282,231 +292,322 @@
                     renderResultados(filtrados);
                 });
 
-                const locationStatus = document.getElementById("location-status");
-                const mapContainer = document.getElementById("map");
-                const comunaForm = document.getElementById("comuna-form");
-                const comunaInput = document.getElementById("comuna-input");
-                const comunasSugeridas = document.getElementById("comunas-sugeridas");
+                const initLocationSection = async () => {
+                    const locationStatus = document.getElementById("location-status");
+                    const mapContainer = document.getElementById("map");
+                    const comunaForm = document.getElementById("comuna-form");
+                    const comunaInput = document.getElementById("comuna-input");
+                    const comunaSelect = document.getElementById("comuna-select");
+                    const comunaSubmitButton = document.getElementById("comuna-btn");
+                    const comunaError = document.getElementById("comuna-error");
 
-                const talleresPorComuna = [
-                    {
-                        nombre: "Taller MotorPlus",
-                        comuna: "Santiago",
-                        direccion: "Av. Libertador Bernardo O'Higgins 1345",
-                        lat: -33.4475,
-                        lng: -70.6736
-                    },
-                    {
-                        nombre: "Servicio Integral Centro",
-                        comuna: "Santiago",
-                        direccion: "San Diego 245",
-                        lat: -33.4558,
-                        lng: -70.6483
-                    },
-                    {
-                        nombre: "AutoFix Providencia",
-                        comuna: "Providencia",
-                        direccion: "Av. Providencia 1650",
-                        lat: -33.4258,
-                        lng: -70.6095
-                    },
-                    {
-                        nombre: "Mecánica Los Leones",
-                        comuna: "Providencia",
-                        direccion: "Los Leones 123",
-                        lat: -33.4212,
-                        lng: -70.6104
-                    },
-                    {
-                        nombre: "Garage Ñuñoa",
-                        comuna: "Ñuñoa",
-                        direccion: "Av. Irarrázaval 2890",
-                        lat: -33.4532,
-                        lng: -70.5986
-                    },
-                    {
-                        nombre: "ElectroCar Ñuñoa",
-                        comuna: "Ñuñoa",
-                        direccion: "José Domingo Cañas 1801",
-                        lat: -33.4615,
-                        lng: -70.6009
-                    },
-                    {
-                        nombre: "Taller Viña Autos",
-                        comuna: "Viña del Mar",
-                        direccion: "Av. Libertad 749",
-                        lat: -33.0245,
-                        lng: -71.5528
-                    },
-                    {
-                        nombre: "Servicio Marga Marga",
-                        comuna: "Viña del Mar",
-                        direccion: "Quillota 45",
-                        lat: -33.0351,
-                        lng: -71.5925
-                    },
-                    {
-                        nombre: "Puerto Motor",
-                        comuna: "Valparaíso",
-                        direccion: "Av. Argentina 1230",
-                        lat: -33.0472,
-                        lng: -71.6127
-                    },
-                    {
-                        nombre: "Mecánica Barón",
-                        comuna: "Valparaíso",
-                        direccion: "Av. España 2350",
-                        lat: -33.0468,
-                        lng: -71.6123
-                    }
-                ];
-
-                const normalizarTexto = (texto) =>
-                    texto
-                        .normalize("NFD")
-                        .replace(/[\u0300-\u036f]/g, "")
-                        .toLowerCase();
-
-                const comunasDisponibles = Array.from(
-                    new Set(talleresPorComuna.map((taller) => taller.comuna))
-                ).sort((a, b) => a.localeCompare(b, "es"));
-
-                comunasDisponibles.forEach((comuna) => {
-                    const option = document.createElement("option");
-                    option.value = comuna;
-                    comunasSugeridas.appendChild(option);
-                });
-
-                const DEFAULT_CENTER = { lat: -33.45, lng: -70.66 };
-                const DEFAULT_ZOOM = 11;
-                let mapa;
-                let marcadores = [];
-
-                inicializarMapaGoogle = () => {
-                    mapa = new google.maps.Map(mapContainer, {
-                        center: DEFAULT_CENTER,
-                        zoom: DEFAULT_ZOOM,
-                        mapTypeControl: false,
-                        streetViewControl: false,
-                        fullscreenControl: false
-                    });
-                };
-
-                const obtenerMapa = () => {
-                    if (!window.google || !google.maps) {
-                        locationStatus.textContent =
-                            "El mapa de Google no se pudo cargar. Verifica tu conexión o la clave de API.";
-                        return null;
-                    }
-
-                    if (!mapa) {
-                        window.initMap();
-                    }
-
-                    return mapa;
-                };
-
-                const mostrarTalleres = (comunaBuscada) => {
-                    const terminoNormalizado = normalizarTexto(comunaBuscada);
-
-                    const mapaActual = obtenerMapa();
-
-                    if (!mapaActual) {
+                    if (
+                        !locationStatus ||
+                        !mapContainer ||
+                        !comunaForm ||
+                        !comunaInput ||
+                        !comunaSelect ||
+                        !comunaSubmitButton ||
+                        !comunaError
+                    ) {
                         return;
                     }
 
-                    marcadores.forEach((marcador) => marcador.setMap(null));
-                    marcadores = [];
+                    const MAP_DEFAULT = { lat: -33.45, lng: -70.66, zoom: 12, focusZoom: 13 };
+                    const quickAccessComunas = [
+                        "Santiago",
+                        "Providencia",
+                        "Ñuñoa",
+                        "Las Condes",
+                        "Vitacura",
+                        "Lo Barnechea",
+                        "Maipú",
+                        "Puente Alto",
+                        "La Florida",
+                        "San Bernardo",
+                        "Peñalolén",
+                        "La Reina",
+                        "Independencia",
+                        "Recoleta",
+                        "Estación Central",
+                        "Quilicura",
+                        "La Cisterna",
+                        "La Pintana"
+                    ];
+                    const fallbackComunas = [
+                        { nombre: "Santiago", lat: -33.45, lng: -70.66 },
+                        { nombre: "Providencia", lat: -33.42628, lng: -70.60974 },
+                        { nombre: "Ñuñoa", lat: -33.45694, lng: -70.59501 },
+                        { nombre: "Las Condes", lat: -33.40835, lng: -70.56796 },
+                        { nombre: "Vitacura", lat: -33.39971, lng: -70.60248 },
+                        { nombre: "Lo Barnechea", lat: -33.35694, lng: -70.50528 },
+                        { nombre: "Maipú", lat: -33.51645, lng: -70.76663 },
+                        { nombre: "Puente Alto", lat: -33.6111, lng: -70.5758 },
+                        { nombre: "La Florida", lat: -33.52192, lng: -70.60571 },
+                        { nombre: "San Bernardo", lat: -33.59217, lng: -70.6996 },
+                        { nombre: "Peñalolén", lat: -33.48235, lng: -70.54354 },
+                        { nombre: "La Reina", lat: -33.44128, lng: -70.54999 },
+                        { nombre: "Independencia", lat: -33.41989, lng: -70.65406 },
+                        { nombre: "Recoleta", lat: -33.41529, lng: -70.64157 },
+                        { nombre: "Estación Central", lat: -33.45152, lng: -70.6883 },
+                        { nombre: "Quilicura", lat: -33.35739, lng: -70.7365 },
+                        { nombre: "La Cisterna", lat: -33.54321, lng: -70.66046 },
+                        { nombre: "La Pintana", lat: -33.5838, lng: -70.6265 }
+                    ];
 
-                    if (!terminoNormalizado) {
-                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                        mapaActual.setZoom(DEFAULT_ZOOM);
-                        mapaActual.setCenter(DEFAULT_CENTER);
-                        return;
-                    }
+                    let comunasData = [];
+                    let comunasIndex = new Map();
+                    let mapInstance;
+                    let comunaMarker;
 
-                    const talleresEncontrados = talleresPorComuna.filter(
-                        (taller) => normalizarTexto(taller.comuna) === terminoNormalizado
-                    );
+                    const normalizeText = (text = "") =>
+                        text
+                            .toString()
+                            .trim()
+                            .toLowerCase()
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .replace(/ñ/g, "n");
 
-                    if (!talleresEncontrados.length) {
-                        locationStatus.textContent = "No hay talleres en esa zona.";
-                        mapaActual.setZoom(DEFAULT_ZOOM);
-                        mapaActual.setCenter(DEFAULT_CENTER);
-                        return;
-                    }
+                    const disableControls = () => {
+                        comunaInput.disabled = true;
+                        comunaSelect.disabled = true;
+                        comunaSubmitButton.disabled = true;
+                    };
 
-                    const limites = new google.maps.LatLngBounds();
-
-                    talleresEncontrados.forEach((taller) => {
-                        const posicion = { lat: taller.lat, lng: taller.lng };
-                        const marcador = new google.maps.Marker({
-                            map: mapaActual,
-                            position: posicion,
-                            title: `${taller.nombre} - ${taller.comuna}`
+                    const buildIndex = (comunas) => {
+                        comunasIndex = new Map();
+                        comunas.forEach((comuna) => {
+                            const key = normalizeText(comuna.nombre);
+                            if (!comunasIndex.has(key)) {
+                                comunasIndex.set(key, comuna);
+                            }
                         });
+                    };
 
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `<strong>${taller.nombre}</strong><br />${taller.direccion}<br />${taller.comuna}`
-                        });
-
-                        marcador.addListener("click", () => {
-                            infoWindow.open({ anchor: marcador, map: mapaActual });
-                        });
-
-                        marcadores.push(marcador);
-                        limites.extend(posicion);
-                    });
-
-                    if (talleresEncontrados.length === 1) {
-                        mapaActual.setCenter(limites.getCenter());
-                        mapaActual.setZoom(14);
-                    } else {
-                        mapaActual.fitBounds(limites, { padding: 60 });
-                    }
-
-                    const nombreComuna = talleresEncontrados[0].comuna;
-                    const cantidad = talleresEncontrados.length;
-                    const etiquetaTaller = cantidad === 1 ? "taller" : "talleres";
-                    locationStatus.textContent = `Mostrando ${cantidad} ${etiquetaTaller} en ${nombreComuna}.`;
-                    comunaInput.value = nombreComuna;
-                };
-
-                comunaForm.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    mostrarTalleres(comunaInput.value);
-                });
-
-                comunaInput.addEventListener("change", (event) => {
-                    if (event.target.value) {
-                        mostrarTalleres(event.target.value);
-                    }
-                });
-
-                comunaInput.addEventListener("input", (event) => {
-                    if (!event.target.value.trim()) {
-                        const mapaActual = obtenerMapa();
-
-                        if (mapaActual) {
-                            marcadores.forEach((marcador) => marcador.setMap(null));
-                            marcadores = [];
-                            mapaActual.setZoom(DEFAULT_ZOOM);
-                            mapaActual.setCenter(DEFAULT_CENTER);
+                    const populateSelect = (comunas) => {
+                        while (comunaSelect.options.length > 1) {
+                            comunaSelect.remove(1);
                         }
 
-                        locationStatus.textContent = "Ingresa una comuna para ver los talleres disponibles en el mapa.";
-                    }
-                });
+                        const comunasByName = new Map();
+                        comunas.forEach((comuna) => {
+                            comunasByName.set(comuna.nombre, comuna);
+                        });
 
-                if (window.google && google.maps) {
-                    window.initMap();
-                }
+                        const fragment = document.createDocumentFragment();
+
+                        quickAccessComunas.forEach((nombre) => {
+                            if (!comunasByName.has(nombre)) {
+                                return;
+                            }
+
+                            const option = document.createElement("option");
+                            option.value = nombre;
+                            option.textContent = nombre;
+                            fragment.appendChild(option);
+                            comunasByName.delete(nombre);
+                        });
+
+                        if (comunasByName.size) {
+                            const optgroup = document.createElement("optgroup");
+                            optgroup.label = "Otras comunas";
+
+                            Array.from(comunasByName.keys())
+                                .sort((a, b) => a.localeCompare(b, "es"))
+                                .forEach((nombre) => {
+                                    const option = document.createElement("option");
+                                    option.value = nombre;
+                                    option.textContent = nombre;
+                                    optgroup.appendChild(option);
+                                });
+
+                            fragment.appendChild(optgroup);
+                        }
+
+                        comunaSelect.appendChild(fragment);
+                    };
+
+                    const ensureMap = () => {
+                        if (mapInstance) {
+                            return mapInstance;
+                        }
+
+                        if (!window.L) {
+                            locationStatus.textContent =
+                                "No fue posible cargar el mapa interactivo. Intenta nuevamente más tarde.";
+                            disableControls();
+                            return null;
+                        }
+
+                        mapInstance = L.map(mapContainer).setView(
+                            [MAP_DEFAULT.lat, MAP_DEFAULT.lng],
+                            MAP_DEFAULT.zoom
+                        );
+
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution:
+                                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                            maxZoom: 19
+                        }).addTo(mapInstance);
+
+                        mapContainer.setAttribute("tabindex", "0");
+
+                        comunaMarker = L.marker([MAP_DEFAULT.lat, MAP_DEFAULT.lng]).addTo(mapInstance);
+                        comunaMarker.bindPopup("Comuna: Santiago").openPopup();
+
+                        return mapInstance;
+                    };
+
+                    const focusComuna = (comuna, { openPopup = true, useDefaultZoom = false } = {}) => {
+                        const map = ensureMap();
+                        if (!map || !comuna) {
+                            return;
+                        }
+
+                        const position = [comuna.lat, comuna.lng];
+                        const zoomLevel = useDefaultZoom ? MAP_DEFAULT.zoom : MAP_DEFAULT.focusZoom;
+
+                        map.setView(position, zoomLevel);
+
+                        if (!comunaMarker) {
+                            comunaMarker = L.marker(position).addTo(map);
+                        } else {
+                            comunaMarker.setLatLng(position);
+                        }
+
+                        comunaMarker.bindPopup(`Comuna: ${comuna.nombre}`);
+
+                        if (openPopup) {
+                            comunaMarker.openPopup();
+                        }
+
+                        locationStatus.textContent = `Mostrando comuna: ${comuna.nombre}.`;
+                        comunaError.textContent = "";
+                        comunaInput.value = comuna.nombre;
+                        comunaSelect.value = comuna.nombre;
+                    };
+
+                    const findComuna = (query) => {
+                        const normalizedQuery = normalizeText(query);
+                        if (!normalizedQuery) {
+                            return null;
+                        }
+
+                        if (comunasIndex.has(normalizedQuery)) {
+                            return comunasIndex.get(normalizedQuery);
+                        }
+
+                        for (const [key, comuna] of comunasIndex.entries()) {
+                            if (key.startsWith(normalizedQuery)) {
+                                return comuna;
+                            }
+                        }
+
+                        return null;
+                    };
+
+                    const loadComunas = async () => {
+                        try {
+                            const response = await fetch("/data/comunas_cl.json");
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+
+                            const data = await response.json();
+
+                            if (!Array.isArray(data) || !data.length) {
+                                throw new Error("Listado de comunas no válido");
+                            }
+
+                            return data;
+                        } catch (error) {
+                            console.error("No se pudo cargar el listado de comunas.", error);
+                            return fallbackComunas;
+                        }
+                    };
+
+                    comunasData = await loadComunas();
+
+                    if (!comunasData.length) {
+                        locationStatus.textContent =
+                            "No hay comunas disponibles para mostrar en el mapa.";
+                        disableControls();
+                        return;
+                    }
+
+                    buildIndex(comunasData);
+                    populateSelect(comunasData);
+
+                    const defaultComuna = findComuna("Santiago") || comunasData[0];
+
+                    if (defaultComuna) {
+                        focusComuna(defaultComuna, { openPopup: true, useDefaultZoom: true });
+                    }
+
+                    comunaForm.addEventListener("submit", (event) => {
+                        event.preventDefault();
+
+                        const rawValue = comunaInput.value.trim();
+                        if (!rawValue) {
+                            comunaError.textContent = "Ingresa el nombre de una comuna.";
+                            locationStatus.textContent =
+                                "Ingresa una comuna para actualizar el mapa.";
+                            comunaInput.focus();
+                            return;
+                        }
+
+                        const comuna = findComuna(rawValue);
+
+                        if (!comuna) {
+                            comunaError.textContent =
+                                "No encontramos la comuna ingresada. Intenta con otro nombre.";
+                            locationStatus.textContent =
+                                "No encontramos la comuna ingresada. Revisa el nombre e inténtalo nuevamente.";
+                            comunaSelect.value = "";
+                            return;
+                        }
+
+                        focusComuna(comuna, { openPopup: true });
+                        comunaInput.blur();
+                    });
+
+                    comunaSelect.addEventListener("change", (event) => {
+                        const value = event.target.value;
+
+                        if (!value) {
+                            comunaError.textContent = "";
+                            return;
+                        }
+
+                        const comuna = findComuna(value);
+
+                        if (!comuna) {
+                            comunaError.textContent = "No encontramos la comuna seleccionada.";
+                            locationStatus.textContent =
+                                "No encontramos la comuna seleccionada. Elige otra opción.";
+                            return;
+                        }
+
+                        comunaInput.value = comuna.nombre;
+                        focusComuna(comuna, { openPopup: true });
+                    });
+
+                    comunaInput.addEventListener("input", (event) => {
+                        if (event.target.value.trim()) {
+                            comunaError.textContent = "";
+                            return;
+                        }
+
+                        comunaError.textContent = "";
+                        locationStatus.textContent =
+                            "Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.";
+                    });
+                };
+
+                initLocationSection();
             });
         </script>
-        <script
-            src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"
-            async
-            defer
-        ></script>
     </body>
 </html>
