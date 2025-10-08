@@ -150,6 +150,25 @@ main {
     gap: 12px;
 }
 
+.profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.profile-actions .button {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--text);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.profile-actions .button:hover,
+.profile-actions .button:focus {
+    background: rgba(99, 102, 241, 0.18);
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.2);
+}
+
 .label {
     text-transform: uppercase;
     letter-spacing: 0.18em;
