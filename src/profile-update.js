@@ -81,6 +81,11 @@ async function initializeForm() {
         }
     }
 
+ 
+    let redirecting = false;
+
+
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
@@ -192,15 +197,29 @@ async function initializeForm() {
                 form.reset();
             }
 
- codex/add-buttons-to-update-user-details-d10rk7
+
+            redirecting = true;
+            setTimeout(() => {
+                window.location.replace("./perfil.html");
+            }, 0);
+            return;
+        } catch (error) {
+            console.error(error);
+
+            if (redirecting && (error?.name === "AbortError" || error?.message === "Failed to fetch" || error?.message === "The user aborted a request.")) {
+                return;
+            }
+
+
             window.location.replace("./perfil.html");
 
             setTimeout(() => {
                 window.location.href = "./perfil.html";
             }, 1500);
- main
+
         } catch (error) {
             console.error(error);
+
             showFeedback(feedbackElement, "No se pudo completar la solicitud. Verifica tu conexión e inténtalo nuevamente.", "error");
         } finally {
             submitButton.disabled = false;
