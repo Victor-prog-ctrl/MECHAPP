@@ -194,6 +194,88 @@ app.get('/api/profile', requireAuth, (req, res) => {
   }
 });
 
+app.put('/api/profile/name', requireAuth, (req, res) => {
+  try {
+    const { name } = req.body;
+    const trimmedName = String(name || '').trim();
+
+    if (!trimmedName) {
+      return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
+    }
+
+    db.prepare(`UPDATE users SET name = ? WHERE id = ?`).run(trimmedName, req.session.userId);
+
+    res.json({ message: 'Nombre actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar el nombre', error);
+    res.status(500).json({ error: 'Ocurrió un error al actualizar el nombre.' });
+  }
+});
+
+app.put('/api/profile/email', requireAuth, (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Ingresa un correo electrónico válido.' });
+    }
+
+    const update = db.prepare(`UPDATE users SET email = ? WHERE id = ?`);
+
+    try {
+      update.run(normalizedEmail, req.session.userId);
+    } catch (error) {
+      if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(409).json({ error: 'El correo ya está registrado.' });
+      }
+      throw error;
+    }
+
+    res.json({ message: 'Correo actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar el correo', error);
+    res.status(500).json({ error: 'Ocurrió un error al actualizar el correo.' });
+  }
+});
+
+app.put('/api/profile/password', requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Debes proporcionar la contraseña actual y la nueva contraseña.' });
+    }
+
+    if (String(newPassword).length < 8) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres.' });
+    }
+
+    const user = db.prepare(`SELECT password_hash FROM users WHERE id = ?`).get(req.session.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const isMatch = await bcrypt.compare(String(currentPassword), user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: 'La contraseña actual no es correcta.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+
+    db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hashedPassword, req.session.userId);
+
+    res.json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar la contraseña', error);
+    res.status(500).json({ error: 'Ocurrió un error al actualizar la contraseña.' });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'pages', 'paginainicio.html'));
 });
