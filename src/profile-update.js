@@ -192,7 +192,13 @@ async function initializeForm() {
                 form.reset();
             }
 
+ codex/add-buttons-to-update-user-details-d10rk7
             window.location.replace("./perfil.html");
+
+            setTimeout(() => {
+                window.location.href = "./perfil.html";
+            }, 1500);
+ main
         } catch (error) {
             console.error(error);
             showFeedback(feedbackElement, "No se pudo completar la solicitud. Verifica tu conexión e inténtalo nuevamente.", "error");
