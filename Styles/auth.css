@@ -233,6 +233,24 @@ input[type="file"] {
     background: rgba(22, 101, 52, 0.45);
 }
 
+.form-feedback {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    min-height: 1.25rem;
+}
+
+.form-feedback.success {
+    color: #bbf7d0;
+}
+
+.form-feedback.error {
+    color: #fca5a5;
+}
+
+.form-feedback.info {
+    color: rgba(248, 250, 252, 0.85);
+}
+
 .button {
     display: inline-flex;
     align-items: center;
