@@ -1,108 +1,10 @@
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
+const UPDATE_ENDPOINTS = {
+    name: "/api/profile/name",
+    email: "/api/profile/email",
+    password: "/api/profile/password",
+};
 
-  if (!submitButton) return;
-
-  let endpoint = "";
-  let payload = {};
-
-  switch (updateType) {
-    case "name": {
-      const nameInput = form.querySelector('input[name="name"]');
-      const trimmedName = String(nameInput?.value || "").trim();
-      if (!trimmedName) {
-        showFeedback(feedbackElement, "Ingresa un nombre válido.", "error");
-        nameInput?.focus();
-        return;
-      }
-      endpoint = "/api/profile/name";
-      payload = { name: trimmedName };
-      break;
-    }
-    case "email": {
-      const emailInput = form.querySelector('input[name="email"]');
-      const normalizedEmail = String(emailInput?.value || "").trim().toLowerCase();
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
-        showFeedback(feedbackElement, "Ingresa un correo electrónico válido.", "error");
-        emailInput?.focus();
-        return;
-      }
-      endpoint = "/api/profile/email";
-      payload = { email: normalizedEmail };
-      break;
-    }
-    case "password": {
-      const currentPasswordInput = form.querySelector('input[name="currentPassword"]');
-      const newPasswordInput = form.querySelector('input[name="newPassword"]');
-      const confirmPasswordInput = form.querySelector('input[name="confirmPassword"]');
-
-      const currentPassword = String(currentPasswordInput?.value || "");
-      const newPassword = String(newPasswordInput?.value || "");
-      const confirmPassword = String(confirmPasswordInput?.value || "");
-
-      if (!currentPassword) {
-        showFeedback(feedbackElement, "Ingresa tu contraseña actual.", "error");
-        currentPasswordInput?.focus();
-        return;
-      }
-      if (newPassword.length < 8) {
-        showFeedback(feedbackElement, "La nueva contraseña debe tener al menos 8 caracteres.", "error");
-        newPasswordInput?.focus();
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        showFeedback(feedbackElement, "La confirmación no coincide con la nueva contraseña.", "error");
-        confirmPasswordInput?.focus();
-        return;
-      }
-
-      endpoint = "/api/profile/password";
-      payload = { currentPassword, newPassword };
-      break;
-    }
-    default:
-      console.warn("Tipo de actualización no soportado:", updateType);
-      return;
-  }
-
-  try {
-    submitButton.disabled = true;
-    showFeedback(feedbackElement, "Guardando cambios...", "info");
-
-    const response = await fetch(endpoint, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (handleUnauthorized(response)) return;
-
-    let data = {};
-    try { data = await response.json(); } catch { /* continuar con mensaje genérico */ }
-
-    if (!response.ok) {
-      const errorMessage = data.error || "No se pudo guardar el cambio. Intenta de nuevo.";
-      showFeedback(feedbackElement, errorMessage, "error");
-      return;
-    }
-
-    showFeedback(feedbackElement, data.message || "Cambios guardados correctamente.", "success");
-    if (updateType === "password") form.reset();
-
-
-    
-    window.location.replace("./perfil.html");
-    return;
-  } catch (error) {
-    console.error(error);
-    showFeedback(
-      feedbackElement,
-      "No se pudo completar la solicitud. Verifica tu conexión e inténtalo nuevamente.",
-      "error"
-    );
-  } finally {
-    submitButton.disabled = false;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function showFeedback(element, message, type = "info") {
     if (!element) {
@@ -134,6 +36,177 @@ function handleUnauthorized(response) {
     return false;
 }
 
+async function fetchProfileOrRedirect() {
+    try {
+        const response = await fetch("/api/profile");
+
+        if (handleUnauthorized(response)) {
+            return null;
+        }
+
+        if (!response.ok) {
+            throw new Error("No se pudo obtener la información del perfil.");
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
+function getNamePayload(form, feedbackElement) {
+    const nameInput = form.querySelector('input[name="name"]');
+    const trimmedName = String(nameInput?.value || "").trim();
+
+    if (!trimmedName) {
+        showFeedback(feedbackElement, "Ingresa un nombre válido.", "error");
+        nameInput?.focus();
+        return null;
+    }
+
+    return { endpoint: UPDATE_ENDPOINTS.name, payload: { name: trimmedName } };
+}
+
+function getEmailPayload(form, feedbackElement) {
+    const emailInput = form.querySelector('input[name="email"]');
+    const normalizedEmail = String(emailInput?.value || "").trim().toLowerCase();
+
+    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+        showFeedback(feedbackElement, "Ingresa un correo electrónico válido.", "error");
+        emailInput?.focus();
+        return null;
+    }
+
+    return { endpoint: UPDATE_ENDPOINTS.email, payload: { email: normalizedEmail } };
+}
+
+function getPasswordPayload(form, feedbackElement) {
+    const currentPasswordInput = form.querySelector('input[name="currentPassword"]');
+    const newPasswordInput = form.querySelector('input[name="newPassword"]');
+    const confirmPasswordInput = form.querySelector('input[name="confirmPassword"]');
+
+    const currentPassword = String(currentPasswordInput?.value || "");
+    const newPassword = String(newPasswordInput?.value || "");
+    const confirmPassword = String(confirmPasswordInput?.value || "");
+
+    if (!currentPassword) {
+        showFeedback(feedbackElement, "Ingresa tu contraseña actual.", "error");
+        currentPasswordInput?.focus();
+        return null;
+    }
+
+    if (newPassword.length < 8) {
+        showFeedback(feedbackElement, "La nueva contraseña debe tener al menos 8 caracteres.", "error");
+        newPasswordInput?.focus();
+        return null;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showFeedback(feedbackElement, "La confirmación no coincide con la nueva contraseña.", "error");
+        confirmPasswordInput?.focus();
+        return null;
+    }
+
+    return {
+        endpoint: UPDATE_ENDPOINTS.password,
+        payload: { currentPassword, newPassword },
+    };
+}
+
+function getRequestData(form, updateType, feedbackElement) {
+    switch (updateType) {
+        case "name":
+            return getNamePayload(form, feedbackElement);
+        case "email":
+            return getEmailPayload(form, feedbackElement);
+        case "password":
+            return getPasswordPayload(form, feedbackElement);
+        default:
+            console.warn("Tipo de actualización no soportado:", updateType);
+            return null;
+    }
+}
+
+async function handleSubmit(event, options) {
+    event.preventDefault();
+
+    const { form, updateType, feedbackElement, submitButton, redirect } = options;
+
+    if (!submitButton) {
+        return;
+    }
+
+    const requestData = getRequestData(form, updateType, feedbackElement);
+    if (!requestData) {
+        return;
+    }
+
+    const { endpoint, payload } = requestData;
+
+    try {
+        submitButton.disabled = true;
+        showFeedback(feedbackElement, "Guardando cambios...", "info");
+
+        const response = await fetch(endpoint, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (handleUnauthorized(response)) {
+            return;
+        }
+
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (error) {
+            // Ignorar errores de parseo y continuar con mensajes genéricos.
+        }
+
+        if (!response.ok) {
+            const errorMessage = data.error || "No se pudo guardar el cambio. Intenta de nuevo.";
+            showFeedback(feedbackElement, errorMessage, "error");
+            return;
+        }
+
+        showFeedback(feedbackElement, data.message || "Cambios guardados correctamente.", "success");
+
+        if (updateType === "password") {
+            form.reset();
+        }
+
+        redirect();
+    } catch (error) {
+        console.error(error);
+        showFeedback(
+            feedbackElement,
+            "No se pudo completar la solicitud. Verifica tu conexión e inténtalo nuevamente.",
+            "error",
+        );
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+
+function setupRedirect() {
+    let redirecting = false;
+
+    return () => {
+        if (redirecting) {
+            return;
+        }
+
+        redirecting = true;
+        setTimeout(() => {
+            window.location.replace("./perfil.html");
+        }, 1500);
+    };
+}
+
 async function initializeForm() {
     const form = document.querySelector("[data-update-form]");
 
@@ -159,152 +232,33 @@ async function initializeForm() {
                 if (nameInput) {
                     nameInput.value = profile.name || "";
                 }
-            } else if (updateType === "email") {
+            }
+
+            if (updateType === "email") {
                 const emailInput = form.querySelector('input[name="email"]');
                 if (emailInput) {
                     emailInput.value = profile.email || "";
                 }
             }
         } catch (error) {
-            console.error(error);
             showFeedback(feedbackElement, "No se pudo cargar la información del perfil.", "error");
             return;
         }
     }
 
- 
-    let redirecting = false;
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    const redirect = setupRedirect();
 
-        if (!submitButton) {
-            return;
-        }
-
-        let endpoint = "";
-        let payload = {};
-
-        switch (updateType) {
-            case "name": {
-                const nameInput = form.querySelector('input[name="name"]');
-                const trimmedName = String(nameInput?.value || "").trim();
-
-                if (!trimmedName) {
-                    showFeedback(feedbackElement, "Ingresa un nombre válido.", "error");
-                    nameInput?.focus();
-                    return;
-                }
-
-                endpoint = "/api/profile/name";
-                payload = { name: trimmedName };
-                break;
-            }
-            case "email": {
-                const emailInput = form.querySelector('input[name="email"]');
-                const normalizedEmail = String(emailInput?.value || "").trim().toLowerCase();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-                if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
-                    showFeedback(feedbackElement, "Ingresa un correo electrónico válido.", "error");
-                    emailInput?.focus();
-                    return;
-                }
-
-                endpoint = "/api/profile/email";
-                payload = { email: normalizedEmail };
-                break;
-            }
-            case "password": {
-                const currentPasswordInput = form.querySelector('input[name="currentPassword"]');
-                const newPasswordInput = form.querySelector('input[name="newPassword"]');
-                const confirmPasswordInput = form.querySelector('input[name="confirmPassword"]');
-
-                const currentPassword = String(currentPasswordInput?.value || "");
-                const newPassword = String(newPasswordInput?.value || "");
-                const confirmPassword = String(confirmPasswordInput?.value || "");
-
-                if (!currentPassword) {
-                    showFeedback(feedbackElement, "Ingresa tu contraseña actual.", "error");
-                    currentPasswordInput?.focus();
-                    return;
-                }
-
-                if (newPassword.length < 8) {
-                    showFeedback(feedbackElement, "La nueva contraseña debe tener al menos 8 caracteres.", "error");
-                    newPasswordInput?.focus();
-                    return;
-                }
-
-                if (newPassword !== confirmPassword) {
-                    showFeedback(feedbackElement, "La confirmación no coincide con la nueva contraseña.", "error");
-                    confirmPasswordInput?.focus();
-                    return;
-                }
-
-                endpoint = "/api/profile/password";
-                payload = { currentPassword, newPassword };
-                break;
-            }
-            default:
-                console.warn("Tipo de actualización no soportado:", updateType);
-                return;
-        }
-
-        try {
-            submitButton.disabled = true;
-            showFeedback(feedbackElement, "Guardando cambios...", "info");
-
-            const response = await fetch(endpoint, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (handleUnauthorized(response)) {
-                return;
-            }
-
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (error) {
-                // Ignorar errores de parseo y usar mensajes genéricos.
-            }
-
-            if (!response.ok) {
-                const errorMessage = data.error || "No se pudo guardar el cambio. Intenta de nuevo.";
-                showFeedback(feedbackElement, errorMessage, "error");
-                return;
-            }
-
-            showFeedback(feedbackElement, data.message || "Cambios guardados correctamente.", "success");
-
-            if (updateType === "password") {
-                form.reset();
-            }
-
-            redirecting = true;
-            setTimeout(() => {
-                window.location.replace("./perfil.html");
-            }, 1500);
-            return;
-        } catch (error) {
-            console.error(error);
-
-            if (redirecting && (error?.name === "AbortError" || error?.message === "Failed to fetch" || error?.message === "The user aborted a request.")) {
-                return;
-            }
-
-            showFeedback(feedbackElement, "No se pudo completar la solicitud. Verifica tu conexión e inténtalo nuevamente.", "error");
-        } finally {
-            submitButton.disabled = false;
-        }
-    });
+    form.addEventListener("submit", (event) =>
+        handleSubmit(event, {
+            form,
+            updateType,
+            feedbackElement,
+            submitButton,
+            redirect,
+        }),
+    );
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     initializeForm();
-
 });
