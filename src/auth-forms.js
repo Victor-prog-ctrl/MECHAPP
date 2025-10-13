@@ -113,6 +113,36 @@ function normalizeErrors(result) {
     return [result];
 }
 
+function getSubmissionErrorMessage(error) {
+    if (!error) {
+        return "No se pudo completar la solicitud. Intenta nuevamente.";
+    }
+
+    if (typeof error === "string" && error.trim()) {
+        return error.trim();
+    }
+
+    const errorName = error?.name;
+    const errorMessage = typeof error?.message === "string" ? error.message.trim() : "";
+
+    if (errorName === "AbortError") {
+        return "La solicitud tardó demasiado. Verifica tu conexión e inténtalo nuevamente.";
+    }
+
+    if (errorName === "TypeError") {
+        return "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo otra vez.";
+    }
+
+    if (errorMessage) {
+        return errorMessage;
+    }
+
+    const fallbackMessage = String(error);
+    return fallbackMessage && fallbackMessage.trim()
+        ? fallbackMessage.trim()
+        : "No se pudo completar la solicitud. Intenta nuevamente.";
+}
+
 function getNormalizedValue(field) {
     if (!field) {
         return "";
@@ -359,7 +389,7 @@ async function handleFormSubmit({ form, formType, submitButton, fields, updateSu
         console.error(error);
         const hasCustomStatus = Boolean(statusElement && statusElement.textContent.trim());
         if (!hasCustomStatus) {
-            setStatus("No se pudo completar la solicitud. Intenta nuevamente.");
+            setStatus(getSubmissionErrorMessage(error));
         }
     } finally {
         if (submitButton) {
