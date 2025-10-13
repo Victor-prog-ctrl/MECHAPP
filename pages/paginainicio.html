@@ -192,6 +192,15 @@
         const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
 
+        const normalizeText = (t = "") =>
+          t
+            .toString()
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/ñ/g, "n");
+
         const updateMechanicElementsVisibility = (shouldShow) => {
           mechanicOnlyElements.forEach((el) => shouldShow ? el.removeAttribute("hidden") : el.setAttribute("hidden",""));
         };
@@ -222,7 +231,27 @@
           { nombre:"Diagnóstico Eléctrico", descripcion:"Soluciones precisas para problemas eléctricos del vehículo.", enlace:"#", tipo:"Servicio" },
           { nombre:"Alineación y Balanceo", descripcion:"Mejora el rendimiento y la seguridad en carretera.", enlace:"#", tipo:"Servicio" }
         ];
-        const datosBusqueda = servicios;
+
+        const marcasVehiculos = [
+          "Abarth","Acura","Aiways","Alfa Romeo","Alpine","Ariel","Aston Martin","Audi","BAIC","Bentley",
+          "BMW","Brilliance","Bugatti","Buick","BYD","Cadillac","Changan","Chery","Chevrolet","Chrysler",
+          "Citroën","Cupra","Dacia","Daewoo","Daihatsu","Datsun","Dodge","Dongfeng","DS Automobiles","FAW",
+          "Ferrari","Fiat","Fisker","Ford","Foton","GAC","Geely","Genesis","GMC","Great Wall",
+          "Haval","Holden","Honda","Hummer","Hyundai","Infiniti","Isuzu","Iveco","JAC","Jaguar",
+          "Jeep","JMC","Kia","Koenigsegg","KTM","Lada","Lamborghini","Lancia","Land Rover","Lexus",
+          "Li Auto","Lincoln","Lotus","Lucid","Mahindra","Maserati","Maybach","Mazda","McLaren","Mercedes-Benz",
+          "MG","Mini","Mitsubishi","NIO","Nissan","Opel","Pagani","Peugeot","Polestar","Pontiac",
+          "Porsche","Proton","RAM","Renault","Rivian","Rolls-Royce","Rover","Saab","Scion","SEAT",
+          "Škoda","Smart","SsangYong","Subaru","Suzuki","Tata","Tesla","Toyota","TVR","Vauxhall",
+          "VinFast","Volkswagen","Volvo","Wuling","Zotye"
+        ].map((marca) => ({
+          nombre: marca,
+          descripcion: "Marca de vehículos disponible para servicios especializados.",
+          enlace: "#",
+          tipo: "Marca"
+        }));
+
+        const datosBusqueda = [...servicios, ...marcasVehiculos];
 
         const renderResultados = (items) => {
           if (!items.length) { searchResults.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
@@ -245,9 +274,11 @@
         };
         renderResultados(datosBusqueda.slice(0,3));
         searchInput?.addEventListener("input", (e) => {
-          const termino = e.target.value.trim().toLowerCase();
+          const termino = normalizeText(e.target.value);
           if (!termino) { renderResultados(datosBusqueda.slice(0,3)); return; }
-          const filtrados = datosBusqueda.filter((it) => (`${it.nombre} ${it.especialidad||""} ${it.descripcion||""}`).toLowerCase().includes(termino));
+          const filtrados = datosBusqueda.filter((it) =>
+            normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
+          );
           renderResultados(filtrados);
         });
 
@@ -293,8 +324,7 @@
         let mapInstance;
         let comunaMarker;
 
-        const normalizeText = (t="") => t.toString().trim().toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g,"n");
+        
 
         const disableControls = () => { comunaInput.disabled = true; comunaSelect.disabled = true; comunaBtn.disabled = true; };
 
