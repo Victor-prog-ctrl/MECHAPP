@@ -321,6 +321,21 @@ app.post('/api/register', async (req, res) => {
       certificatePath
     );
 
+    );
+
+    const certificateUploadedValue = isMechanic && certificatePath ? 1 : 0;
+    const certificateStatusValue = isMechanic ? 'pendiente' : 'validado';
+
+    insert.run(
+      name.trim(),
+      normalizedEmail,
+      hashedPassword,
+      accountType,
+      certificateUploadedValue,
+      certificateStatusValue,
+      certificatePath
+    );
+
     const successMessage = isMechanic
       ? 'Tu registro se envió correctamente. Un administrador validará tu certificado antes de habilitar tu cuenta.'
       : 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
