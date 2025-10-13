@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de administración | AutoServ</title>
+    <link rel="stylesheet" href="/Styles/admin.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="admin-header">
+      <div class="admin-header__inner">
+        <h1>Panel de administración</h1>
+        <button class="logout-button" id="logout-button" type="button">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-card" aria-labelledby="resumen-title">
+        <div class="card-header">
+          <h2 id="resumen-title">Resumen general</h2>
+          <p class="card-subtitle">Monitorea usuarios y certificados en tiempo real.</p>
+        </div>
+        <div class="stats-grid" id="dashboard-stats" aria-live="polite"></div>
+      </section>
+
+      <section class="admin-card" aria-labelledby="usuarios-title">
+        <div class="card-header">
+          <div>
+            <h2 id="usuarios-title">Gestión de usuarios</h2>
+            <p class="card-subtitle">Valida certificados, actualiza permisos y revisa registros.</p>
+          </div>
+          <div class="table-actions">
+            <label class="filter">
+              <span>Filtrar por tipo</span>
+              <select id="filter-account-type" aria-label="Filtrar usuarios por tipo de cuenta">
+                <option value="todos">Todos</option>
+                <option value="admin">Administradores</option>
+                <option value="mecanico">Mecánicos</option>
+                <option value="cliente">Clientes</option>
+              </select>
+            </label>
+            <label class="filter">
+              <span>Filtrar por estado</span>
+              <select id="filter-certificate-status" aria-label="Filtrar usuarios por estado del certificado">
+                <option value="todos">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="validado">Validado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="table-container" role="region" aria-live="polite">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th scope="col">Usuario</th>
+                <th scope="col">Correo</th>
+                <th scope="col">Tipo de cuenta</th>
+                <th scope="col">Certificado</th>
+                <th scope="col">Registrado</th>
+                <th scope="col" class="col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+          <div id="users-empty-state" class="empty-state" hidden>
+            <p>No se encontraron usuarios con los filtros seleccionados.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="user-row-template">
+      <tr class="user-row" data-user-row>
+        <td data-user-name></td>
+        <td data-user-email></td>
+        <td>
+          <label class="sr-only" data-account-label>Tipo de cuenta</label>
+          <select class="inline-select" data-account-select>
+            <option value="admin">Administrador</option>
+            <option value="mecanico">Mecánico</option>
+            <option value="cliente">Cliente</option>
+          </select>
+        </td>
+        <td class="certificate-cell">
+          <div class="certificate-status">
+            <span class="status-indicator" data-certificate-indicator></span>
+            <select class="inline-select" data-certificate-select>
+              <option value="pendiente">Pendiente</option>
+              <option value="validado">Validado</option>
+              <option value="rechazado">Rechazado</option>
+            </select>
+          </div>
+        </td>
+        <td data-user-date></td>
+        <td class="col-actions">
+          <div class="actions">
+            <button class="ghost-button" type="button" data-action="update-certificate">Actualizar certificado</button>
+            <button class="ghost-button" type="button" data-action="update-account">Actualizar rol</button>
+          </div>
+          <p class="feedback" data-row-feedback hidden></p>
+        </td>
+      </tr>
+    </template>
+
+    <script src="/src/admin.js" type="module"></script>
+  </body>
+</html>
