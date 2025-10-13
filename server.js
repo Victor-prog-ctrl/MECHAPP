@@ -32,6 +32,19 @@ db.prepare(`
     )
 `).run();
 
+function ensureCertificateStatusColumn() {
+  const columns = db.prepare(`PRAGMA table_info(users)`).all();
+  const hasCertificateStatus = columns.some((column) => column.name === 'certificate_status');
+
+  if (!hasCertificateStatus) {
+    db.prepare(
+      `ALTER TABLE users ADD COLUMN certificate_status TEXT NOT NULL DEFAULT 'pendiente'`
+    ).run();
+  }
+}
+
+ensureCertificateStatusColumn();
+
 // ===== Middlewares =====
 
 
@@ -126,6 +139,21 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function requireAdmin(req, res, next) {
+  try {
+    const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
+
+    if (!user || user.account_type !== 'admin') {
+      return res.status(403).json({ error: 'Acceso restringido para administradores.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error verificando privilegios de administrador', error);
+    res.status(500).json({ error: 'No se pudieron validar los permisos.' });
+  }
+}
+
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password, accountType, certificateProvided, termsAccepted } = req.body;
@@ -202,7 +230,9 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/profile', requireAuth, (req, res) => {
   try {
-    const user = db.prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`).get(
+    const user = db
+      .prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`)
+      .get(
       req.session.userId
     );
 
@@ -302,6 +332,71 @@ app.put('/api/profile/password', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar la contraseña', error);
     res.status(500).json({ error: 'Ocurrió un error al actualizar la contraseña.' });
+  }
+});
+
+app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const users = db
+      .prepare(
+        `SELECT id, name, email, account_type, certificate_uploaded, certificate_status, created_at
+         FROM users
+         ORDER BY datetime(created_at) DESC`
+      )
+      .all();
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Error obteniendo usuarios para el panel de administración', error);
+    res.status(500).json({ error: 'No se pudieron obtener los usuarios.' });
+  }
+});
+
+app.put('/api/admin/users/:id/certificate', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const { status } = req.body || {};
+    const allowedStatuses = ['pendiente', 'validado', 'rechazado'];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Estado de certificado no válido.' });
+    }
+
+    const result = db
+      .prepare(`UPDATE users SET certificate_status = ? WHERE id = ?`)
+      .run(status, userId);
+
+    if (!result.changes) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    res.json({ message: 'Estado del certificado actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error actualizando el estado del certificado', error);
+    res.status(500).json({ error: 'No se pudo actualizar el estado del certificado.' });
+  }
+});
+
+app.put('/api/admin/users/:id/account-type', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const { accountType } = req.body || {};
+    const allowedAccountTypes = ['cliente', 'mecanico', 'admin'];
+
+    if (!allowedAccountTypes.includes(accountType)) {
+      return res.status(400).json({ error: 'Tipo de cuenta no válido.' });
+    }
+
+    const result = db.prepare(`UPDATE users SET account_type = ? WHERE id = ?`).run(accountType, userId);
+
+    if (!result.changes) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    res.json({ message: 'Tipo de cuenta actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error actualizando el tipo de cuenta', error);
+    res.status(500).json({ error: 'No se pudo actualizar el tipo de cuenta.' });
   }
 });
 
