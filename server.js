@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -17,6 +18,7 @@ fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = path.join(dataDir, 'app.db');
 const db = new Database(dbPath);
+const fsp = fs.promises;
 
 db.pragma('journal_mode = WAL');
 
@@ -43,7 +45,117 @@ function ensureCertificateStatusColumn() {
   }
 }
 
+function ensureCertificatePathColumn() {
+  const columns = db.prepare(`PRAGMA table_info(users)`).all();
+  const hasCertificatePath = columns.some((column) => column.name === 'certificate_path');
+
+  if (!hasCertificatePath) {
+    db.prepare(`ALTER TABLE users ADD COLUMN certificate_path TEXT`).run();
+  }
+}
+
 ensureCertificateStatusColumn();
+ensureCertificatePathColumn();
+
+const certificatesDir = path.join(dataDir, 'certificates');
+fs.mkdirSync(certificatesDir, { recursive: true });
+const certificatesDirNormalized = path.normalize(certificatesDir + path.sep);
+
+const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador';
+const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@mechapp.local';
+const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin123!';
+
+function ensureDefaultAdminAccount() {
+  try {
+    const existingAdmin = db
+      .prepare(`SELECT id FROM users WHERE account_type = 'admin' LIMIT 1`)
+      .get();
+
+    if (existingAdmin) {
+      return;
+    }
+
+    const duplicateEmail = db
+      .prepare(`SELECT id FROM users WHERE email = ? LIMIT 1`)
+      .get(DEFAULT_ADMIN_EMAIL.trim().toLowerCase());
+
+    if (duplicateEmail) {
+      return;
+    }
+
+    const passwordHash = bcrypt.hashSync(String(DEFAULT_ADMIN_PASSWORD), 10);
+
+    db.prepare(
+      `INSERT INTO users (
+         name,
+         email,
+         password_hash,
+         account_type,
+         certificate_uploaded,
+         certificate_status,
+         certificate_path
+       )
+       VALUES (?, ?, ?, 'admin', 0, 'validado', NULL)`
+    ).run(
+      String(DEFAULT_ADMIN_NAME).trim() || 'Administrador',
+      DEFAULT_ADMIN_EMAIL.trim().toLowerCase(),
+      passwordHash
+    );
+
+    console.info('Cuenta administradora predeterminada creada:', DEFAULT_ADMIN_EMAIL);
+  } catch (error) {
+    console.error('No se pudo crear la cuenta administradora predeterminada', error);
+  }
+}
+
+ensureDefaultAdminAccount();
+
+const MAX_CERTIFICATE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_CERTIFICATE_TYPES = new Map([
+  ['image/jpeg', 'jpg'],
+  ['image/png', 'png'],
+  ['image/jpg', 'jpg'],
+]);
+
+function parseCertificateDataUrl(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') {
+    throw new Error('Certificado no válido.');
+  }
+
+  const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
+
+  if (!matches) {
+    throw new Error('Formato de certificado no soportado.');
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  if (!ALLOWED_CERTIFICATE_TYPES.has(mimeType)) {
+    throw new Error('Solo se aceptan certificados en formato JPG o PNG.');
+  }
+
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  if (buffer.length > MAX_CERTIFICATE_SIZE) {
+    throw new Error('El certificado excede el tamaño máximo permitido (5MB).');
+  }
+
+  const extension = ALLOWED_CERTIFICATE_TYPES.get(mimeType);
+  return { buffer, extension };
+}
+
+async function storeCertificateFile({ dataUrl }, identifier) {
+  const { buffer, extension } = parseCertificateDataUrl(dataUrl);
+  const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+  const safeIdentifier = String(identifier || 'cert').replace(/[^a-zA-Z0-9-_]/g, '_');
+  const filename = `${safeIdentifier}-${uniqueSuffix}.${extension}`;
+  const relativePath = path.join('certificates', filename);
+  const absolutePath = path.join(dataDir, relativePath);
+
+  await fsp.writeFile(absolutePath, buffer);
+  return relativePath;
+}
 
 // ===== Middlewares =====
 
@@ -108,7 +220,7 @@ app.use(helmet({
 }));
 
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
@@ -155,8 +267,9 @@ function requireAdmin(req, res, next) {
 }
 
 app.post('/api/register', async (req, res) => {
+  let certificatePath = null;
   try {
-    const { name, email, password, accountType, certificateProvided, termsAccepted } = req.body;
+    const { name, email, password, accountType, certificate, termsAccepted } = req.body;
 
     if (!name || !email || !password || !accountType) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
@@ -169,15 +282,59 @@ app.post('/api/register', async (req, res) => {
     const normalizedEmail = String(email).trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const isMechanic = accountType === 'mecanico';
+    if (isMechanic) {
+      if (!certificate || typeof certificate !== 'object') {
+        return res.status(400).json({ error: 'Debes adjuntar tu certificado profesional.' });
+      }
+
+      try {
+        certificatePath = await storeCertificateFile(certificate, normalizedEmail);
+      } catch (certificateError) {
+        return res.status(400).json({ error: certificateError.message || 'No se pudo guardar el certificado.' });
+      }
+    }
+
     const insert = db.prepare(
-      `INSERT INTO users (name, email, password_hash, account_type, certificate_uploaded)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO users (
+         name,
+         email,
+         password_hash,
+         account_type,
+         certificate_uploaded,
+         certificate_status,
+         certificate_path
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     );
 
-    insert.run(name.trim(), normalizedEmail, hashedPassword, accountType, certificateProvided ? 1 : 0);
+    const certificateUploadedValue = isMechanic && certificatePath ? 1 : 0;
+    const certificateStatusValue = isMechanic ? 'pendiente' : 'validado';
 
-    return res.status(201).json({ message: 'Usuario registrado correctamente.' });
+    insert.run(
+      name.trim(),
+      normalizedEmail,
+      hashedPassword,
+      accountType,
+      certificateUploadedValue,
+      certificateStatusValue,
+      certificatePath
+    );
+
+    const successMessage = isMechanic
+      ? 'Tu registro se envió correctamente. Un administrador validará tu certificado antes de habilitar tu cuenta.'
+      : 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
+
+    return res.status(201).json({ message: successMessage });
   } catch (error) {
+    if (certificatePath) {
+      try {
+        await fsp.unlink(path.join(dataDir, certificatePath));
+      } catch (removeError) {
+        console.error('No se pudo eliminar el certificado almacenado temporalmente', removeError);
+      }
+    }
+
     if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return res.status(409).json({ error: 'El correo ya está registrado.' });
     }
@@ -206,6 +363,20 @@ app.post('/api/login', async (req, res) => {
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    if (user.account_type === 'mecanico') {
+      if (user.certificate_status === 'pendiente') {
+        return res.status(403).json({
+          error: 'Tu certificado está pendiente de validación. Un administrador debe aprobarlo antes de que puedas iniciar sesión.',
+        });
+      }
+
+      if (user.certificate_status === 'rechazado') {
+        return res.status(403).json({
+          error: 'Tu certificado fue rechazado. Comunícate con un administrador para recibir asistencia.',
+        });
+      }
     }
 
     req.session.userId = user.id;
@@ -349,6 +520,40 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
   } catch (error) {
     console.error('Error obteniendo usuarios para el panel de administración', error);
     res.status(500).json({ error: 'No se pudieron obtener los usuarios.' });
+  }
+});
+
+app.get('/api/admin/users/:id/certificate-file', requireAuth, requireAdmin, (req, res) => {
+  const userId = Number(req.params.id);
+
+  if (!Number.isInteger(userId)) {
+    return res.status(400).json({ error: 'Identificador de usuario inválido.' });
+  }
+
+  try {
+    const user = db
+      .prepare(`SELECT certificate_path FROM users WHERE id = ?`)
+      .get(userId);
+
+    if (!user || !user.certificate_path) {
+      return res.status(404).json({ error: 'Certificado no disponible.' });
+    }
+
+    const absolutePath = path.join(dataDir, user.certificate_path);
+    const normalizedPath = path.normalize(absolutePath);
+
+    if (!normalizedPath.startsWith(certificatesDirNormalized)) {
+      return res.status(400).json({ error: 'Ruta de certificado no válida.' });
+    }
+
+    if (!fs.existsSync(normalizedPath)) {
+      return res.status(404).json({ error: 'Certificado no encontrado.' });
+    }
+
+    res.sendFile(normalizedPath);
+  } catch (error) {
+    console.error('Error al recuperar el certificado', error);
+    res.status(500).json({ error: 'No se pudo recuperar el certificado.' });
   }
 });
 
