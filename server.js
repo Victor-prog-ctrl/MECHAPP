@@ -61,6 +61,55 @@ const certificatesDir = path.join(dataDir, 'certificates');
 fs.mkdirSync(certificatesDir, { recursive: true });
 const certificatesDirNormalized = path.normalize(certificatesDir + path.sep);
 
+const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador';
+const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@mechapp.local';
+const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin123!';
+
+function ensureDefaultAdminAccount() {
+  try {
+    const existingAdmin = db
+      .prepare(`SELECT id FROM users WHERE account_type = 'admin' LIMIT 1`)
+      .get();
+
+    if (existingAdmin) {
+      return;
+    }
+
+    const duplicateEmail = db
+      .prepare(`SELECT id FROM users WHERE email = ? LIMIT 1`)
+      .get(DEFAULT_ADMIN_EMAIL.trim().toLowerCase());
+
+    if (duplicateEmail) {
+      return;
+    }
+
+    const passwordHash = bcrypt.hashSync(String(DEFAULT_ADMIN_PASSWORD), 10);
+
+    db.prepare(
+      `INSERT INTO users (
+         name,
+         email,
+         password_hash,
+         account_type,
+         certificate_uploaded,
+         certificate_status,
+         certificate_path
+       )
+       VALUES (?, ?, ?, 'admin', 0, 'validado', NULL)`
+    ).run(
+      String(DEFAULT_ADMIN_NAME).trim() || 'Administrador',
+      DEFAULT_ADMIN_EMAIL.trim().toLowerCase(),
+      passwordHash
+    );
+
+    console.info('Cuenta administradora predeterminada creada:', DEFAULT_ADMIN_EMAIL);
+  } catch (error) {
+    console.error('No se pudo crear la cuenta administradora predeterminada', error);
+  }
+}
+
+ensureDefaultAdminAccount();
+
 const MAX_CERTIFICATE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_CERTIFICATE_TYPES = new Map([
   ['image/jpeg', 'jpg'],
@@ -247,16 +296,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     const insert = db.prepare(
-      `INSERT INTO users (
-         name,
-         email,
-         password_hash,
-         account_type,
-         certificate_uploaded,
-         certificate_status,
-         certificate_path
-       )
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      'INSERT INTO users (name, email, password_hash, account_type, certificate_uploaded, certificate_status, certificate_path) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
 
     const certificateUploadedValue = isMechanic && certificatePath ? 1 : 0;
@@ -332,7 +372,13 @@ app.post('/api/login', async (req, res) => {
 
     req.session.userId = user.id;
 
-    res.json({ message: 'Inicio de sesión correcto.' });
+    const redirectTo = user.account_type === 'admin' ? '/admin.html' : '/perfil.html';
+
+    res.json({
+      message: 'Inicio de sesión correcto.',
+      accountType: user.account_type,
+      redirectTo,
+    });
   } catch (error) {
     console.error('Error al iniciar sesión', error);
     res.status(500).json({ error: 'Ocurrió un error al iniciar sesión.' });

@@ -558,5 +558,8 @@ async function submitLogin(formData, setStatus) {
         throw new Error(result?.error || "Error en el inicio de sesión");
     }
 
-    window.location.href = "./perfil.html";
+    const redirectTo = result?.redirectTo
+        || (result?.accountType === "admin" ? "/admin.html" : "/perfil.html");
+
+    window.location.href = redirectTo;
 }
