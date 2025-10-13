@@ -1,4 +1,6 @@
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ALLOWED_CERTIFICATE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
+const MAX_CERTIFICATE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const passwordRuleDefinitions = [
     {
@@ -418,6 +420,42 @@ function collectFormData(fields) {
     }, {});
 }
 
+function validateCertificateFile(file) {
+    if (!file) {
+        return "Debes adjuntar tu certificación profesional.";
+    }
+
+    if (!ALLOWED_CERTIFICATE_TYPES.includes(file.type)) {
+        return "El certificado debe ser una imagen en formato JPG o PNG.";
+    }
+
+    if (file.size > MAX_CERTIFICATE_SIZE) {
+        return "El certificado no debe superar los 5 MB.";
+    }
+
+    return null;
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            if (typeof reader.result === "string") {
+                resolve(reader.result);
+            } else {
+                reject(new Error("No se pudo procesar el certificado."));
+            }
+        };
+
+        reader.onerror = () => {
+            reject(new Error("No se pudo leer el certificado. Intenta nuevamente."));
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
 async function parseJsonResponse(response) {
     const contentType = response.headers.get("content-type") || "";
 
@@ -438,14 +476,46 @@ async function parseJsonResponse(response) {
 }
 
 async function submitRegister(formData, setStatus) {
+    const accountType = formData["account-type"];
+    const isMechanic = accountType === "mecanico";
+    let certificatePayload;
+
+    if (isMechanic) {
+        const files = formData.certificate;
+        const file = files && files[0];
+        const validationError = validateCertificateFile(file);
+
+        if (validationError) {
+            setStatus(validationError);
+            throw new Error(validationError);
+        }
+
+        try {
+            const dataUrl = await readFileAsDataURL(file);
+            certificatePayload = {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                dataUrl,
+            };
+        } catch (error) {
+            const message = error?.message || "No se pudo procesar el certificado. Intenta nuevamente.";
+            setStatus(message);
+            throw error;
+        }
+    }
+
     const payload = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        accountType: formData["account-type"],
-        certificateProvided: Boolean(formData.certificate && formData.certificate.length),
+        accountType,
         termsAccepted: Boolean(formData.terms),
     };
+
+    if (certificatePayload) {
+        payload.certificate = certificatePayload;
+    }
 
     const response = await fetch("/api/register", {
         method: "POST",
@@ -460,10 +530,13 @@ async function submitRegister(formData, setStatus) {
         throw new Error(result?.error || "Error en el registro");
     }
 
-    setStatus("Registro exitoso. Redirigiendo al inicio de sesión...", "success");
+    const successMessage = result?.message || "Registro exitoso. Redirigiendo al inicio de sesión...";
+    setStatus(successMessage, "success");
+
+    const redirectDelay = isMechanic ? 2600 : 1200;
     setTimeout(() => {
         window.location.href = "./login.html";
-    }, 1200);
+    }, redirectDelay);
 }
 
 async function submitLogin(formData, setStatus) {
@@ -485,5 +558,8 @@ async function submitLogin(formData, setStatus) {
         throw new Error(result?.error || "Error en el inicio de sesión");
     }
 
-    window.location.href = "./perfil.html";
+    const redirectTo = result?.redirectTo
+        || (result?.accountType === "admin" ? "/admin.html" : "/perfil.html");
+
+    window.location.href = redirectTo;
 }

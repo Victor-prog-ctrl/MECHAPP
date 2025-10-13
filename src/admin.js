@@ -144,6 +144,7 @@ function renderUsers(users) {
     const accountSelect = fragment.querySelector('[data-account-select]');
     const certificateSelect = fragment.querySelector('[data-certificate-select]');
     const certificateIndicator = fragment.querySelector('[data-certificate-indicator]');
+    const viewCertificateButton = fragment.querySelector('[data-action="view-certificate"]');
     const dateCell = fragment.querySelector('[data-user-date]');
 
     if (row) row.dataset.userId = user.id;
@@ -164,6 +165,21 @@ function renderUsers(users) {
 
     if (certificateIndicator) {
       updateStatusIndicator(certificateIndicator, user.certificate_status || 'pendiente');
+    }
+
+    if (viewCertificateButton) {
+      const hasCertificate = Boolean(user.certificate_uploaded);
+      viewCertificateButton.hidden = !hasCertificate;
+
+      if (hasCertificate) {
+        viewCertificateButton.dataset.certificateUrl = `/api/admin/users/${user.id}/certificate-file`;
+        viewCertificateButton.setAttribute(
+          'aria-label',
+          `Ver certificado de ${user.name || 'usuario'}`,
+        );
+      } else {
+        delete viewCertificateButton.dataset.certificateUrl;
+      }
     }
 
     if (dateCell) {
@@ -279,6 +295,16 @@ function wireTableActions() {
 
     const row = target.closest('[data-user-row]');
     if (!row) return;
+
+    if (action === 'view-certificate') {
+      const url = target.dataset.certificateUrl;
+      if (url) {
+        window.open(url, '_blank', 'noopener');
+      } else {
+        showRowFeedback(row, 'Este usuario no adjuntó un certificado.', 'error');
+      }
+      return;
+    }
 
     target.disabled = true;
     try {
