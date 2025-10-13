@@ -30,7 +30,9 @@ const formConfigurations = {
                 (value) => (!value ? "Ingresa tu correo electrónico." : null),
                 (value) => (value && emailPattern.test(value) ? null : "Ingresa un correo electrónico válido."),
             ],
-            password: [passwordValidator],
+            password: [
+                (value) => (!value ? "Ingresa tu contraseña." : null),
+            ],
         },
     },
     register: {
