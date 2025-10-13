@@ -33,26 +33,50 @@
                 <form data-update-form data-update-type="password">
                     <div class="field">
                         <label for="current-password">Contraseña actual</label>
-                        <input
-                            type="password"
-                            id="current-password"
-                            name="currentPassword"
-                            placeholder="Contraseña actual"
-                            autocomplete="current-password"
-                            required
-                        />
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="current-password"
+                                name="currentPassword"
+                                placeholder="Contraseña actual"
+                                autocomplete="current-password"
+                                required
+                                data-password-input
+                            />
+                            <button
+                                type="button"
+                                class="password-toggle-button"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false"
+                                data-password-toggle
+                            >
+                                <span class="password-toggle-icon" aria-hidden="true"></span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="field">
                         <label for="new-password">Nueva contraseña</label>
-                        <input
-                            type="password"
-                            id="new-password"
-                            name="newPassword"
-                            placeholder="Nueva contraseña"
-                            autocomplete="new-password"
-                            required
-                        />
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="new-password"
+                                name="newPassword"
+                                placeholder="Nueva contraseña"
+                                autocomplete="new-password"
+                                required
+                                data-password-input
+                            />
+                            <button
+                                type="button"
+                                class="password-toggle-button"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false"
+                                data-password-toggle
+                            >
+                                <span class="password-toggle-icon" aria-hidden="true"></span>
+                            </button>
+                        </div>
                         <ul class="password-rules">
                             <li>Al menos 8 caracteres.</li>
                             <li>Combina letras, números y símbolos para mayor seguridad.</li>
@@ -61,14 +85,26 @@
 
                     <div class="field">
                         <label for="confirm-password">Confirmar nueva contraseña</label>
-                        <input
-                            type="password"
-                            id="confirm-password"
-                            name="confirmPassword"
-                            placeholder="Repite la nueva contraseña"
-                            autocomplete="new-password"
-                            required
-                        />
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="confirm-password"
+                                name="confirmPassword"
+                                placeholder="Repite la nueva contraseña"
+                                autocomplete="new-password"
+                                required
+                                data-password-input
+                            />
+                            <button
+                                type="button"
+                                class="password-toggle-button"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false"
+                                data-password-toggle
+                            >
+                                <span class="password-toggle-icon" aria-hidden="true"></span>
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="button">Guardar cambios</button>
@@ -77,6 +113,7 @@
             </section>
         </main>
 
+        <script src="../src/password-visibility.js" defer></script>
         <script src="../src/profile-update.js" defer></script>
     </body>
 </html>

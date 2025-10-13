@@ -120,6 +120,59 @@ form {
     gap: 8px;
 }
 
+.password-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input input {
+    width: 100%;
+    padding-right: 48px;
+}
+
+.password-toggle-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 50%;
+    cursor: pointer;
+    color: rgba(248, 250, 252, 0.85);
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.password-toggle-button:hover,
+.password-toggle-button:focus-visible {
+    background: rgba(248, 250, 252, 0.12);
+    color: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.password-toggle-button:focus {
+    outline: none;
+}
+
+.password-toggle-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    background: center/contain no-repeat
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23e2e8f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' viewBox='0 0 24 24'%3E%3Cpath d='M2.25 12S5.75 6 12 6s9.75 6 9.75 6-3.5 6-9.75 6S2.25 12 2.25 12Z'/%3E%3Ccircle cx='12' cy='12' r='3.25'/%3E%3C/svg%3E");
+}
+
+.password-toggle-button.is-visible .password-toggle-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23e2e8f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 4.5 19.5 19.5'/%3E%3Cpath d='M9.88 9.88A3.5 3.5 0 0 0 12 15.5c3.38 0 5.94-2.62 7.21-4.11a1.75 1.75 0 0 0 0-2.26C17.94 8.62 15.38 6 12 6a3.5 3.5 0 0 0-2.12.63'/%3E%3Cpath d='M6.77 6.77C4.84 8.32 3.53 10 3.53 10a1.75 1.75 0 0 0 0 2.26C4.8 13.74 7.36 16.36 10.74 16.36a3.5 3.5 0 0 0 2.63-1.18'/%3E%3C/svg%3E");
+}
+
 label {
     font-size: 0.95rem;
     font-weight: 600;
