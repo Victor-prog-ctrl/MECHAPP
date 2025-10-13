@@ -33,42 +33,67 @@ db.prepare(`
 `).run();
 
 // ===== Middlewares =====
-// Helmet con CSP ajustada para Leaflet + OSM y localhost (HTTP)
+
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
-      // Evitar forzar HTTPS en desarrollo
-      'upgrade-insecure-requests': null,
-      'block-all-mixed-content': null,
+      // No fuerces HTTPS en dev
+      "upgrade-insecure-requests": null,
+      "block-all-mixed-content": null,
 
-      'default-src': ["'self'"],
+      "default-src": ["'self'"],
 
-      // Scripts locales + unpkg (Leaflet) + inline (tu script en la página)
-      'script-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-
-      // Estilos locales + unpkg + Google Fonts; permitir inline para estilos embebidos
-      'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
-
-      // Imágenes locales, data URIs, íconos de Leaflet desde unpkg y tiles de OSM
-      'img-src': [
+      // ✅ Scripts permitidos (añadimos Google Maps)
+      "script-src": [
         "'self'",
-        'data:',
-        'https://unpkg.com',
-        'https://*.tile.openstreetmap.org',
-        'https://*.openstreetmap.org'
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://cdn.jsdelivr.net",
+        "https://maps.googleapis.com",
+        "https://maps.gstatic.com"
       ],
 
-      // Fuentes de Google
-      'font-src': ["'self'", 'https://fonts.gstatic.com'],
+      // ✅ Estilos (Maps usa gstatic para CSS internos)
+      "style-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://fonts.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
 
-      // Permitir fetch/XHR a tu propio servidor y (opcional) a unpkg (para sourcemaps)
-      'connect-src': ["'self'", 'https://unpkg.com', 'https://api.emailjs.com'],
+      // ✅ Imágenes (incluye sprites/tiles de Google)
+      "img-src": [
+        "'self'",
+        "data:",
+        "https://unpkg.com",
+        "https://*.tile.openstreetmap.org",
+        "https://*.openstreetmap.org",
+        "https://maps.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
+
+      // ✅ Fuentes
+      "font-src": [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+
+      // ✅ XHR/Fetch (Google Maps + EmailJS + unpkg)
+      "connect-src": [
+        "'self'",
+        "https://unpkg.com",
+        "https://api.emailjs.com",
+        "https://maps.googleapis.com"
+      ],
     },
   },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginEmbedderPolicy: false,
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

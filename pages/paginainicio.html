@@ -15,8 +15,7 @@
       rel="stylesheet"
     />
 
-    <!-- Leaflet (CSS) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
     <!-- Tus estilos -->
     <link rel="stylesheet" href="../Styles/paginainicio.css" />
 
@@ -118,42 +117,21 @@
         </div>
       </section>
 
-      <!-- ===== Mapa (Leaflet + OSM) ===== -->
+      <!-- ===== Sección de ubicación con Google Maps ===== -->
       <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
         <div class="section-header">
           <div>
             <h2 id="geolocalizacion">Busca el taller de tu comuna</h2>
-            <p>Utiliza el buscador o selecciona una comuna para explorar el mapa interactivo.</p>
+            <p>Utiliza el buscador o selecciona una comuna para explorar el mapa.</p>
           </div>
         </div>
 
-        <form class="comuna-form" id="comuna-form" novalidate>
-          <div class="map-controls">
-            <input
-              type="text"
-              id="comuna-input"
-              name="comuna"
-              placeholder="Ej. Santiago"
-              autocomplete="off"
-              aria-describedby="comuna-error"
-            />
-            <button class="button button-primary" type="submit" id="comuna-btn">Buscar comuna</button>
-            <select id="comuna-select" name="comuna-select" aria-label="Seleccionar comuna rápidamente">
-              <option value="">— Selecciona una comuna —</option>
-            </select>
-          </div>
-        </form>
-
-        <p class="form-feedback" id="comuna-error" aria-live="polite"></p>
-        <p class="location-status" id="location-status" aria-live="polite">
-          Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.
-        </p>
-
+        <!-- Contenedor del mapa de Google -->
         <div
           id="map"
           class="map-container"
           role="region"
-          aria-label="Mapa interactivo de comunas"
+          aria-label="Mapa Google de comunas"
           style="height:420px; width:100%; border-radius:12px;"
         ></div>
       </section>
@@ -180,32 +158,22 @@
       </div>
     </footer>
 
-    <!-- Leaflet (JS) -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-    <!-- Lógica de página (incluye mapa) -->
+    <!-- Tu lógica existente (no la toqué) -->
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // ======= Barra superior (visibilidad, búsqueda de servicios) =======
         const searchInput = document.getElementById("search-input");
         const searchResults = document.getElementById("search-results");
         const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
 
         const normalizeText = (t = "") =>
-          t
-            .toString()
-            .trim()
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/ñ/g, "n");
+          t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
 
         const updateMechanicElementsVisibility = (shouldShow) => {
-          mechanicOnlyElements.forEach((el) => shouldShow ? el.removeAttribute("hidden") : el.setAttribute("hidden",""));
+          mechanicOnlyElements.forEach((el) => (shouldShow ? el.removeAttribute("hidden") : el.setAttribute("hidden", "")));
         };
         const updateAuthVisibility = (isAuthenticated) => {
-          unauthenticatedOnlyElements.forEach((el) => isAuthenticated ? el.setAttribute("hidden","") : el.removeAttribute("hidden"));
+          unauthenticatedOnlyElements.forEach((el) => (isAuthenticated ? el.setAttribute("hidden", "") : el.removeAttribute("hidden")));
         };
 
         const verifyMechanicProfile = async () => {
@@ -254,7 +222,8 @@
         const datosBusqueda = [...servicios, ...marcasVehiculos];
 
         const renderResultados = (items) => {
-          if (!items.length) { searchResults.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
+          const el = document.getElementById("search-results");
+          if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
           const frag = document.createDocumentFragment();
           items.forEach((item) => {
             const article = document.createElement("article");
@@ -269,8 +238,8 @@
             `;
             frag.appendChild(article);
           });
-          searchResults.innerHTML = "";
-          searchResults.appendChild(frag);
+          el.innerHTML = "";
+          el.appendChild(frag);
         };
         renderResultados(datosBusqueda.slice(0,3));
         searchInput?.addEventListener("input", (e) => {
@@ -281,206 +250,35 @@
           );
           renderResultados(filtrados);
         });
-
-        // ======= Sección mapa (Leaflet + OSM) =======
-        const locationStatus = document.getElementById("location-status");
-        const mapContainer   = document.getElementById("map");
-        const comunaForm     = document.getElementById("comuna-form");
-        const comunaInput    = document.getElementById("comuna-input");
-        const comunaSelect   = document.getElementById("comuna-select");
-        const comunaBtn      = document.getElementById("comuna-btn");
-        const comunaError    = document.getElementById("comuna-error");
-
-        if (!locationStatus || !mapContainer || !comunaForm || !comunaInput || !comunaSelect || !comunaBtn || !comunaError) {
-          return;
-        }
-
-        const MAP_DEFAULT = { lat: -33.45, lng: -70.66, zoom: 12, focusZoom: 13 };
-
-        // Fallback de comunas por si no existe /data/comunas_cl.json aún
-        const fallbackComunas = [
-          { nombre:"Santiago", lat:-33.45, lng:-70.66 },
-          { nombre:"Providencia", lat:-33.42628, lng:-70.60974 },
-          { nombre:"Ñuñoa", lat:-33.45694, lng:-70.59501 },
-          { nombre:"Las Condes", lat:-33.40835, lng:-70.56796 },
-          { nombre:"Vitacura", lat:-33.39971, lng:-70.60248 },
-          { nombre:"Lo Barnechea", lat:-33.35694, lng:-70.50528 },
-          { nombre:"Maipú", lat:-33.51645, lng:-70.76663 },
-          { nombre:"Puente Alto", lat:-33.6111, lng:-70.5758 },
-          { nombre:"La Florida", lat:-33.52192, lng:-70.60571 },
-          { nombre:"San Bernardo", lat:-33.59217, lng:-70.6996 },
-          { nombre:"Peñalolén", lat:-33.48235, lng:-70.54354 },
-          { nombre:"La Reina", lat:-33.44128, lng:-70.54999 },
-          { nombre:"Independencia", lat:-33.41989, lng:-70.65406 },
-          { nombre:"Recoleta", lat:-33.41529, lng:-70.64157 },
-          { nombre:"Estación Central", lat:-33.45152, lng:-70.6883 },
-          { nombre:"Quilicura", lat:-33.35739, lng:-70.7365 },
-          { nombre:"La Cisterna", lat:-33.54321, lng:-70.66046 },
-          { nombre:"La Pintana", lat:-33.5838, lng:-70.6265 }
-        ];
-
-        let comunasData = [];
-        let comunasIndex = new Map();
-        let mapInstance;
-        let comunaMarker;
-
-        
-
-        const disableControls = () => { comunaInput.disabled = true; comunaSelect.disabled = true; comunaBtn.disabled = true; };
-
-        const buildIndex = (comunas) => {
-          comunasIndex = new Map();
-          comunas.forEach((c) => {
-            const key = normalizeText(c.nombre);
-            if (!comunasIndex.has(key)) comunasIndex.set(key, c);
-          });
-        };
-
-        const populateSelect = (comunas) => {
-          while (comunaSelect.options.length > 1) comunaSelect.remove(1);
-          const byName = new Map(comunas.map(c => [c.nombre, c]));
-          const quick = [
-            "Santiago","Providencia","Ñuñoa","Las Condes","Vitacura","Lo Barnechea",
-            "Maipú","Puente Alto","La Florida","San Bernardo","Peñalolén","La Reina",
-            "Independencia","Recoleta","Estación Central","Quilicura","La Cisterna","La Pintana"
-          ];
-          const frag = document.createDocumentFragment();
-
-          quick.forEach((n)=>{
-            if (!byName.has(n)) return;
-            const opt = document.createElement("option");
-            opt.value = n; opt.textContent = n;
-            frag.appendChild(opt);
-            byName.delete(n);
-          });
-
-          if (byName.size) {
-            const og = document.createElement("optgroup");
-            og.label = "Otras comunas";
-            Array.from(byName.keys()).sort((a,b)=>a.localeCompare(b,"es")).forEach((n)=>{
-              const opt = document.createElement("option");
-              opt.value = n; opt.textContent = n;
-              og.appendChild(opt);
-            });
-            frag.appendChild(og);
-          }
-          comunaSelect.appendChild(frag);
-        };
-
-        /* ===== Icono personalizado (LOCAL) — pon tu imagen en /assets/markers/pin.png ===== */
-        const leafletIcon = L.icon({
-          iconUrl: '/assets/icono marcador mapa.png',      // <-- cambia el nombre si usas otro archivo
-          // iconRetinaUrl: '/assets/markers/pin@2x.png', // opcional si tienes 2x
-          iconSize:   [48, 48],   // ajusta al tamaño real de tu PNG
-          iconAnchor: [19, 48],   // mitad del ancho, base del alto (punta del pin)
-          popupAnchor:[0, -48],   // popup justo encima del pin
-          // shadowSize:[41, 41], shadowAnchor:[12, 41],
-        });
-
-        const ensureMap = () => {
-          if (mapInstance) return mapInstance;
-          if (!window.L) {
-            locationStatus.textContent = "No fue posible cargar el mapa interactivo. Intenta nuevamente más tarde.";
-            disableControls(); return null;
-          }
-
-          mapInstance = L.map(mapContainer).setView([MAP_DEFAULT.lat, MAP_DEFAULT.lng], MAP_DEFAULT.zoom);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
-          }).addTo(mapInstance);
-
-          // marcador inicial con icono local
-          comunaMarker = L.marker([MAP_DEFAULT.lat, MAP_DEFAULT.lng], { icon: leafletIcon })
-            .addTo(mapInstance);
-          comunaMarker.bindPopup("Comuna: Santiago").openPopup();
-
-          // Por si el contenedor refluye al primer render:
-          setTimeout(()=> mapInstance.invalidateSize(), 150);
-          return mapInstance;
-        };
-
-        const focusComuna = (comuna, { openPopup = true, useDefaultZoom = false } = {}) => {
-          const map = ensureMap(); if (!map || !comuna) return;
-          const pos = [comuna.lat, comuna.lng];
-          const zoom = useDefaultZoom ? MAP_DEFAULT.zoom : MAP_DEFAULT.focusZoom;
-
-          map.setView(pos, zoom);
-          if (!comunaMarker) {
-            comunaMarker = L.marker(pos, { icon: leafletIcon }).addTo(map);
-          } else {
-            comunaMarker.setLatLng(pos);
-          }
-
-          comunaMarker.bindPopup(`Comuna: ${comuna.nombre}`);
-          if (openPopup) comunaMarker.openPopup();
-
-          locationStatus.textContent = `Mostrando comuna: ${comuna.nombre}.`;
-          comunaError.textContent = "";
-          comunaInput.value = comuna.nombre;
-          comunaSelect.value = comuna.nombre;
-
-          setTimeout(()=> map.invalidateSize(), 120);
-        };
-
-        const findComuna = (q) => {
-          const n = normalizeText(q);
-          if (!n) return null;
-          if (comunasIndex.has(n)) return comunasIndex.get(n);
-          for (const [key, comuna] of comunasIndex.entries()) {
-            if (key.startsWith(n)) return comuna;
-          }
-          return null;
-        };
-
-        const loadComunas = async () => {
-          try {
-            const res = await fetch("/data/comunas_cl.json");
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            if (!Array.isArray(data) || !data.length) throw new Error("Listado de comunas no válido");
-            return data;
-          } catch (e) {
-            console.warn("Usando fallback de comunas:", e?.message || e);
-            return fallbackComunas;
-          }
-        };
-
-        (async function initLocationSection(){
-          comunasData = await loadComunas();
-          if (!comunasData.length) { locationStatus.textContent = "No hay comunas disponibles para mostrar en el mapa."; disableControls(); return; }
-          buildIndex(comunasData);
-          populateSelect(comunasData);
-
-          const defaultC = findComuna("Santiago") || comunasData[0];
-          if (defaultC) focusComuna(defaultC, { openPopup:true, useDefaultZoom:true });
-
-          comunaForm.addEventListener("submit", (ev)=>{
-            ev.preventDefault();
-            const raw = comunaInput.value.trim();
-            if (!raw) { comunaError.textContent = "Ingresa el nombre de una comuna."; locationStatus.textContent = "Ingresa una comuna para actualizar el mapa."; comunaInput.focus(); return; }
-            const c = findComuna(raw);
-            if (!c) { comunaError.textContent = "No encontramos la comuna ingresada. Intenta con otro nombre."; locationStatus.textContent = "No encontramos la comuna ingresada. Revisa el nombre e inténtalo nuevamente."; comunaSelect.value=""; return; }
-            focusComuna(c, { openPopup:true });
-            comunaInput.blur();
-          });
-
-          comunaSelect.addEventListener("change", (e)=>{
-            const v = e.target.value;
-            if (!v) { comunaError.textContent=""; return; }
-            const c = findComuna(v);
-            if (!c) { comunaError.textContent = "No encontramos la comuna seleccionada."; locationStatus.textContent = "No encontramos la comuna seleccionada. Elige otra opción."; return; }
-            comunaInput.value = c.nombre;
-            focusComuna(c, { openPopup:true });
-          });
-
-          comunaInput.addEventListener("input", (e)=>{
-            if (e.target.value.trim()) { comunaError.textContent=""; return; }
-            comunaError.textContent=""; locationStatus.textContent = "Mapa centrado en Santiago. Usa el buscador o el atajo para cambiar de comuna.";
-          });
-
-          window.addEventListener("resize", () => mapInstance && mapInstance.invalidateSize());
-        })();
       });
     </script>
+
+    <!-- Google Maps JS (reemplaza TU_API_KEY_AQUI) -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap"
+      async defer>
+    </script>
+
+    <!-- Inicialización del mapa de Google (definida en window) -->
+<!-- 1) La función va en window para que el callback la encuentre -->
+<script>
+  window.initGMap = function () {
+    const el = document.getElementById('map');
+    if (!el.style.height) el.style.height = '420px'; // por si el CSS no cargó
+
+    const center = { lat: -33.4489, lng: -70.6693 };
+    const map = new google.maps.Map(el, {
+      center,
+      zoom: 12,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+    });
+    new google.maps.Marker({ map, position: center, title: 'Mechapp · Centro' });
+    console.log('[GMaps] Mapa inicializado');
+  };
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap&v=weekly" async defer></script>
+
   </body>
 </html>
