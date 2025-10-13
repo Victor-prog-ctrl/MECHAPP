@@ -70,6 +70,9 @@ const formConfigurations = {
                     return hasFile ? null : "Adjunta tu certificación profesional.";
                 },
             ],
+            terms: [
+                (value) => (value ? null : "Debes aceptar los términos y condiciones."),
+            ],
         },
     },
     recovery: {
@@ -214,7 +217,8 @@ function setupForm(form) {
 
         const isFile = field.type === "file";
         const isSelect = field.tagName === "SELECT";
-        const eventType = isFile || isSelect ? "change" : "input";
+        const isCheckbox = field.type === "checkbox";
+        const eventType = isFile || isSelect || isCheckbox ? "change" : "input";
 
         field.addEventListener(eventType, () => {
             if (!field.dataset.touched) {
@@ -408,6 +412,7 @@ async function submitRegister(formData, setStatus) {
         password: formData.password,
         accountType: formData["account-type"],
         certificateProvided: Boolean(formData.certificate && formData.certificate.length),
+        termsAccepted: Boolean(formData.terms),
     };
 
     const response = await fetch("/api/register", {

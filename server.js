@@ -103,10 +103,14 @@ function requireAuth(req, res, next) {
 
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, email, password, accountType, certificateProvided } = req.body;
+    const { name, email, password, accountType, certificateProvided, termsAccepted } = req.body;
 
     if (!name || !email || !password || !accountType) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'Debes aceptar los términos y condiciones para registrarte.' });
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
