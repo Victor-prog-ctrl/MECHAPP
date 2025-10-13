@@ -120,6 +120,28 @@ form {
     gap: 8px;
 }
 
+.field--checkbox {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.field--checkbox label {
+    font-weight: 500;
+    line-height: 1.45;
+    color: rgba(248, 250, 252, 0.85);
+}
+
+.field--checkbox a {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.field--checkbox a:hover,
+.field--checkbox a:focus {
+    text-decoration: none;
+}
+
 .password-input {
     position: relative;
     display: flex;

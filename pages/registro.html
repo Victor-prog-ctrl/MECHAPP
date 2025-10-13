@@ -131,6 +131,21 @@
                         <p class="hint">Sube una foto legible de tu certificación como mecánico.</p>
                         <p class="error-message" id="register-certificate-error" aria-live="polite"></p>
                     </div>
+                    <div class="field field--checkbox">
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            name="terms"
+                            required
+                            aria-describedby="register-terms-error"
+                        />
+                        <label for="terms">
+                            He leído y acepto los
+                            <a href="./terminos-y-condiciones.html" target="_blank" rel="noopener">términos y condiciones</a>
+                            de Mechapp.
+                        </label>
+                    </div>
+                    <p class="error-message" id="register-terms-error" aria-live="polite"></p>
                     <p class="form-status" data-form-status hidden aria-live="polite"></p>
                     <div class="actions">
                         <button type="submit" class="button" disabled aria-disabled="true">Registrarme</button>
