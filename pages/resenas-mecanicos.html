@@ -11,7 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    <link rel="stylesheet" href="../Styles/paginainicio.css" />
     <link rel="stylesheet" href="../Styles/resenas.css" />
   </head>
 
@@ -36,37 +35,30 @@
     </header>
 
     <main>
-      <section class="hero reviews-hero" aria-labelledby="resenas-title">
-        <div
-          class="hero-image reviews-hero-image"
-          role="img"
-          aria-label="Clientes revisando la experiencia en talleres mecánicos"
-        ></div>
-        <div class="hero-content">
-          <span class="hero-tag">Experiencias reales</span>
-          <h1 id="resenas-title">Reseñas de nuestros mecánicos destacados</h1>
-          <p>
-            Explora los comentarios de clientes, conoce las calificaciones promedio y descubre los
-            servicios estrella de cada profesional registrado en Mechapp.
-          </p>
-          <div class="reviews-hero-metrics" aria-label="Resumen de calificaciones">
-            <div>
-              <strong>4.8</strong>
-              <span>Calificación global</span>
-            </div>
-            <div>
-              <strong>320+</strong>
-              <span>Clientes verificados</span>
-            </div>
-            <div>
-              <strong>12</strong>
-              <span>Especialidades</span>
-            </div>
-          </div>
-        </div>
+      <section class="hero">
+        <span>Experiencias reales</span>
+        <h1>Reseñas de nuestros mecánicos destacados</h1>
+        <p>
+          Explora los comentarios de clientes y conoce las calificaciones promedio,
+          servicios estrella y especialidades de cada profesional registrado en Mechapp.
+        </p>
       </section>
 
-      <section class="review-toolbar" aria-label="Herramientas de reseñas">
+      <section class="review-toolbar" aria-label="Resumen de reseñas">
+        <div class="stats">
+          <div>
+            <strong>4.8</strong>
+            <span>Calificación global</span>
+          </div>
+          <div>
+            <strong>+320</strong>
+            <span>Clientes verificados</span>
+          </div>
+          <div>
+            <strong>12</strong>
+            <span>Especialidades disponibles</span>
+          </div>
+        </div>
         <div class="filter-group" role="presentation">
           <label class="visually-hidden" for="filter-servicio">Filtrar por servicio</label>
           <select id="filter-servicio" name="servicio" aria-label="Filtrar por servicio" disabled>
