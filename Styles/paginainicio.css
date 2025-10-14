@@ -513,12 +513,13 @@ main {
 .service-card {
     background: var(--surface-alt);
     border-radius: var(--radius-md);
-    padding: 24px;
+    padding: 20px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto auto;
     gap: 20px;
     align-items: center;
     border: 1px solid rgba(15, 23, 42, 0.06);
+
 }
 
 .service-icon {
@@ -616,7 +617,7 @@ main {
     }
 
     .service-card {
-        grid-template-columns: 1fr;
+        grid-template-columns: auto;
         text-align: left;
     }
 
