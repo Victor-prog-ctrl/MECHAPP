@@ -36,11 +36,29 @@
         >
           Perfil
         </a>
+        <a
+          href="./registro-taller.html"
+          class="nav-link"
+          data-visible-for="mecanico"
+          data-auth-visibility="authenticated"
+          hidden
+        >
+          Registrar Taller
+        </a>
       </nav>
       <div class="header-actions">
         <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
         <a href="#agendar" class="button button-primary">Agendar Cita</a>
         <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
+        <a
+          href="./registro-taller.html"
+          class="button ghost"
+          data-visible-for="mecanico"
+          data-auth-visibility="authenticated"
+          hidden
+        >
+          Registrar Taller
+        </a>
       </div>
     </header>
 
@@ -165,10 +183,6 @@
         const searchResults = document.getElementById("search-results");
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
         const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
-        const nav = document.querySelector(".main-nav");
-        const headerActions = document.querySelector(".header-actions");
-        let mechanicNavLink = null;
-        let mechanicActionLink = null;
 
         const visibilityState = {
           isAuthenticated: false,
@@ -178,44 +192,8 @@
         const normalizeText = (t = "") =>
           t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
 
-        const ensureMechanicControls = () => {
-          const shouldShowMechanicActions = visibilityState.isAuthenticated && visibilityState.isMechanic;
-
-          if (shouldShowMechanicActions) {
-            if (!mechanicNavLink && nav) {
-              mechanicNavLink = document.createElement("a");
-              mechanicNavLink.href = "./registro-taller.html";
-              mechanicNavLink.className = "nav-link";
-              mechanicNavLink.dataset.visibleFor = "mecanico";
-              mechanicNavLink.dataset.authVisibility = "authenticated";
-              mechanicNavLink.textContent = "Registrar Taller";
-              nav.appendChild(mechanicNavLink);
-            }
-
-            if (!mechanicActionLink && headerActions) {
-              mechanicActionLink = document.createElement("a");
-              mechanicActionLink.href = "./registro-taller.html";
-              mechanicActionLink.className = "button ghost";
-              mechanicActionLink.dataset.visibleFor = "mecanico";
-              mechanicActionLink.dataset.authVisibility = "authenticated";
-              mechanicActionLink.textContent = "Registrar Taller";
-              headerActions.appendChild(mechanicActionLink);
-            }
-          } else {
-            if (mechanicNavLink) {
-              mechanicNavLink.remove();
-              mechanicNavLink = null;
-            }
-
-            if (mechanicActionLink) {
-              mechanicActionLink.remove();
-              mechanicActionLink = null;
-            }
-          }
-        };
-
         const applyVisibilityState = () => {
-          const { isAuthenticated } = visibilityState;
+          const { isAuthenticated, isMechanic } = visibilityState;
 
           unauthenticatedOnlyElements.forEach((el) => {
             if (isAuthenticated) {
@@ -233,7 +211,13 @@
             }
           });
 
-          ensureMechanicControls();
+          mechanicOnlyElements.forEach((el) => {
+            if (isAuthenticated && isMechanic) {
+              el.removeAttribute("hidden");
+            } else {
+              el.setAttribute("hidden", "");
+            }
+          });
         };
 
         const verifyMechanicProfile = async () => {
