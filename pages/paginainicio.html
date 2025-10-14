@@ -15,16 +15,6 @@
     <!-- Tus estilos -->
     <link rel="stylesheet" href="../Styles/paginainicio.css" />
 
-    <!-- Estilos mínimos específicos del mapa -->
-    <style>
-      .map-container { height: 420px; width: 100%; border-radius: 12px; }
-      @media (max-width: 768px) { .map-container { height: 300px; } }
-      .map-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
-      .map-controls input { flex:1; min-width:230px; padding:10px 12px; }
-      .map-controls select, .map-controls button { padding:10px 12px; }
-      .form-feedback { color:#b45454; margin-top:6px; }
-      .location-status { margin: 6px 0 10px; color:#6b7280; }
-    </style>
   </head>
 
   <body>
@@ -35,18 +25,22 @@
       </div>
       <nav class="main-nav" aria-label="Principal">
         <a href="#inicio" class="nav-link active">Inicio</a>
-        <a href="#citas" class="nav-link">Citas</a>
         <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
         <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
         <a href="#ubicacion" class="nav-link">Ubicación</a>
-        <a href="./perfil.html" class="nav-link">Perfil</a>
-        <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>Registrar Taller</a>
+        <a
+          href="./perfil.html"
+          class="nav-link"
+          data-auth-visibility="authenticated"
+          hidden
+        >
+          Perfil
+        </a>
       </nav>
       <div class="header-actions">
         <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
         <a href="#agendar" class="button button-primary">Agendar Cita</a>
-        <a href="./perfil.html" class="button ghost">Mi Perfil</a>
-        <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>Registrar Taller</a>
+        <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
       </div>
     </header>
 
@@ -169,36 +163,105 @@
       document.addEventListener("DOMContentLoaded", () => {
         const searchInput = document.getElementById("search-input");
         const searchResults = document.getElementById("search-results");
-        const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
+        const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
+        const nav = document.querySelector(".main-nav");
+        const headerActions = document.querySelector(".header-actions");
+        let mechanicNavLink = null;
+        let mechanicActionLink = null;
+
+        const visibilityState = {
+          isAuthenticated: false,
+          isMechanic: false,
+        };
 
         const normalizeText = (t = "") =>
           t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
 
-        const updateMechanicElementsVisibility = (shouldShow) => {
-          mechanicOnlyElements.forEach((el) => (shouldShow ? el.removeAttribute("hidden") : el.setAttribute("hidden", "")));
+        const ensureMechanicControls = () => {
+          const shouldShowMechanicActions = visibilityState.isAuthenticated && visibilityState.isMechanic;
+
+          if (shouldShowMechanicActions) {
+            if (!mechanicNavLink && nav) {
+              mechanicNavLink = document.createElement("a");
+              mechanicNavLink.href = "./registro-taller.html";
+              mechanicNavLink.className = "nav-link";
+              mechanicNavLink.dataset.visibleFor = "mecanico";
+              mechanicNavLink.dataset.authVisibility = "authenticated";
+              mechanicNavLink.textContent = "Registrar Taller";
+              nav.appendChild(mechanicNavLink);
+            }
+
+            if (!mechanicActionLink && headerActions) {
+              mechanicActionLink = document.createElement("a");
+              mechanicActionLink.href = "./registro-taller.html";
+              mechanicActionLink.className = "button ghost";
+              mechanicActionLink.dataset.visibleFor = "mecanico";
+              mechanicActionLink.dataset.authVisibility = "authenticated";
+              mechanicActionLink.textContent = "Registrar Taller";
+              headerActions.appendChild(mechanicActionLink);
+            }
+          } else {
+            if (mechanicNavLink) {
+              mechanicNavLink.remove();
+              mechanicNavLink = null;
+            }
+
+            if (mechanicActionLink) {
+              mechanicActionLink.remove();
+              mechanicActionLink = null;
+            }
+          }
         };
-        const updateAuthVisibility = (isAuthenticated) => {
-          unauthenticatedOnlyElements.forEach((el) => (isAuthenticated ? el.setAttribute("hidden", "") : el.removeAttribute("hidden")));
+
+        const applyVisibilityState = () => {
+          const { isAuthenticated } = visibilityState;
+
+          unauthenticatedOnlyElements.forEach((el) => {
+            if (isAuthenticated) {
+              el.setAttribute("hidden", "");
+            } else {
+              el.removeAttribute("hidden");
+            }
+          });
+
+          authenticatedOnlyElements.forEach((el) => {
+            if (isAuthenticated) {
+              el.removeAttribute("hidden");
+            } else {
+              el.setAttribute("hidden", "");
+            }
+          });
+
+          ensureMechanicControls();
         };
 
         const verifyMechanicProfile = async () => {
           try {
             const response = await fetch("/api/profile");
             if (!response.ok) {
-              if (response.status === 401) { updateMechanicElementsVisibility(false); updateAuthVisibility(false); return; }
+              if (response.status === 401) {
+                visibilityState.isAuthenticated = false;
+                visibilityState.isMechanic = false;
+                applyVisibilityState();
+                return;
+              }
               throw new Error("No se pudo obtener el perfil del usuario");
             }
             const profile = await response.json();
-            updateMechanicElementsVisibility(profile?.accountType === "mecanico");
-            updateAuthVisibility(true);
+            visibilityState.isAuthenticated = true;
+            visibilityState.isMechanic = profile?.accountType === "mecanico";
+            applyVisibilityState();
           } catch (e) {
             console.error(e);
-            updateMechanicElementsVisibility(false);
-            updateAuthVisibility(false);
+            visibilityState.isAuthenticated = false;
+            visibilityState.isMechanic = false;
+            applyVisibilityState();
           }
         };
         verifyMechanicProfile();
+
+        applyVisibilityState();
 
         const servicios = [
           { nombre:"Mantenimiento General", descripcion:"Incluye revisión completa de fluidos y ajustes básicos.", enlace:"#", tipo:"Servicio" },
