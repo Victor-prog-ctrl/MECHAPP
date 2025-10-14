@@ -23,6 +23,43 @@ function getAccountTypeLabel(accountType) {
     return "Cliente";
 }
 
+function getVisitTypeLabel(visitType) {
+    if (visitType === "domicilio") {
+        return "Visita a domicilio";
+    }
+    return "Presencial en taller";
+}
+
+function getStatusLabel(status) {
+    switch (status) {
+        case "confirmado":
+            return "Confirmado";
+        case "completado":
+            return "Completado";
+        case "cancelado":
+            return "Cancelado";
+        default:
+            return "Pendiente";
+    }
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) {
+        return "";
+    }
+
+    try {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat("es", {
+            dateStyle: "medium",
+            timeStyle: "short",
+        }).format(date);
+    } catch (error) {
+        console.error("No se pudo formatear la fecha y hora", error);
+        return dateString;
+    }
+}
+
 function getInitials(name) {
     if (!name) {
         return "";
@@ -78,6 +115,120 @@ function renderProfile(profile) {
     }
 }
 
+function toggleMechanicSection(visible) {
+    const mechanicSection = document.querySelector("[data-mechanic-section]");
+    if (!mechanicSection) {
+        return;
+    }
+    mechanicSection.hidden = !visible;
+}
+
+function renderMechanicRequests(requests, { errorMessage } = {}) {
+    const container = document.querySelector("[data-mechanic-requests]");
+    const emptyState = document.querySelector("[data-mechanic-empty]");
+
+    if (!container) {
+        return;
+    }
+
+    const normalizedRequests = Array.isArray(requests) ? requests : [];
+
+    if (!normalizedRequests.length) {
+        container.innerHTML = "";
+        if (emptyState) {
+            emptyState.textContent = errorMessage ||
+                "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+            emptyState.hidden = false;
+        }
+        return;
+    }
+
+    if (emptyState) {
+        emptyState.hidden = true;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    normalizedRequests.forEach((request) => {
+        const article = document.createElement("article");
+        article.className = "request-card";
+
+        const header = document.createElement("div");
+        header.className = "request-header";
+
+        const title = document.createElement("h3");
+        title.textContent = request.service || "Servicio solicitado";
+        header.appendChild(title);
+
+        const status = document.createElement("span");
+        status.className = "request-status";
+        status.textContent = getStatusLabel(request.status);
+        header.appendChild(status);
+
+        article.appendChild(header);
+
+        const meta = document.createElement("div");
+        meta.className = "request-meta";
+
+        const clientName = request?.client?.name || "Cliente";
+        const clientEmail = request?.client?.email || "";
+
+        const metaItems = [
+            `${getVisitTypeLabel(request.visitType)}`,
+            formatDateTime(request.scheduledFor),
+            request.address || "Sin dirección",
+            clientEmail ? `${clientName} · ${clientEmail}` : clientName,
+        ];
+
+        if (request.clientLocation && request.clientLocation.latitude !== null && request.clientLocation.longitude !== null) {
+            const { latitude, longitude } = request.clientLocation;
+            metaItems.push(`Ubicación aproximada: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        }
+
+        metaItems
+            .filter(Boolean)
+            .forEach((item) => {
+                const span = document.createElement("span");
+                span.textContent = item;
+                meta.appendChild(span);
+            });
+
+        article.appendChild(meta);
+
+        if (request.notes) {
+            const notes = document.createElement("p");
+            notes.className = "request-notes";
+            notes.textContent = request.notes;
+            article.appendChild(notes);
+        }
+
+        fragment.appendChild(article);
+    });
+
+    container.innerHTML = "";
+    container.appendChild(fragment);
+}
+
+async function fetchMechanicRequests() {
+    const response = await fetch("/api/appointments/requests");
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return [];
+    }
+
+    if (response.status === 403) {
+        return [];
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudieron obtener las solicitudes de citas.");
+    }
+
+    const data = await response.json();
+    return Array.isArray(data?.requests) ? data.requests : [];
+}
+
 async function setupProfilePage() {
     try {
         const profile = await fetchProfile();
@@ -86,6 +237,23 @@ async function setupProfilePage() {
         }
 
         renderProfile(profile);
+
+        const isMechanic = profile.accountType === "mecanico";
+        toggleMechanicSection(isMechanic);
+
+        if (isMechanic) {
+            try {
+                const requests = await fetchMechanicRequests();
+                renderMechanicRequests(requests);
+            } catch (error) {
+                console.error(error);
+                renderMechanicRequests([], {
+                    errorMessage: "No se pudieron cargar las solicitudes. Intenta nuevamente más tarde.",
+                });
+            }
+        } else {
+            renderMechanicRequests([]);
+        }
     } catch (error) {
         console.error(error);
     }

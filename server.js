@@ -57,6 +57,29 @@ function ensureCertificatePathColumn() {
 ensureCertificateStatusColumn();
 ensureCertificatePathColumn();
 
+function ensureAppointmentsTable() {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      mechanic_id INTEGER NOT NULL,
+      service TEXT NOT NULL,
+      visit_type TEXT NOT NULL CHECK (visit_type IN ('presencial','domicilio')),
+      scheduled_for TEXT NOT NULL,
+      address TEXT,
+      notes TEXT,
+      client_latitude REAL,
+      client_longitude REAL,
+      status TEXT NOT NULL DEFAULT 'pendiente',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES users(id),
+      FOREIGN KEY (mechanic_id) REFERENCES users(id)
+    )
+  `).run();
+}
+
+ensureAppointmentsTable();
+
 const certificatesDir = path.join(dataDir, 'certificates');
 fs.mkdirSync(certificatesDir, { recursive: true });
 const certificatesDirNormalized = path.normalize(certificatesDir + path.sep);
@@ -267,6 +290,21 @@ function requireAdmin(req, res, next) {
   }
 }
 
+function requireMechanic(req, res, next) {
+  try {
+    const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
+
+    if (!user || user.account_type !== 'mecanico') {
+      return res.status(403).json({ error: 'Acceso disponible solo para mecánicos.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error verificando privilegios de mecánico', error);
+    res.status(500).json({ error: 'No se pudieron validar los permisos.' });
+  }
+}
+
 app.post('/api/register', async (req, res) => {
   let certificatePath = null;
   try {
@@ -419,6 +457,193 @@ app.get('/api/profile', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Error obteniendo perfil', error);
     res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+  }
+});
+
+app.get('/api/mechanics', requireAuth, (req, res) => {
+  try {
+    const mechanics = db
+      .prepare(
+        `SELECT id, name, email
+         FROM users
+         WHERE account_type = 'mecanico' AND certificate_status = 'validado'
+         ORDER BY name COLLATE NOCASE`
+      )
+      .all();
+
+    res.json({
+      mechanics: mechanics.map((mechanic) => ({
+        id: mechanic.id,
+        name: mechanic.name,
+        email: mechanic.email,
+      })),
+    });
+  } catch (error) {
+    console.error('Error obteniendo mecánicos disponibles', error);
+    res.status(500).json({ error: 'No se pudieron obtener los mecánicos disponibles.' });
+  }
+});
+
+app.post('/api/appointments', requireAuth, (req, res) => {
+  try {
+    const currentUser = db
+      .prepare(`SELECT id, account_type FROM users WHERE id = ?`)
+      .get(req.session.userId);
+
+    if (!currentUser) {
+      return res.status(401).json({ error: 'No autorizado.' });
+    }
+
+    if (currentUser.account_type === 'mecanico') {
+      return res.status(403).json({ error: 'Los mecánicos no pueden agendar citas.' });
+    }
+
+    const {
+      mechanicId,
+      service,
+      visitType,
+      scheduledFor,
+      notes,
+      address,
+      clientLatitude,
+      clientLongitude,
+    } = req.body;
+
+    const parsedMechanicId = Number.parseInt(mechanicId, 10);
+    const normalizedService = typeof service === 'string' ? service.trim() : '';
+    const normalizedVisitType = visitType === 'domicilio' ? 'domicilio' : 'presencial';
+    const normalizedAddress = typeof address === 'string' ? address.trim() : '';
+    const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
+
+    if (!Number.isInteger(parsedMechanicId) || parsedMechanicId <= 0) {
+      return res.status(400).json({ error: 'Selecciona un mecánico válido.' });
+    }
+
+    if (!normalizedService) {
+      return res.status(400).json({ error: 'Indica el servicio requerido.' });
+    }
+
+    if (!scheduledFor || typeof scheduledFor !== 'string') {
+      return res.status(400).json({ error: 'Selecciona la fecha y hora de la visita.' });
+    }
+
+    const scheduledDate = new Date(scheduledFor);
+    if (Number.isNaN(scheduledDate.getTime())) {
+      return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
+    }
+
+    if (!normalizedAddress) {
+      const message =
+        normalizedVisitType === 'domicilio'
+          ? 'Indica la dirección para la visita a domicilio.'
+          : 'Indica la ubicación del taller para la visita.';
+      return res.status(400).json({ error: message });
+    }
+
+    const mechanic = db
+      .prepare(
+        `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
+      )
+      .get(parsedMechanicId);
+
+    if (!mechanic) {
+      return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
+    }
+
+    const parseCoordinate = (value) => {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const insert = db.prepare(
+      `INSERT INTO appointments (
+        client_id,
+        mechanic_id,
+        service,
+        visit_type,
+        scheduled_for,
+        address,
+        notes,
+        client_latitude,
+        client_longitude
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    const result = insert.run(
+      currentUser.id,
+      parsedMechanicId,
+      normalizedService,
+      normalizedVisitType,
+      scheduledDate.toISOString(),
+      normalizedAddress,
+      trimmedNotes || null,
+      parseCoordinate(clientLatitude),
+      parseCoordinate(clientLongitude)
+    );
+
+    res.status(201).json({
+      message: 'Cita agendada correctamente.',
+      appointmentId: result.lastInsertRowid,
+    });
+  } catch (error) {
+    console.error('Error al agendar la cita', error);
+    res.status(500).json({ error: 'Ocurrió un error al agendar la cita.' });
+  }
+});
+
+app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) => {
+  try {
+    const requests = db
+      .prepare(
+        `SELECT
+          a.id,
+          a.service,
+          a.visit_type,
+          a.scheduled_for,
+          a.address,
+          a.notes,
+          a.status,
+          a.created_at,
+          a.client_latitude,
+          a.client_longitude,
+          u.name AS client_name,
+          u.email AS client_email
+        FROM appointments a
+        JOIN users u ON u.id = a.client_id
+        WHERE a.mechanic_id = ?
+        ORDER BY datetime(a.scheduled_for) ASC`
+      )
+      .all(req.session.userId);
+
+    res.json({
+      requests: requests.map((request) => ({
+        id: request.id,
+        service: request.service,
+        visitType: request.visit_type,
+        scheduledFor: request.scheduled_for,
+        address: request.address,
+        notes: request.notes,
+        status: request.status,
+        createdAt: request.created_at,
+        client: {
+          name: request.client_name,
+          email: request.client_email,
+        },
+        clientLocation:
+          request.client_latitude !== null && request.client_longitude !== null
+            ? {
+                latitude: request.client_latitude,
+                longitude: request.client_longitude,
+              }
+            : null,
+      })),
+    });
+  } catch (error) {
+    console.error('Error obteniendo solicitudes de citas', error);
+    res.status(500).json({ error: 'No se pudieron obtener las solicitudes de citas.' });
   }
 });
 

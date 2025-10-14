@@ -427,6 +427,77 @@ main {
     color: var(--accent);
 }
 
+.mechanic-requests {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.requests-list {
+    display: grid;
+    gap: 18px;
+}
+
+.request-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    background: var(--surface-alt);
+    display: grid;
+    gap: 12px;
+}
+
+.request-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.request-header h3 {
+    font-size: 1.1rem;
+}
+
+.request-status {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.24);
+}
+
+.request-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.request-meta span {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.request-notes {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.empty-state {
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
 .site-footer {
     width: min(1120px, 100%);
     text-align: center;
@@ -473,7 +544,8 @@ main {
 
     .profile-summary,
     .history,
-    .scores {
+    .scores,
+    .mechanic-requests {
         padding: 28px;
     }
 
