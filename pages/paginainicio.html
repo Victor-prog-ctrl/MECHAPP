@@ -39,8 +39,6 @@
         <a
           href="./registro-taller.html"
           class="nav-link"
-          data-auth-visibility="authenticated"
-          data-visible-for="mecanico"
           data-visible-for="mecanico"
           data-auth-visibility="authenticated"
           hidden
@@ -55,8 +53,6 @@
         <a
           href="./registro-taller.html"
           class="button ghost"
-          data-auth-visibility="authenticated"
-          data-visible-for="mecanico"
           data-visible-for="mecanico"
           data-auth-visibility="authenticated"
           hidden
@@ -185,7 +181,6 @@
       document.addEventListener("DOMContentLoaded", () => {
         const searchInput = document.getElementById("search-input");
         const searchResults = document.getElementById("search-results");
-        const visibilityTargets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
         const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
 
@@ -197,42 +192,6 @@
         const normalizeText = (t = "") =>
           t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
 
-        const setElementVisibility = (el, shouldShow) => {
-          if (shouldShow) {
-            el.removeAttribute("hidden");
-          } else {
-            el.setAttribute("hidden", "");
-          }
-        };
-
-        const applyVisibilityState = () => {
-          const { isAuthenticated, isMechanic } = visibilityState;
-
-          visibilityTargets.forEach((el) => {
-            let shouldShow = true;
-            const authVisibility = el.dataset.authVisibility;
-            const visibleFor = el.dataset.visibleFor;
-
-            if (authVisibility === "unauthenticated") {
-              shouldShow = !isAuthenticated;
-            } else if (authVisibility === "authenticated") {
-              shouldShow = isAuthenticated;
-            }
-
-            if (shouldShow && visibleFor) {
-              switch (visibleFor) {
-                case "mecanico":
-                  shouldShow = isMechanic;
-                  break;
-                case "usuario":
-                  shouldShow = isAuthenticated && !isMechanic;
-                  break;
-                default:
-                  break;
-              }
-            }
-
-            setElementVisibility(el, shouldShow);
         const applyVisibilityState = () => {
           const { isAuthenticated, isMechanic } = visibilityState;
 
