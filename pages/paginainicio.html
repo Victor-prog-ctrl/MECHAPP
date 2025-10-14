@@ -41,6 +41,8 @@
           class="nav-link"
           data-auth-visibility="authenticated"
           data-visible-for="mecanico"
+          data-visible-for="mecanico"
+          data-auth-visibility="authenticated"
           hidden
         >
           Registrar Taller
@@ -55,6 +57,8 @@
           class="button ghost"
           data-auth-visibility="authenticated"
           data-visible-for="mecanico"
+          data-visible-for="mecanico"
+          data-auth-visibility="authenticated"
           hidden
         >
           Registrar Taller
@@ -182,6 +186,8 @@
         const searchInput = document.getElementById("search-input");
         const searchResults = document.getElementById("search-results");
         const visibilityTargets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
+        const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
+        const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
 
         const visibilityState = {
           isAuthenticated: false,
@@ -227,6 +233,31 @@
             }
 
             setElementVisibility(el, shouldShow);
+        const applyVisibilityState = () => {
+          const { isAuthenticated, isMechanic } = visibilityState;
+
+          unauthenticatedOnlyElements.forEach((el) => {
+            if (isAuthenticated) {
+              el.setAttribute("hidden", "");
+            } else {
+              el.removeAttribute("hidden");
+            }
+          });
+
+          authenticatedOnlyElements.forEach((el) => {
+            if (isAuthenticated) {
+              el.removeAttribute("hidden");
+            } else {
+              el.setAttribute("hidden", "");
+            }
+          });
+
+          mechanicOnlyElements.forEach((el) => {
+            if (isAuthenticated && isMechanic) {
+              el.removeAttribute("hidden");
+            } else {
+              el.setAttribute("hidden", "");
+            }
           });
         };
 
