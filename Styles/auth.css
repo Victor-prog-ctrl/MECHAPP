@@ -176,7 +176,7 @@ form {
     background: var(--surface);
     color: var(--text);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
 }
 
 .password-toggle-button:focus {
@@ -217,8 +217,8 @@ select {
 
 input:focus {
     outline: none;
-    border-color: rgba(99, 102, 241, 0.6);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+    border-color: rgba(249, 115, 22, 0.6);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
 }
 
 input[aria-invalid="true"],
