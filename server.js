@@ -197,7 +197,8 @@ app.use(helmet({
         "https://*.tile.openstreetmap.org",
         "https://*.openstreetmap.org",
         "https://maps.googleapis.com",
-        "https://maps.gstatic.com"
+        "https://maps.gstatic.com",
+        "https://images.unsplash.com"
       ],
 
       // ✅ Fuentes
