@@ -1,93 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <title>MechApp · Iniciar Sesión</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Inicia sesión para gestionar tus servicios automotrices." />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="../Styles/auth.css" />
-    </head>
-    <body>
-        <main>
-            <section class="auth-card" aria-labelledby="login-title">
-                <div class="brand" aria-label="AutoServ">
-                    <a class="brand-link" href="./paginainicio.html">
-                        <div class="brand-icon" aria-hidden="true"></div>
-                        <span>Mechapp</span>
-                    </a>
-                    <a class="back-home" href="./paginainicio.html">Volver al inicio</a>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>MechApp · Iniciar Sesión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Inicia sesión para gestionar tus servicios automotrices." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../Styles/auth.css" />
+</head>
+
+<body>
+    <main>
+        <section class="auth-card" aria-labelledby="login-title">
+            <div class="brand" aria-label="AutoServ">
+                <a class="brand-link" href="./paginainicio.html">
+                    <img src="../assets/logo-oscuro.png" alt="Logo Mechapp" width="90" height="90">
+                    <span>Mechapp</span>
+                </a>
+                <a class="back-home" href="./paginainicio.html">Volver al inicio</a>
+            </div>
+
+            <header class="auth-header">
+                <h1 id="login-title">Bienvenido de nuevo</h1>
+                <p>Accede a tu cuenta para agendar citas, enviar mensajes y revisar tu historial.</p>
+            </header>
+
+            <form id="login-form" data-form="login" novalidate>
+                <div class="field">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" name="email" placeholder="nombre@correo.com" autocomplete="email"
+                        required aria-describedby="login-email-error" />
+                    <p class="error-message" id="login-email-error" aria-live="polite"></p>
                 </div>
-
-                <header class="auth-header">
-                    <h1 id="login-title">Bienvenido de nuevo</h1>
-                    <p>Accede a tu cuenta para agendar citas, enviar mensajes y revisar tu historial.</p>
-                </header>
-
-                <form id="login-form" data-form="login" novalidate>
-                    <div class="field">
-                        <label for="email">Correo electrónico</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="nombre@correo.com"
-                            autocomplete="email"
-                            required
-                            aria-describedby="login-email-error"
-                        />
-                        <p class="error-message" id="login-email-error" aria-live="polite"></p>
+                <div class="field">
+                    <label for="password">Contraseña</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña"
+                            autocomplete="current-password" required aria-describedby="login-password-error"
+                            data-password-input />
+                        <button type="button" class="password-toggle-button" aria-label="Mostrar contraseña"
+                            aria-pressed="false" data-password-toggle>
+                            <span class="password-toggle-icon" aria-hidden="true"></span>
+                        </button>
                     </div>
-                    <div class="field">
-                        <label for="password">Contraseña</label>
-                        <div class="password-input">
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                placeholder="Ingresa tu contraseña"
-                                autocomplete="current-password"
-                                required
-                                aria-describedby="login-password-error"
-                                data-password-input
-                            />
-                            <button
-                                type="button"
-                                class="password-toggle-button"
-                                aria-label="Mostrar contraseña"
-                                aria-pressed="false"
-                                data-password-toggle
-                            >
-                                <span class="password-toggle-icon" aria-hidden="true"></span>
-                            </button>
-                        </div>
-                        <p class="error-message" id="login-password-error" aria-live="polite"></p>
-                    </div>
-                    <div class="inline">
-                        <label for="remember">
-                            <input type="checkbox" id="remember" name="remember" /> Recuérdame
-                        </label>
-                        <a href="./recuperar-contrasena.html">¿Olvidaste tu contraseña?</a>
-                    </div>
-                    <p class="form-status" data-form-status hidden aria-live="polite"></p>
-                    <div class="actions">
-                        <button type="submit" class="button" disabled aria-disabled="true">Iniciar sesión</button>
-                    </div>
-                </form>
-
-                <div class="auxiliary">
-                    <span>¿Aún no tienes una cuenta?</span>
-                    <a href="./registro.html">Crear cuenta</a>
+                    <p class="error-message" id="login-password-error" aria-live="polite"></p>
                 </div>
-            </section>
-        </main>
-        <script src="../src/password-visibility.js" defer></script>
-        <script src="../src/auth-forms.js" defer></script>
-    </body>
+                <div class="inline">
+                    <label for="remember">
+                        <input type="checkbox" id="remember" name="remember" /> Recuérdame
+                    </label>
+                    <a href="./recuperar-contrasena.html">¿Olvidaste tu contraseña?</a>
+                </div>
+                <p class="form-status" data-form-status hidden aria-live="polite"></p>
+                <div class="actions">
+                    <button type="submit" class="button" disabled aria-disabled="true">Iniciar sesión</button>
+                </div>
+            </form>
+
+            <div class="auxiliary">
+                <span>¿Aún no tienes una cuenta?</span>
+                <a href="./registro.html">Crear cuenta</a>
+            </div>
+        </section>
+    </main>
+    <script src="../src/password-visibility.js" defer></script>
+    <script src="../src/auth-forms.js" defer></script>
+</body>
+
 </html>
