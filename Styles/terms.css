@@ -2,12 +2,15 @@
     color-scheme: dark light;
     font-size: 16px;
     --bg: #0f172a;
-    --bg-alt: #1f2937;
+    --bg-alt: #1e293b;
     --surface: #ffffff;
+    --surface-alt: #f8fafc;
     --surface-dark: rgba(15, 23, 42, 0.8);
     --text: #0f172a;
     --text-muted: #475569;
     --accent: #f97316;
+    --accent-dark: #ea580c;
+    --border: rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -83,7 +86,7 @@ body {
     align-self: flex-start;
     padding: 6px 14px;
     border-radius: 999px;
-    background: var(--surface-alt);
+    background: rgba(249, 115, 22, 0.12);
     color: var(--accent);
     font-weight: 600;
     font-size: 0.85rem;
