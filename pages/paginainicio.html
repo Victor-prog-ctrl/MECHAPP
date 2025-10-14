@@ -41,8 +41,6 @@
           class="nav-link"
           data-auth-visibility="authenticated"
           data-visible-for="mecanico"
-          data-visible-for="mecanico"
-          data-auth-visibility="authenticated"
           hidden
         >
           Registrar Taller
@@ -57,8 +55,6 @@
           class="button ghost"
           data-auth-visibility="authenticated"
           data-visible-for="mecanico"
-          data-visible-for="mecanico"
-          data-auth-visibility="authenticated"
           hidden
         >
           Registrar Taller
@@ -188,6 +184,8 @@
         const visibilityTargets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
         const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
         const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
+        const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
+        const userOnlyElements = document.querySelectorAll('[data-visible-for="usuario"]');
 
         const visibilityState = {
           isAuthenticated: false,
@@ -208,56 +206,27 @@
         const applyVisibilityState = () => {
           const { isAuthenticated, isMechanic } = visibilityState;
 
-          visibilityTargets.forEach((el) => {
-            let shouldShow = true;
-            const authVisibility = el.dataset.authVisibility;
-            const visibleFor = el.dataset.visibleFor;
-
-            if (authVisibility === "unauthenticated") {
-              shouldShow = !isAuthenticated;
-            } else if (authVisibility === "authenticated") {
-              shouldShow = isAuthenticated;
-            }
-
-            if (shouldShow && visibleFor) {
-              switch (visibleFor) {
-                case "mecanico":
-                  shouldShow = isMechanic;
-                  break;
-                case "usuario":
-                  shouldShow = isAuthenticated && !isMechanic;
-                  break;
-                default:
-                  break;
-              }
-            }
-
-            setElementVisibility(el, shouldShow);
-        const applyVisibilityState = () => {
-          const { isAuthenticated, isMechanic } = visibilityState;
-
           unauthenticatedOnlyElements.forEach((el) => {
-            if (isAuthenticated) {
-              el.setAttribute("hidden", "");
-            } else {
-              el.removeAttribute("hidden");
-            }
+            setElementVisibility(el, !isAuthenticated);
           });
 
           authenticatedOnlyElements.forEach((el) => {
-            if (isAuthenticated) {
-              el.removeAttribute("hidden");
-            } else {
-              el.setAttribute("hidden", "");
-            }
+            setElementVisibility(el, isAuthenticated);
           });
 
           mechanicOnlyElements.forEach((el) => {
-            if (isAuthenticated && isMechanic) {
-              el.removeAttribute("hidden");
-            } else {
-              el.setAttribute("hidden", "");
+            setElementVisibility(el, isAuthenticated && isMechanic);
+          });
+
+          userOnlyElements.forEach((el) => {
+            setElementVisibility(el, isAuthenticated && !isMechanic);
+          });
+
+          visibilityTargets.forEach((el) => {
+            if (el.dataset.authVisibility || el.dataset.visibleFor) {
+              return;
             }
+            setElementVisibility(el, true);
           });
         };
 
