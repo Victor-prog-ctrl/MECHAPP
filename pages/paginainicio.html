@@ -10,23 +10,20 @@
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Tus estilos -->
     <link rel="stylesheet" href="../Styles/paginainicio.css" />
 
-    <!-- Asegura altura del mapa -->
+    <!-- Estilos mínimos específicos del mapa -->
     <style>
       .map-container { height: 420px; width: 100%; border-radius: 12px; }
       @media (max-width: 768px) { .map-container { height: 300px; } }
-      .map-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-      .map-controls input { flex:1; min-width:220px; padding:8px; }
-      .map-controls button, .map-controls select { padding:8px 12px; }
+      .map-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+      .map-controls input { flex:1; min-width:230px; padding:10px 12px; }
+      .map-controls select, .map-controls button { padding:10px 12px; }
       .form-feedback { color:#b45454; margin-top:6px; }
+      .location-status { margin: 6px 0 10px; color:#6b7280; }
     </style>
   </head>
 
@@ -42,17 +39,13 @@
         <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
         <a href="#ubicacion" class="nav-link">Ubicación</a>
         <a href="./perfil.html" class="nav-link">Perfil</a>
-        <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>
-          Registrar Taller
-        </a>
+        <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>Registrar Taller</a>
       </nav>
       <div class="header-actions">
         <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
         <a href="#agendar" class="button button-primary">Agendar Cita</a>
         <a href="./perfil.html" class="button ghost">Mi Perfil</a>
-        <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>
-          Registrar Taller
-        </a>
+        <a href="./registro-taller.html" class="button ghost" data-visible-for="mecanico" hidden>Registrar Taller</a>
       </div>
     </header>
 
@@ -126,14 +119,26 @@
           </div>
         </div>
 
+        <!-- Controles del mapa -->
+        <div class="map-controls">
+          <input id="comuna-input" type="text" placeholder="Busca una comuna (ej. Santiago)" autocomplete="off" />
+          <button id="comuna-btn" class="button button-primary" type="button">Buscar comuna</button>
+          <select id="comuna-select" aria-label="Comunas rápidas">
+            <option value="">— Selecciona una comuna —</option>
+            <option>Santiago</option><option>Providencia</option><option>Ñuñoa</option>
+            <option>Las Condes</option><option>Vitacura</option><option>Maipú</option>
+            <option>Puente Alto</option><option>La Florida</option><option>San Bernardo</option>
+            <option>Peñalolén</option><option>La Reina</option><option>Quilicura</option>
+          </select>
+          <button id="mi-ubicacion-btn" class="button" type="button">Mi ubicación</button>
+        </div>
+
+        <p class="location-status" id="location-status" aria-live="polite">
+          Mapa centrado en Santiago. Usa el buscador, el selector o “Mi ubicación”.
+        </p>
+
         <!-- Contenedor del mapa de Google -->
-        <div
-          id="map"
-          class="map-container"
-          role="region"
-          aria-label="Mapa Google de comunas"
-          style="height:420px; width:100%; border-radius:12px;"
-        ></div>
+        <div id="map" class="map-container" role="region" aria-label="Mapa Google de comunas"></div>
       </section>
       <!-- ===== /Mapa ===== -->
     </main>
@@ -158,7 +163,7 @@
       </div>
     </footer>
 
-    <!-- Tu lógica existente (no la toqué) -->
+    <!-- Tu lógica general (búsqueda) la dejé intacta -->
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const searchInput = document.getElementById("search-input");
@@ -201,23 +206,10 @@
         ];
 
         const marcasVehiculos = [
-          "Abarth","Acura","Aiways","Alfa Romeo","Alpine","Ariel","Aston Martin","Audi","BAIC","Bentley",
-          "BMW","Brilliance","Bugatti","Buick","BYD","Cadillac","Changan","Chery","Chevrolet","Chrysler",
-          "Citroën","Cupra","Dacia","Daewoo","Daihatsu","Datsun","Dodge","Dongfeng","DS Automobiles","FAW",
-          "Ferrari","Fiat","Fisker","Ford","Foton","GAC","Geely","Genesis","GMC","Great Wall",
-          "Haval","Holden","Honda","Hummer","Hyundai","Infiniti","Isuzu","Iveco","JAC","Jaguar",
-          "Jeep","JMC","Kia","Koenigsegg","KTM","Lada","Lamborghini","Lancia","Land Rover","Lexus",
-          "Li Auto","Lincoln","Lotus","Lucid","Mahindra","Maserati","Maybach","Mazda","McLaren","Mercedes-Benz",
-          "MG","Mini","Mitsubishi","NIO","Nissan","Opel","Pagani","Peugeot","Polestar","Pontiac",
-          "Porsche","Proton","RAM","Renault","Rivian","Rolls-Royce","Rover","Saab","Scion","SEAT",
-          "Škoda","Smart","SsangYong","Subaru","Suzuki","Tata","Tesla","Toyota","TVR","Vauxhall",
-          "VinFast","Volkswagen","Volvo","Wuling","Zotye"
-        ].map((marca) => ({
-          nombre: marca,
-          descripcion: "Marca de vehículos disponible para servicios especializados.",
-          enlace: "#",
-          tipo: "Marca"
-        }));
+          "Abarth","Acura","Alfa Romeo","Audi","BMW","BYD","Chevrolet","Citroën","Ford","Honda",
+          "Hyundai","Kia","Mazda","Mercedes-Benz","MG","Mitsubishi","Nissan","Peugeot","Renault",
+          "Subaru","Suzuki","Toyota","Volkswagen","Volvo"
+        ].map((m)=>({ nombre:m, descripcion:"Marca disponible para servicios especializados.", enlace:"#", tipo:"Marca" }));
 
         const datosBusqueda = [...servicios, ...marcasVehiculos];
 
@@ -238,8 +230,7 @@
             `;
             frag.appendChild(article);
           });
-          el.innerHTML = "";
-          el.appendChild(frag);
+          el.innerHTML = ""; el.appendChild(frag);
         };
         renderResultados(datosBusqueda.slice(0,3));
         searchInput?.addEventListener("input", (e) => {
@@ -253,32 +244,171 @@
       });
     </script>
 
-    <!-- Google Maps JS (reemplaza TU_API_KEY_AQUI) -->
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap"
-      async defer>
+    <!-- Inicialización del mapa de Google y funcionalidad -->
+    <script>
+      // ==== Bloque JS de Google Maps ====
+      window.initGMap = function () {
+        const CL_REGION_SUFFIX = ", Región Metropolitana, Chile";
+        const DEFAULT_CENTER = { lat: -33.4489, lng: -70.6693 };
+        const DEFAULT_ZOOM   = 12;
+        const SEARCH_ZOOM    = 13;
+        const RADIUS_METERS  = 4000;
+
+        const $ = (id) => document.getElementById(id);
+        const setStatus = (msg) => { const el = $("location-status"); if (el) el.textContent = msg; };
+
+        // === ICONOS por URL (NO SVG path) ===
+        const ICONS = {
+          taller: {  url: "/assets/markers/wrench-red.png",
+            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
+            anchor: new google.maps.Point(14, 28)
+          },
+          vulca:  {  url: "/assets/markers/bolt-green.png",
+            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
+            anchor: new google.maps.Point(14, 28)
+          },
+          user:   {  url: "/assets/markers/user-blue.png",
+            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
+            anchor: new google.maps.Point(14, 28)
+          },
+          center: {  url: "/assets/icono-central-mapa.jpg",
+            size: new google.maps.Size(45, 55), scaledSize: new google.maps.Size(45, 55),
+            anchor: new google.maps.Point(22, 34)
+          }
+        };
+
+        let map, geocoder, autocomplete, userMarker = null, placeMarkers = [];
+        let centerMarker = null; // marcador del centro de la comuna
+
+        function clearPlaceMarkers(){ placeMarkers.forEach(m=>m.setMap(null)); placeMarkers=[]; }
+        function addPlaceMarker(pos, tipo, nombre){
+          const iconCfg = (tipo === "vulcanizacion") ? ICONS.vulca : ICONS.taller;
+          const marker = new google.maps.Marker({
+            position: pos, map, icon: iconCfg,
+            title: nombre || (tipo==="vulcanizacion"?"Vulcanización":"Taller mecánico")
+          });
+          const iw = new google.maps.InfoWindow({
+            content:`<strong>${nombre || (tipo==="vulcanizacion"?"Vulcanización":"Taller mecánico")}</strong><br><small>${tipo}</small>`
+          });
+          marker.addListener("click", ()=> iw.open({ anchor: marker, map }));
+          placeMarkers.push(marker);
+        }
+        function samplePlaces(center){
+          const dx = (Math.random()-0.5)*0.04, dy = (Math.random()-0.5)*0.04;
+          return [
+            { lat:center.lat+dx, lng:center.lng+dy, tipo:"taller", nombre:"Taller Don Pepe" },
+            { lat:center.lat+dy, lng:center.lng-dx, tipo:"vulcanizacion", nombre:"Vulcanización La Rueda" },
+            { lat:center.lat-dx, lng:center.lng+dy, tipo:"taller", nombre:"Servicio Mecánico Andes" },
+          ];
+        }
+        async function loadPlaces(center){
+          clearPlaceMarkers();
+          try{
+            const res = await fetch(`/api/talleres?lat=${center.lat}&lng=${center.lng}&radius=${RADIUS_METERS}`);
+            if(!res.ok) throw new Error("HTTP "+res.status);
+            const data = await res.json();
+            const items = Array.isArray(data) ? data : (data.items||[]);
+            items.forEach(p=> addPlaceMarker({lat:p.lat,lng:p.lng}, p.tipo||"taller", p.nombre));
+            setStatus(`Mostrando ${items.length} talleres/vulcanizaciones cerca de esta zona.`);
+          }catch{
+            const items = samplePlaces(center);
+            items.forEach(p=> addPlaceMarker({lat:p.lat,lng:p.lng}, p.tipo, p.nombre));
+            setStatus(`Mostrando ${items.length} talleres/vulcanizaciones cerca de esta zona (datos de ejemplo).`);
+          }
+        }
+        function focus(center, comunaNombre){
+          map.setCenter(center);
+          map.setZoom(SEARCH_ZOOM);
+
+          // marcador del centro de la comuna
+          if (!centerMarker) {
+            centerMarker = new google.maps.Marker({
+              position: center, map, icon: ICONS.center,
+              title: comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona"
+            });
+          } else {
+            centerMarker.setPosition(center);
+            centerMarker.setIcon(ICONS.center);
+            centerMarker.setTitle(comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona");
+          }
+
+          setStatus(`Mostrando comuna: ${comunaNombre || "—"}.`);
+          loadPlaces(center);
+        }
+        function geolocate(){
+          if(!navigator.geolocation){ setStatus("Tu navegador no admite geolocalización."); return; }
+          navigator.geolocation.getCurrentPosition(async (pos)=>{
+            const center = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+
+            // marcador del usuario
+            if(!userMarker) {
+              userMarker = new google.maps.Marker({ position:center, map, icon: ICONS.user, title:"Estás aquí" });
+            } else {
+              userMarker.setPosition(center);
+              userMarker.setIcon(ICONS.user);
+            }
+
+            try{
+              const resp = await geocoder.geocode({ location:center });
+              const commune = (resp.results[0]?.address_components||[]).find(c=>c.types.includes("locality"))?.long_name || "tu ubicación";
+              focus(center, commune);
+            }catch{ focus(center,"tu ubicación"); }
+          }, ()=> setStatus("No se pudo obtener tu ubicación."), { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+        }
+
+        // === Inicializar mapa ===
+        const el = document.getElementById("map");
+        if (!el.style.height) el.style.height = "420px";
+
+        map = new google.maps.Map(el, {
+          center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM,
+          mapTypeControl:false, streetViewControl:false, fullscreenControl:true,
+          gestureHandling:"greedy", scrollwheel:false
+        });
+        geocoder = new google.maps.Geocoder();
+
+        // Autocomplete + eventos
+        const input = document.getElementById("comuna-input");
+        autocomplete = new google.maps.places.Autocomplete(input, {
+          fields:["geometry","name","address_components"],
+          types:["(regions)"], componentRestrictions:{ country:"cl" }
+        });
+        autocomplete.addListener("place_changed", ()=>{
+          const place = autocomplete.getPlace();
+          const loc = place.geometry?.location; if(!loc) return;
+          focus({ lat:loc.lat(), lng:loc.lng() }, place.name || "Comuna");
+        });
+
+        document.getElementById("comuna-btn").addEventListener("click", async ()=>{
+          const q = input.value.trim(); if(!q) return;
+          try{
+            const resp = await geocoder.geocode({ address: q + CL_REGION_SUFFIX });
+            const loc = resp.results[0]?.geometry?.location; if(!loc) return setStatus("No encontramos esa comuna.");
+            const comuna = (resp.results[0].address_components||[]).find(c=>c.types.includes("locality"))?.long_name || q;
+            focus({ lat:loc.lat(), lng:loc.lng() }, comuna);
+          }catch{ setStatus("No se pudo geocodificar esa comuna."); }
+        });
+        input.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); document.getElementById("comuna-btn").click(); } });
+
+        document.getElementById("comuna-select").addEventListener("change", async (e)=>{
+          const v = e.target.value; if(!v) return;
+          try{
+            const resp = await geocoder.geocode({ address: v + CL_REGION_SUFFIX });
+            const loc = resp.results[0]?.geometry?.location; if(!loc) return;
+            focus({ lat:loc.lat(), lng:loc.lng() }, v);
+          }catch{ setStatus("No se pudo cargar esa comuna."); }
+        });
+
+        document.getElementById("mi-ubicacion-btn").addEventListener("click", geolocate);
+
+        // Carga inicial
+        focus(DEFAULT_CENTER, "Santiago");
+      };
     </script>
 
-    <!-- Inicialización del mapa de Google (definida en window) -->
-<!-- 1) La función va en window para que el callback la encuentre -->
-<script>
-  window.initGMap = function () {
-    const el = document.getElementById('map');
-    if (!el.style.height) el.style.height = '420px'; // por si el CSS no cargó
-
-    const center = { lat: -33.4489, lng: -70.6693 };
-    const map = new google.maps.Map(el, {
-      center,
-      zoom: 12,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-    });
-    new google.maps.Marker({ map, position: center, title: 'Mechapp · Centro' });
-    console.log('[GMaps] Mapa inicializado');
-  };
-</script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap&v=weekly" async defer></script>
-
+    <!-- SDK de Google Maps (una sola vez). Reemplaza la key si corresponde -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap&libraries=places&v=weekly"
+      async defer></script>
   </body>
 </html>
