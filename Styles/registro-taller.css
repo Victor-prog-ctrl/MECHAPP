@@ -21,7 +21,7 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%);
+    background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     padding: 32px 16px 64px;

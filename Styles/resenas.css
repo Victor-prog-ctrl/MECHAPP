@@ -1,0 +1,218 @@
+.reviews-hero {
+  gap: 40px;
+  margin-bottom: 32px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.reviews-hero::after {
+  border: 1px solid var(--border);
+}
+
+.reviews-hero-image {
+  background: url("https://images.unsplash.com/photo-1523419409543-0c1df022bdd1?auto=format&fit=crop&w=880&q=80")
+      center / cover no-repeat;
+  min-height: 260px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.reviews-hero .hero-tag {
+  background: var(--surface-alt);
+  color: #6366f1;
+  padding: 6px 14px;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.reviews-hero h1 {
+  color: var(--text);
+}
+
+.reviews-hero p {
+  color: var(--text-muted);
+  max-width: 520px;
+}
+
+.reviews-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.reviews-hero-metrics > div {
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--text);
+}
+
+.reviews-hero-metrics strong {
+  display: block;
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.reviews-hero-metrics span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-group select {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface-alt);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.filter-group select:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.review-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 26px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--text);
+}
+
+.review-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.review-header img {
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.review-header .identity {
+  flex: 1;
+}
+
+.review-header h3 {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.rating svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.service-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service-tags span {
+  background: var(--surface-alt);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.review-comment {
+  background: var(--surface-alt);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  line-height: 1.6;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.review-footer time {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .review-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .review-card {
+    padding: 20px;
+  }
+
+  .review-header img {
+    width: 60px;
+    height: 60px;
+  }
+}
