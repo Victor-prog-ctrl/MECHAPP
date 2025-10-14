@@ -20,6 +20,10 @@
     padding: 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family: "Manrope", sans-serif;
     background: var(--bg);
