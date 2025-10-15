@@ -1,0 +1,6 @@
+[
+  { "comuna": "Santiago", "nombre": "Taller Central Santiago", "tipo": "taller", "lat": -33.4489, "lng": -70.6693 },
+  { "comuna": "Santiago", "nombre": "Vulcanización Don Lucho", "tipo": "vulcanizacion", "lat": -33.454, "lng": -70.665 },
+  { "comuna": "Quilicura", "nombre": "Mecánica El Rápido", "tipo": "taller", "lat": -33.366, "lng": -70.736 },
+  { "comuna": "Maipú", "nombre": "Vulcanización Los Pinos", "tipo": "vulcanizacion", "lat": -33.519, "lng": -70.761 }
+]

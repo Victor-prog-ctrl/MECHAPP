@@ -1,285 +1,279 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Mechapp · Inicio</title>
-    <meta name="description" content="Servicio automotriz profesional." />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Fuentes -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Mechapp · Inicio</title>
+  <meta name="description" content="Servicio automotriz profesional." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Tus estilos -->
-    <link rel="stylesheet" href="../Styles/paginainicio.css" />
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  </head>
+  <!-- Tus estilos -->
+  <link rel="stylesheet" href="../Styles/paginainicio.css" />
 
-  <body>
-    <header class="site-header">
-      <div class="brand">
-        <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
-        <span class="brand-name">Mechapp</span>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+      <span class="brand-name">Mechapp</span>
+    </div>
+    <nav class="main-nav" aria-label="Principal">
+      <a href="#inicio" class="nav-link active">Inicio</a>
+      <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
+      <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
+      <a href="./agendar-cita.html" class="nav-link">Agendar cita</a>
+      <a href="#ubicacion" class="nav-link">Ubicación</a>
+      <a href="./perfil.html" class="nav-link" data-auth-visibility="authenticated" hidden>
+        Perfil
+      </a>
+      <a href="./registro-taller.html" class="nav-link" data-auth-visibility="authenticated" data-visible-for="mecanico"
+        hidden>
+        Registrar Taller
+      </a>
+    </nav>
+    <div class="header-actions">
+      <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
+      <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
+      <a href="./registro-taller.html" class="button ghost" data-auth-visibility="authenticated"
+        data-visible-for="mecanico" hidden>
+        Registrar Taller
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="hero-image" role="img" aria-label="Taller mecánico"></div>
+      <div class="hero-content">
+        <span class="hero-tag">Tus Técnicos</span>
+        <h1>Confianza en Cada Reparación</h1>
+        <p>Tu Solución para el Mantenimiento Automotriz.</p>
+        <a class="button" href="./perfil.html">Ver Perfil</a>
       </div>
-      <nav class="main-nav" aria-label="Principal">
-        <a href="#inicio" class="nav-link active">Inicio</a>
-        <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
-        <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
-        <a href="./agendar-cita.html" class="nav-link">Agendar cita</a>
-        <a href="#ubicacion" class="nav-link">Ubicación</a>
-        <a
-          href="./perfil.html"
-          class="nav-link"
-          data-auth-visibility="authenticated"
-          hidden
-        >
-          Perfil
-        </a>
-        <a
-          href="./registro-taller.html"
-          class="nav-link"
-          data-auth-visibility="authenticated"
-          data-visible-for="mecanico"
-          hidden
-        >
-          Registrar Taller
-        </a>
-      </nav>
-      <div class="header-actions">
-        <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
-        <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
-        <a
-          href="./registro-taller.html"
-          class="button ghost"
-          data-auth-visibility="authenticated"
-          data-visible-for="mecanico"
-          hidden
-        >
-          Registrar Taller
-        </a>
-      </div>
-    </header>
+    </section>
 
-    <main>
-      <section class="hero" id="inicio">
-        <div class="hero-image" role="img" aria-label="Taller mecánico"></div>
-        <div class="hero-content">
-          <span class="hero-tag">Tus Técnicos</span>
-          <h1>Confianza en Cada Reparación</h1>
-          <p>Tu Solución para el Mantenimiento Automotriz.</p>
-          <a class="button" href="./perfil.html">Ver Perfil</a>
+    <section class="search-section" aria-labelledby="buscador">
+      <div class="section-header">
+        <div>
+          <h2 id="buscador">Encuentra tu taller o servicio</h2>
+          <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
         </div>
-      </section>
+      </div>
+      <div class="search-control">
+        <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
+        <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
+      </div>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </section>
 
-      <section class="search-section" aria-labelledby="buscador">
-        <div class="section-header">
+    <section class="services" id="citas" aria-labelledby="servicios">
+      <div class="section-header">
+        <div>
+          <h2 id="servicios">Servicios Populares</h2>
+          <p>Agenda los servicios más solicitados por nuestros clientes.</p>
+        </div>
+        <a class="button" href="#citas">Explorar</a>
+      </div>
+      <div class="grid">
+        <article class="service-card">
+          <img src="assets/mantenimiento-generalf-Photoroom.png" width="60" height="60">
+
           <div>
-            <h2 id="buscador">Encuentra tu taller o servicio</h2>
-            <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+            <h3>Mantenimiento General</h3>
+            <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
           </div>
-        </div>
-        <div class="search-control">
-          <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
-          <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
-        </div>
-        <div class="search-results" id="search-results" aria-live="polite"></div>
-      </section>
-
-      <section class="services" id="citas" aria-labelledby="servicios">
-        <div class="section-header">
+          <a class="button ghost" href="#">Próximas Citas</a>
+        </article>
+        <article class="service-card">
+          <img src="assets/transparent-Photoroom.png" width="60" height="60">
           <div>
-            <h2 id="servicios">Servicios Populares</h2>
-            <p>Agenda los servicios más solicitados por nuestros clientes.</p>
+            <h3>Diagnóstico Eléctrico</h3>
+            <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
           </div>
-          <a class="button" href="#citas">Explorar</a>
-        </div>
-        <div class="grid">
-          <article class="service-card">
-           <img src="assets/mantenimiento-generalf-Photoroom.png" width="60" height="60">
-
-            <div>
-              <h3>Mantenimiento General</h3>
-              <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
-            </div>
-            <a class="button ghost" href="#">Próximas Citas</a>
-          </article>
-          <article class="service-card">
-            <img src="assets/transparent-Photoroom.png" width="60" height="60">
-            <div>
-              <h3>Diagnóstico Eléctrico</h3>
-              <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
-            </div>
-            <a class="button ghost" href="#">Próximas Citas</a>
-          </article>
-          <article class="service-card">
-            <img src="assets/aliniacion-Photoroom.png" width="60" height="60">
-            <div>
-              <h3>Alineación y Balanceo</h3>
-              <p>Mejora el rendimiento y la seguridad en carretera.</p>
-            </div>
-            <a class="button ghost" href="#">Próximas Citas</a>
-          </article>
-        </div>
-      </section>
-
-      <!-- ===== Sección de ubicación con Google Maps ===== -->
-      <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
-        <div class="section-header">
+          <a class="button ghost" href="#">Próximas Citas</a>
+        </article>
+        <article class="service-card">
+          <img src="assets/aliniacion-Photoroom.png" width="60" height="60">
           <div>
-            <h2 id="geolocalizacion">Busca el taller de tu comuna</h2>
-            <p>Utiliza el buscador o selecciona una comuna para explorar el mapa.</p>
+            <h3>Alineación y Balanceo</h3>
+            <p>Mejora el rendimiento y la seguridad en carretera.</p>
           </div>
+          <a class="button ghost" href="#">Próximas Citas</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Sección de ubicación con Google Maps ===== -->
+    <section class="location-section" id="ubicacion" aria-labelledby="geolocalizacion">
+      <div class="section-header">
+        <div>
+          <h2 id="geolocalizacion">Busca el taller de tu comuna</h2>
+          <p>Utiliza el buscador o selecciona una comuna para explorar el mapa.</p>
         </div>
-
-        <!-- Controles del mapa -->
-        <div class="map-controls">
-          <input id="comuna-input" type="text" placeholder="Busca una comuna (ej. Santiago)" autocomplete="off" />
-          <button id="comuna-btn" class="button button-primary" type="button">Buscar comuna</button>
-          <select id="comuna-select" aria-label="Comunas rápidas">
-            <option value="">— Selecciona una comuna —</option>
-            <option>Santiago</option><option>Providencia</option><option>Ñuñoa</option>
-            <option>Las Condes</option><option>Vitacura</option><option>Maipú</option>
-            <option>Puente Alto</option><option>La Florida</option><option>San Bernardo</option>
-            <option>Peñalolén</option><option>La Reina</option><option>Quilicura</option>
-          </select>
-          <button id="mi-ubicacion-btn" class="button" type="button">Mi ubicación</button>
-        </div>
-
-        <p class="location-status" id="location-status" aria-live="polite">
-          Mapa centrado en Santiago. Usa el buscador, el selector o “Mi ubicación”.
-        </p>
-
-        <!-- Contenedor del mapa de Google -->
-        <div id="map" class="map-container" role="region" aria-label="Mapa Google de comunas"></div>
-      </section>
-      <!-- ===== /Mapa ===== -->
-    </main>
-
-    <footer class="site-footer" id="mensajes">
-      <div class="footer-column">
-        <h4>Citas Directas</h4>
-        <p>Atención personalizada para empresas y flotas.</p>
       </div>
-      <div class="footer-column">
-        <h4>Servicios Adicionales</h4>
-        <ul>
-          <li>Mantenimiento Preventivo</li>
-          <li>Inspecciones Técnicas</li>
-          <li>Reemplazo de Partes</li>
-        </ul>
+
+      <!-- Controles del mapa -->
+      <div class="map-controls">
+        <input id="comuna-input" type="text" placeholder="Busca una comuna (ej. Santiago)" autocomplete="off" />
+        <button id="comuna-btn" class="button button-primary" type="button">Buscar comuna</button>
+        <select id="comuna-select" aria-label="Comunas rápidas">
+          <option value="">— Selecciona una comuna —</option>
+          <option>Santiago</option>
+          <option>Providencia</option>
+          <option>Ñuñoa</option>
+          <option>Las Condes</option>
+          <option>Vitacura</option>
+          <option>Maipú</option>
+          <option>Puente Alto</option>
+          <option>La Florida</option>
+          <option>San Bernardo</option>
+          <option>Peñalolén</option>
+          <option>La Reina</option>
+          <option>Quilicura</option>
+        </select>
+        <button id="mi-ubicacion-btn" class="button" type="button">Mi ubicación</button>
       </div>
-      <div class="footer-column">
-        <h4>Contacto</h4>
-        <p>+34 900 123 456</p>
-        <p>soporte@autoserv.com</p>
-      </div>
-    </footer>
 
-    <!-- Tu lógica general (búsqueda) la dejé intacta -->
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const searchInput = document.getElementById("search-input");
-        const searchResults = document.getElementById("search-results");
-        const visibilityTargets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
-        const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
-        const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
-        const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
-        const userOnlyElements = document.querySelectorAll('[data-visible-for="usuario"]');
+      <p class="location-status" id="location-status" aria-live="polite">
+        Mapa centrado en Santiago. Usa el buscador, el selector o “Mi ubicación”.
+      </p>
 
-        const visibilityState = {
-          isAuthenticated: false,
-          isMechanic: false,
-        };
+      <!-- Contenedor del mapa de Google -->
+      <div id="map" class="map-container" role="region" aria-label="Mapa Google de comunas"></div>
+    </section>
+    <!-- ===== /Mapa ===== -->
+  </main>
 
-        const normalizeText = (t = "") =>
-          t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
+  <footer class="site-footer" id="mensajes">
+    <div class="footer-column">
+      <h4>Citas Directas</h4>
+      <p>Atención personalizada para empresas y flotas.</p>
+    </div>
+    <div class="footer-column">
+      <h4>Servicios Adicionales</h4>
+      <ul>
+        <li>Mantenimiento Preventivo</li>
+        <li>Inspecciones Técnicas</li>
+        <li>Reemplazo de Partes</li>
+      </ul>
+    </div>
+    <div class="footer-column">
+      <h4>Contacto</h4>
+      <p>+34 900 123 456</p>
+      <p>soporte@autoserv.com</p>
+    </div>
+  </footer>
 
-        const setElementVisibility = (el, shouldShow) => {
-          if (shouldShow) {
-            el.removeAttribute("hidden");
-          } else {
-            el.setAttribute("hidden", "");
+  <!-- Tu lógica general (búsqueda) la dejé intacta -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchInput = document.getElementById("search-input");
+      const searchResults = document.getElementById("search-results");
+      const visibilityTargets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
+      const unauthenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
+      const authenticatedOnlyElements = document.querySelectorAll('[data-auth-visibility="authenticated"]');
+      const mechanicOnlyElements = document.querySelectorAll('[data-visible-for="mecanico"]');
+      const userOnlyElements = document.querySelectorAll('[data-visible-for="usuario"]');
+
+      const visibilityState = {
+        isAuthenticated: false,
+        isMechanic: false,
+      };
+
+      const normalizeText = (t = "") =>
+        t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
+
+      const setElementVisibility = (el, shouldShow) => {
+        if (shouldShow) {
+          el.removeAttribute("hidden");
+        } else {
+          el.setAttribute("hidden", "");
+        }
+      };
+
+      const applyVisibilityState = () => {
+        const { isAuthenticated, isMechanic } = visibilityState;
+
+        unauthenticatedOnlyElements.forEach((el) => {
+          setElementVisibility(el, !isAuthenticated);
+        });
+
+        authenticatedOnlyElements.forEach((el) => {
+          setElementVisibility(el, isAuthenticated);
+        });
+
+        mechanicOnlyElements.forEach((el) => {
+          setElementVisibility(el, isAuthenticated && isMechanic);
+        });
+
+        userOnlyElements.forEach((el) => {
+          setElementVisibility(el, isAuthenticated && !isMechanic);
+        });
+
+        visibilityTargets.forEach((el) => {
+          if (el.dataset.authVisibility || el.dataset.visibleFor) {
+            return;
           }
-        };
+          setElementVisibility(el, true);
+        });
+      };
 
-        const applyVisibilityState = () => {
-          const { isAuthenticated, isMechanic } = visibilityState;
-
-          unauthenticatedOnlyElements.forEach((el) => {
-            setElementVisibility(el, !isAuthenticated);
-          });
-
-          authenticatedOnlyElements.forEach((el) => {
-            setElementVisibility(el, isAuthenticated);
-          });
-
-          mechanicOnlyElements.forEach((el) => {
-            setElementVisibility(el, isAuthenticated && isMechanic);
-          });
-
-          userOnlyElements.forEach((el) => {
-            setElementVisibility(el, isAuthenticated && !isMechanic);
-          });
-
-          visibilityTargets.forEach((el) => {
-            if (el.dataset.authVisibility || el.dataset.visibleFor) {
+      const verifyMechanicProfile = async () => {
+        try {
+          const response = await fetch("/api/profile");
+          if (!response.ok) {
+            if (response.status === 401) {
+              visibilityState.isAuthenticated = false;
+              visibilityState.isMechanic = false;
+              applyVisibilityState();
               return;
             }
-            setElementVisibility(el, true);
-          });
-        };
-
-        const verifyMechanicProfile = async () => {
-          try {
-            const response = await fetch("/api/profile");
-            if (!response.ok) {
-              if (response.status === 401) {
-                visibilityState.isAuthenticated = false;
-                visibilityState.isMechanic = false;
-                applyVisibilityState();
-                return;
-              }
-              throw new Error("No se pudo obtener el perfil del usuario");
-            }
-            const profile = await response.json();
-            visibilityState.isAuthenticated = true;
-            visibilityState.isMechanic = profile?.accountType === "mecanico";
-            applyVisibilityState();
-          } catch (e) {
-            console.error(e);
-            visibilityState.isAuthenticated = false;
-            visibilityState.isMechanic = false;
-            applyVisibilityState();
+            throw new Error("No se pudo obtener el perfil del usuario");
           }
-        };
-        verifyMechanicProfile();
+          const profile = await response.json();
+          visibilityState.isAuthenticated = true;
+          visibilityState.isMechanic = profile?.accountType === "mecanico";
+          applyVisibilityState();
+        } catch (e) {
+          console.error(e);
+          visibilityState.isAuthenticated = false;
+          visibilityState.isMechanic = false;
+          applyVisibilityState();
+        }
+      };
+      verifyMechanicProfile();
 
-        applyVisibilityState();
+      applyVisibilityState();
 
-        const servicios = [
-          { nombre:"Mantenimiento General", descripcion:"Incluye revisión completa de fluidos y ajustes básicos.", enlace:"#", tipo:"Servicio" },
-          { nombre:"Diagnóstico Eléctrico", descripcion:"Soluciones precisas para problemas eléctricos del vehículo.", enlace:"#", tipo:"Servicio" },
-          { nombre:"Alineación y Balanceo", descripcion:"Mejora el rendimiento y la seguridad en carretera.", enlace:"#", tipo:"Servicio" }
-        ];
+      const servicios = [
+        { nombre: "Mantenimiento General", descripcion: "Incluye revisión completa de fluidos y ajustes básicos.", enlace: "#", tipo: "Servicio" },
+        { nombre: "Diagnóstico Eléctrico", descripcion: "Soluciones precisas para problemas eléctricos del vehículo.", enlace: "#", tipo: "Servicio" },
+        { nombre: "Alineación y Balanceo", descripcion: "Mejora el rendimiento y la seguridad en carretera.", enlace: "#", tipo: "Servicio" }
+      ];
 
-        const marcasVehiculos = [
-          "Abarth","Acura","Alfa Romeo","Audi","BMW","BYD","Chevrolet","Citroën","Ford","Honda",
-          "Hyundai","Kia","Mazda","Mercedes-Benz","MG","Mitsubishi","Nissan","Peugeot","Renault",
-          "Subaru","Suzuki","Toyota","Volkswagen","Volvo"
-        ].map((m)=>({ nombre:m, descripcion:"Marca disponible para servicios especializados.", enlace:"#", tipo:"Marca" }));
+      const marcasVehiculos = [
+        "Abarth", "Acura", "Alfa Romeo", "Audi", "BMW", "BYD", "Chevrolet", "Citroën", "Ford", "Honda",
+        "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Peugeot", "Renault",
+        "Subaru", "Suzuki", "Toyota", "Volkswagen", "Volvo"
+      ].map((m) => ({ nombre: m, descripcion: "Marca disponible para servicios especializados.", enlace: "#", tipo: "Marca" }));
 
-        const datosBusqueda = [...servicios, ...marcasVehiculos];
+      const datosBusqueda = [...servicios, ...marcasVehiculos];
 
-        const renderResultados = (items) => {
-          const el = document.getElementById("search-results");
-          if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
-          const frag = document.createDocumentFragment();
-          items.forEach((item) => {
-            const article = document.createElement("article");
-            article.className = "result-item";
-            article.innerHTML = `
+      const renderResultados = (items) => {
+        const el = document.getElementById("search-results");
+        if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
+        const frag = document.createDocumentFragment();
+        items.forEach((item) => {
+          const article = document.createElement("article");
+          article.className = "result-item";
+          article.innerHTML = `
               <div class="result-type" aria-hidden="true">${item.tipo}</div>
               <div class="result-content">
                 <h3>${item.nombre}</h3>
@@ -287,187 +281,201 @@
               </div>
               <a class="button ghost" href="${item.enlace}">Ver más</a>
             `;
-            frag.appendChild(article);
-          });
-          el.innerHTML = ""; el.appendChild(frag);
-        };
-        renderResultados(datosBusqueda.slice(0,3));
-        searchInput?.addEventListener("input", (e) => {
-          const termino = normalizeText(e.target.value);
-          if (!termino) { renderResultados(datosBusqueda.slice(0,3)); return; }
-          const filtrados = datosBusqueda.filter((it) =>
-            normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
-          );
-          renderResultados(filtrados);
+          frag.appendChild(article);
         });
-      });
-    </script>
-
-    <!-- Inicialización del mapa de Google y funcionalidad -->
-    <script>
-      // ==== Bloque JS de Google Maps ====
-      window.initGMap = function () {
-        const CL_REGION_SUFFIX = ", Región Metropolitana, Chile";
-        const DEFAULT_CENTER = { lat: -33.4489, lng: -70.6693 };
-        const DEFAULT_ZOOM   = 12;
-        const SEARCH_ZOOM    = 13;
-        const RADIUS_METERS  = 4000;
-
-        const $ = (id) => document.getElementById(id);
-        const setStatus = (msg) => { const el = $("location-status"); if (el) el.textContent = msg; };
-
-        // === ICONOS por URL (NO SVG path) ===
-        const ICONS = {
-          taller: {  url: "/assets/markers/wrench-red.png",
-            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
-            anchor: new google.maps.Point(14, 28)
-          },
-          vulca:  {  url: "/assets/markers/bolt-green.png",
-            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
-            anchor: new google.maps.Point(14, 28)
-          },
-          user:   {  url: "/assets/markers/user-blue.png",
-            size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
-            anchor: new google.maps.Point(14, 28)
-          },
-          center: {  url: "/assets/icono-central-mapa.jpg",
-            size: new google.maps.Size(45, 55), scaledSize: new google.maps.Size(45, 55),
-            anchor: new google.maps.Point(22, 34)
-          }
-        };
-
-        let map, geocoder, autocomplete, userMarker = null, placeMarkers = [];
-        let centerMarker = null; // marcador del centro de la comuna
-
-        function clearPlaceMarkers(){ placeMarkers.forEach(m=>m.setMap(null)); placeMarkers=[]; }
-        function addPlaceMarker(pos, tipo, nombre){
-          const iconCfg = (tipo === "vulcanizacion") ? ICONS.vulca : ICONS.taller;
-          const marker = new google.maps.Marker({
-            position: pos, map, icon: iconCfg,
-            title: nombre || (tipo==="vulcanizacion"?"Vulcanización":"Taller mecánico")
-          });
-          const iw = new google.maps.InfoWindow({
-            content:`<strong>${nombre || (tipo==="vulcanizacion"?"Vulcanización":"Taller mecánico")}</strong><br><small>${tipo}</small>`
-          });
-          marker.addListener("click", ()=> iw.open({ anchor: marker, map }));
-          placeMarkers.push(marker);
-        }
-        function samplePlaces(center){
-          const dx = (Math.random()-0.5)*0.04, dy = (Math.random()-0.5)*0.04;
-          return [
-            { lat:center.lat+dx, lng:center.lng+dy, tipo:"taller", nombre:"Taller Don Pepe" },
-            { lat:center.lat+dy, lng:center.lng-dx, tipo:"vulcanizacion", nombre:"Vulcanización La Rueda" },
-            { lat:center.lat-dx, lng:center.lng+dy, tipo:"taller", nombre:"Servicio Mecánico Andes" },
-          ];
-        }
-        async function loadPlaces(center){
-          clearPlaceMarkers();
-          try{
-            const res = await fetch(`/api/talleres?lat=${center.lat}&lng=${center.lng}&radius=${RADIUS_METERS}`);
-            if(!res.ok) throw new Error("HTTP "+res.status);
-            const data = await res.json();
-            const items = Array.isArray(data) ? data : (data.items||[]);
-            items.forEach(p=> addPlaceMarker({lat:p.lat,lng:p.lng}, p.tipo||"taller", p.nombre));
-            setStatus(`Mostrando ${items.length} talleres/vulcanizaciones cerca de esta zona.`);
-          }catch{
-            const items = samplePlaces(center);
-            items.forEach(p=> addPlaceMarker({lat:p.lat,lng:p.lng}, p.tipo, p.nombre));
-            setStatus(`Mostrando ${items.length} talleres/vulcanizaciones cerca de esta zona (datos de ejemplo).`);
-          }
-        }
-        function focus(center, comunaNombre){
-          map.setCenter(center);
-          map.setZoom(SEARCH_ZOOM);
-
-          // marcador del centro de la comuna
-          if (!centerMarker) {
-            centerMarker = new google.maps.Marker({
-              position: center, map, icon: ICONS.center,
-              title: comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona"
-            });
-          } else {
-            centerMarker.setPosition(center);
-            centerMarker.setIcon(ICONS.center);
-            centerMarker.setTitle(comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona");
-          }
-
-          setStatus(`Mostrando comuna: ${comunaNombre || "—"}.`);
-          loadPlaces(center);
-        }
-        function geolocate(){
-          if(!navigator.geolocation){ setStatus("Tu navegador no admite geolocalización."); return; }
-          navigator.geolocation.getCurrentPosition(async (pos)=>{
-            const center = { lat:pos.coords.latitude, lng:pos.coords.longitude };
-
-            // marcador del usuario
-            if(!userMarker) {
-              userMarker = new google.maps.Marker({ position:center, map, icon: ICONS.user, title:"Estás aquí" });
-            } else {
-              userMarker.setPosition(center);
-              userMarker.setIcon(ICONS.user);
-            }
-
-            try{
-              const resp = await geocoder.geocode({ location:center });
-              const commune = (resp.results[0]?.address_components||[]).find(c=>c.types.includes("locality"))?.long_name || "tu ubicación";
-              focus(center, commune);
-            }catch{ focus(center,"tu ubicación"); }
-          }, ()=> setStatus("No se pudo obtener tu ubicación."), { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
-        }
-
-        // === Inicializar mapa ===
-        const el = document.getElementById("map");
-        if (!el.style.height) el.style.height = "420px";
-
-        map = new google.maps.Map(el, {
-          center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM,
-          mapTypeControl:false, streetViewControl:false, fullscreenControl:true,
-          gestureHandling:"greedy", scrollwheel:false
-        });
-        geocoder = new google.maps.Geocoder();
-
-        // Autocomplete + eventos
-        const input = document.getElementById("comuna-input");
-        autocomplete = new google.maps.places.Autocomplete(input, {
-          fields:["geometry","name","address_components"],
-          types:["(regions)"], componentRestrictions:{ country:"cl" }
-        });
-        autocomplete.addListener("place_changed", ()=>{
-          const place = autocomplete.getPlace();
-          const loc = place.geometry?.location; if(!loc) return;
-          focus({ lat:loc.lat(), lng:loc.lng() }, place.name || "Comuna");
-        });
-
-        document.getElementById("comuna-btn").addEventListener("click", async ()=>{
-          const q = input.value.trim(); if(!q) return;
-          try{
-            const resp = await geocoder.geocode({ address: q + CL_REGION_SUFFIX });
-            const loc = resp.results[0]?.geometry?.location; if(!loc) return setStatus("No encontramos esa comuna.");
-            const comuna = (resp.results[0].address_components||[]).find(c=>c.types.includes("locality"))?.long_name || q;
-            focus({ lat:loc.lat(), lng:loc.lng() }, comuna);
-          }catch{ setStatus("No se pudo geocodificar esa comuna."); }
-        });
-        input.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); document.getElementById("comuna-btn").click(); } });
-
-        document.getElementById("comuna-select").addEventListener("change", async (e)=>{
-          const v = e.target.value; if(!v) return;
-          try{
-            const resp = await geocoder.geocode({ address: v + CL_REGION_SUFFIX });
-            const loc = resp.results[0]?.geometry?.location; if(!loc) return;
-            focus({ lat:loc.lat(), lng:loc.lng() }, v);
-          }catch{ setStatus("No se pudo cargar esa comuna."); }
-        });
-
-        document.getElementById("mi-ubicacion-btn").addEventListener("click", geolocate);
-
-        // Carga inicial
-        focus(DEFAULT_CENTER, "Santiago");
+        el.innerHTML = ""; el.appendChild(frag);
       };
-    </script>
+      renderResultados(datosBusqueda.slice(0, 3));
+      searchInput?.addEventListener("input", (e) => {
+        const termino = normalizeText(e.target.value);
+        if (!termino) { renderResultados(datosBusqueda.slice(0, 3)); return; }
+        const filtrados = datosBusqueda.filter((it) =>
+          normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
+        );
+        renderResultados(filtrados);
+      });
+    });
+  </script>
 
-    <!-- SDK de Google Maps (una sola vez). Reemplaza la key si corresponde -->
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap&libraries=places&v=weekly"
-      async defer></script>
-  </body>
+  <!-- Inicialización del mapa de Google y funcionalidad -->
+  <script>
+    // ==== Bloque JS de Google Maps ====
+    window.initGMap = function () {
+      const CL_REGION_SUFFIX = ", Región Metropolitana, Chile";
+      const DEFAULT_CENTER = { lat: -33.4489, lng: -70.6693 };
+      const DEFAULT_ZOOM = 12;
+      const SEARCH_ZOOM = 13;
+      const RADIUS_METERS = 4000;
+
+      const $ = (id) => document.getElementById(id);
+      const setStatus = (msg) => { const el = $("location-status"); if (el) el.textContent = msg; };
+
+      // === ICONOS por URL (NO SVG path) ===
+      const ICONS = {
+        taller: {
+          url: "assets/logo-oscuro.png",
+          size: new google.maps.Size(55, 60), scaledSize: new google.maps.Size(55, 60),
+          anchor: new google.maps.Point(14, 28)
+        },
+        vulca: {
+          url: "assets/vulca-Photoroom.png",
+          size: new google.maps.Size(55, 60), scaledSize: new google.maps.Size(55, 60),
+          anchor: new google.maps.Point(14, 28)
+        },
+        user: {
+          url: "/assets/markers/user-blue.png",
+          size: new google.maps.Size(28, 28), scaledSize: new google.maps.Size(28, 28),
+          anchor: new google.maps.Point(14, 28)
+        },
+        center: {
+          url: "/assets/icono-central-mapa.jpg",
+          size: new google.maps.Size(45, 55), scaledSize: new google.maps.Size(45, 55),
+          anchor: new google.maps.Point(22, 34)
+        }
+      };
+
+      let map, geocoder, autocomplete, userMarker = null, placeMarkers = [];
+      let centerMarker = null; // marcador del centro de la comuna
+
+      function clearPlaceMarkers() { placeMarkers.forEach(m => m.setMap(null)); placeMarkers = []; }
+      function addPlaceMarker(pos, tipo, nombre) {
+        const iconCfg = (tipo === "vulcanizacion") ? ICONS.vulca : ICONS.taller;
+        const marker = new google.maps.Marker({
+          position: pos, map, icon: iconCfg,
+          title: nombre || (tipo === "vulcanizacion" ? "Vulcanización" : "Taller mecánico")
+        });
+        const iw = new google.maps.InfoWindow({
+          content: `<strong>${nombre || (tipo === "vulcanizacion" ? "Vulcanización" : "Taller mecánico")}</strong><br><small>${tipo}</small>`
+        });
+        marker.addListener("click", () => iw.open({ anchor: marker, map }));
+        placeMarkers.push(marker);
+      }
+      function samplePlaces(center) {
+        const dx = (Math.random() - 0.5) * 0.04, dy = (Math.random() - 0.5) * 0.04;
+        return [
+          { lat: center.lat + dx, lng: center.lng + dy, tipo: "taller", nombre: "Taller Don Pepe" },
+          { lat: center.lat + dy, lng: center.lng - dx, tipo: "vulcanizacion", nombre: "Vulcanización La Rueda" },
+          { lat: center.lat - dx, lng: center.lng + dy, tipo: "taller", nombre: "Servicio Mecánico Andes" },
+        ];
+      }
+      async function loadPlaces(center, comunaNombre) {
+        clearPlaceMarkers();
+        try {
+          const res = await fetch("/data/talleres.json");
+          const data = await res.json();
+
+          // Filtra talleres por comuna
+          const items = data.filter(p =>
+            comunaNombre && p.comuna.toLowerCase() === comunaNombre.toLowerCase()
+          );
+
+          if (items.length > 0) {
+            items.forEach(p => addPlaceMarker({ lat: p.lat, lng: p.lng }, p.tipo, p.nombre));
+            setStatus(`Mostrando ${items.length} talleres/vulcanizaciones en ${comunaNombre}.`);
+          } else {
+            setStatus(`No hay talleres registrados para ${comunaNombre}.`);
+          }
+
+        } catch (err) {
+          console.error("Error cargando talleres.json", err);
+          setStatus("No se pudieron cargar los talleres de esta comuna.");
+        }
+      }
+
+      function focus(center, comunaNombre) {
+        map.setCenter(center);
+        map.setZoom(SEARCH_ZOOM);
+
+        // marcador del centro de la comuna
+        if (!centerMarker) {
+          centerMarker = new google.maps.Marker({
+            position: center, map, icon: ICONS.center,
+            title: comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona"
+          });
+        } else {
+          centerMarker.setPosition(center);
+          centerMarker.setIcon(ICONS.center);
+          centerMarker.setTitle(comunaNombre ? `Centro: ${comunaNombre}` : "Centro de la zona");
+        }
+
+        setStatus(`Mostrando comuna: ${comunaNombre || "—"}.`);
+        loadPlaces(center, comunaNombre);
+      }
+      function geolocate() {
+        if (!navigator.geolocation) { setStatus("Tu navegador no admite geolocalización."); return; }
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+          // marcador del usuario
+          if (!userMarker) {
+            userMarker = new google.maps.Marker({ position: center, map, icon: ICONS.user, title: "Estás aquí" });
+          } else {
+            userMarker.setPosition(center);
+            userMarker.setIcon(ICONS.user);
+          }
+
+          try {
+            const resp = await geocoder.geocode({ location: center });
+            const commune = (resp.results[0]?.address_components || []).find(c => c.types.includes("locality"))?.long_name || "tu ubicación";
+            focus(center, commune);
+          } catch { focus(center, "tu ubicación"); }
+        }, () => setStatus("No se pudo obtener tu ubicación."), { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      }
+
+      // === Inicializar mapa ===
+      const el = document.getElementById("map");
+      if (!el.style.height) el.style.height = "420px";
+
+      map = new google.maps.Map(el, {
+        center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM,
+        mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+        gestureHandling: "greedy", scrollwheel: false
+      });
+      geocoder = new google.maps.Geocoder();
+
+      // Autocomplete + eventos
+      const input = document.getElementById("comuna-input");
+      autocomplete = new google.maps.places.Autocomplete(input, {
+        fields: ["geometry", "name", "address_components"],
+        types: ["(regions)"], componentRestrictions: { country: "cl" }
+      });
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        const loc = place.geometry?.location; if (!loc) return;
+        focus({ lat: loc.lat(), lng: loc.lng() }, place.name || "Comuna");
+      });
+
+      document.getElementById("comuna-btn").addEventListener("click", async () => {
+        const q = input.value.trim(); if (!q) return;
+        try {
+          const resp = await geocoder.geocode({ address: q + CL_REGION_SUFFIX });
+          const loc = resp.results[0]?.geometry?.location; if (!loc) return setStatus("No encontramos esa comuna.");
+          const comuna = (resp.results[0].address_components || []).find(c => c.types.includes("locality"))?.long_name || q;
+          focus({ lat: loc.lat(), lng: loc.lng() }, comuna);
+        } catch { setStatus("No se pudo geocodificar esa comuna."); }
+      });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("comuna-btn").click(); } });
+
+      document.getElementById("comuna-select").addEventListener("change", async (e) => {
+        const v = e.target.value; if (!v) return;
+        try {
+          const resp = await geocoder.geocode({ address: v + CL_REGION_SUFFIX });
+          const loc = resp.results[0]?.geometry?.location; if (!loc) return;
+          focus({ lat: loc.lat(), lng: loc.lng() }, v);
+        } catch { setStatus("No se pudo cargar esa comuna."); }
+      });
+
+      document.getElementById("mi-ubicacion-btn").addEventListener("click", geolocate);
+
+      // Carga inicial
+      focus(DEFAULT_CENTER, "Santiago");
+    };
+  </script>
+
+  <!-- SDK de Google Maps (una sola vez). Reemplaza la key si corresponde -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATF7l8QIpx6dlv2icl48TYG5N1PJVLdcw&callback=initGMap&libraries=places&v=weekly"
+    async defer></script>
+</body>
+
 </html>
