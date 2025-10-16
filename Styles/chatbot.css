@@ -13,7 +13,6 @@
   bottom: 1.5rem;
   z-index: 2000;
   font-family: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: var(--chatbot-text);
 }
 
 .mecha-chatbot__toggle {
@@ -119,7 +118,6 @@
   background: #fff;
   border: 1px solid rgba(31, 60, 136, 0.08);
   box-shadow: 0 8px 18px rgba(20, 41, 90, 0.08);
-  color: var(--chatbot-text);
 }
 
 .mecha-chatbot__message--user {
