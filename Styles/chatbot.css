@@ -13,7 +13,6 @@
   bottom: 1.5rem;
   z-index: 2000;
   font-family: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: var(--chatbot-text);
 }
 
 .mecha-chatbot__toggle {
@@ -122,6 +121,11 @@
   color: var(--chatbot-text);
 }
 
+.mecha-chatbot__message--bot a {
+  color: var(--chatbot-brand);
+  font-weight: 600;
+}
+
 .mecha-chatbot__message--user {
   align-self: flex-end;
   background: var(--chatbot-brand);
@@ -184,13 +188,6 @@
   box-shadow: 0 10px 20px rgba(31, 60, 136, 0.18);
 }
 
-.mecha-chatbot__send[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
 .mecha-chatbot__suggestions {
   display: flex;
   flex-wrap: wrap;
@@ -207,11 +204,6 @@
   font-size: 0.75rem;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
-}
-
-.mecha-chatbot__message[data-loading="true"] span:first-child {
-  color: var(--chatbot-muted);
-  font-style: italic;
 }
 
 .mecha-chatbot__suggestion:hover,

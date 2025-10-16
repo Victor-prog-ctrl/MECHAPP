@@ -168,7 +168,11 @@
       return entry.response;
     }
 
-    return null;
+    return (
+      "No tengo una respuesta exacta para eso todavía. " +
+      "Puedo ayudarte con agendamientos, registro, validaciones y soporte general. " +
+      "Si quieres que te contacte una persona, escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>."
+    );
   };
 
   const botReply = (text) => {
@@ -177,112 +181,14 @@
     }, 400);
   };
 
-  const showBotLoading = (text = "Buscando información en internet...") => {
-    const loadingMessage = createMessageEl("bot", text, new Date());
-    loadingMessage.dataset.loading = "true";
-    messagesEl.appendChild(loadingMessage);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return loadingMessage;
-  };
-
-  const removeBotLoading = (element) => {
-    if (element && messagesEl.contains(element)) {
-      messagesEl.removeChild(element);
-    }
-  };
-
-  const fallbackMessage =
-    "No encontré una respuesta exacta todavía. " +
-    "Puedo ayudarte con agendamientos, registro, validaciones y soporte general. " +
-    "Si quieres que te contacte una persona, escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>.";
-
-  const fetchInternetKnowledge = async (question) => {
-    const trimmed = question.trim().replace(/\s+/g, " ");
-    if (!trimmed) {
-      return null;
-    }
-
-    const query = encodeURIComponent(trimmed.slice(0, 80));
-    const url =
-      `https://es.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&limit=1&namespace=0&search=${query}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = await response.json();
-      const titles = Array.isArray(data?.[1]) ? data[1] : [];
-      const descriptions = Array.isArray(data?.[2]) ? data[2] : [];
-      const links = Array.isArray(data?.[3]) ? data[3] : [];
-
-      if (!titles.length || !descriptions.length) {
-        return null;
-      }
-
-      const [title] = titles;
-      const [description] = descriptions;
-      const [link] = links;
-
-      if (!description) {
-        return null;
-      }
-
-      const safeTitle = title || "Más información";
-      const safeDescription = description;
-      const safeLink = link ? `<br><a href="${link}" target="_blank" rel="noopener">Leer más en Wikipedia</a>` : "";
-
-      return (
-        `Encontré esto en internet sobre <strong>${safeTitle}</strong>:<br>` +
-        `${safeDescription}${safeLink}`
-      );
-    } catch (error) {
-      console.warn("No fue posible obtener información externa", error);
-      return null;
-    }
-  };
-
-  let isProcessing = false;
-
-  const handleSend = async () => {
+  const handleSend = () => {
     const raw = sanitize(inputEl.value);
-    if (!raw || isProcessing) return;
-
-    isProcessing = true;
-    sendButton.disabled = true;
+    if (!raw) return;
 
     appendMessage("user", raw);
     inputEl.value = "";
-
     const response = findResponse(raw);
-    if (response) {
-      botReply(response);
-      isProcessing = false;
-      sendButton.disabled = false;
-      inputEl.focus();
-      return;
-    }
-
-    const loadingMessage = showBotLoading();
-    try {
-      const internetResponse = await fetchInternetKnowledge(raw);
-      removeBotLoading(loadingMessage);
-      botReply(internetResponse || fallbackMessage);
-    } catch (error) {
-      console.warn("No fue posible completar la búsqueda externa", error);
-      removeBotLoading(loadingMessage);
-      botReply(fallbackMessage);
-    } finally {
-      isProcessing = false;
-      sendButton.disabled = false;
-      inputEl.focus();
-    }
+    botReply(response);
   };
 
   toggleButton.addEventListener("click", () => {
@@ -336,8 +242,7 @@
     const greeting =
       "¡Hola! Soy <strong>Mechapp Assist</strong>. " +
       "Estoy aquí para resolver tus dudas sobre servicios, registro, mecánicos y soporte en la plataforma. " +
-      "Cuéntame qué necesitas y te guiaré paso a paso. " +
-      "Si lo requieres, también puedo buscar datos públicos en internet para complementar la respuesta.";
+      "Cuéntame qué necesitas y te guiaré paso a paso.";
     appendMessage("bot", greeting);
     renderSuggestions();
   };
