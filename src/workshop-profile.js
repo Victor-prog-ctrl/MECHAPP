@@ -1,0 +1,113 @@
+(function () {
+  function getWorkshopIdFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id');
+  }
+
+  function populateText(selector, value) {
+    const el = document.querySelector(selector);
+    if (el) {
+      el.textContent = value;
+    }
+  }
+
+  function populateLink(selector, value, hrefPrefix) {
+    const el = document.querySelector(selector);
+    if (!el) {
+      return;
+    }
+    el.classList.remove('disabled');
+    if (!value) {
+      el.textContent = 'No disponible';
+      el.removeAttribute('href');
+      el.classList.add('disabled');
+      return;
+    }
+    el.textContent = value;
+    if (hrefPrefix) {
+      el.href = `${hrefPrefix}${value.replace(/\s+/g, '')}`;
+    } else {
+      el.href = `mailto:${value}`;
+    }
+  }
+
+  function createListItems(containerSelector, items) {
+    const container = document.querySelector(containerSelector);
+    if (!container) {
+      return;
+    }
+    container.innerHTML = '';
+    if (!items?.length) {
+      const empty = document.createElement('li');
+      empty.textContent = 'Información no disponible.';
+      container.appendChild(empty);
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      fragment.appendChild(li);
+    });
+    container.appendChild(fragment);
+  }
+
+  function renderWorkshop(workshop) {
+    const photo = document.querySelector('[data-workshop-photo]');
+    if (photo) {
+      photo.src = workshop.photo;
+      photo.alt = `Foto del taller ${workshop.name}`;
+    }
+
+    populateText('[data-workshop-name]', workshop.name);
+    populateText('[data-workshop-description]', workshop.description);
+
+    const specialtiesTag = document.querySelector('[data-workshop-specialties]');
+    if (specialtiesTag) {
+      specialtiesTag.textContent = workshop.specialties?.slice(0, 2).join(' · ') || 'Taller mecánico';
+    }
+
+    populateText('[data-workshop-experience]', `${workshop.experienceYears} años`);
+    populateText('[data-workshop-rating]', `${workshop.rating.toFixed(1)} ★`);
+    populateText('[data-workshop-rating-count]', `(${workshop.reviewsCount} reseñas verificadas)`);
+    populateText('[data-workshop-schedule]', workshop.schedule);
+    populateText('[data-workshop-address]', workshop.address);
+    populateLink('[data-workshop-phone]', workshop.phone, 'tel:');
+    populateLink('[data-workshop-email]', workshop.email, 'mailto:');
+
+    createListItems('[data-workshop-specialties-list]', workshop.specialties);
+    createListItems('[data-workshop-services]', workshop.services);
+    createListItems('[data-workshop-certifications]', workshop.certifications);
+
+    const reviewButton = document.querySelector('[data-review-button]');
+    if (reviewButton) {
+      reviewButton.href = `./redactar-resena.html?id=${encodeURIComponent(workshop.id)}`;
+    }
+  }
+
+  function showEmptyState() {
+    const sections = document.querySelectorAll('main > section');
+    sections.forEach((section) => {
+      if (section.dataset.workshopEmpty === undefined) {
+        section.hidden = true;
+      }
+    });
+
+    const emptySection = document.querySelector('[data-workshop-empty]');
+    if (emptySection) {
+      emptySection.hidden = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const workshopId = getWorkshopIdFromQuery();
+    const workshop = window.Mechapp?.workshops?.findById(workshopId);
+
+    if (!workshop) {
+      showEmptyState();
+      return;
+    }
+
+    renderWorkshop(workshop);
+  });
+})();
