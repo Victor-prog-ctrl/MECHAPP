@@ -92,6 +92,17 @@
     if (reviewButton) {
       reviewButton.href = `./redactar-resena.html?id=${encodeURIComponent(workshop.id)}`;
     }
+
+    const reviewsUrl = `./resenas-taller.html?id=${encodeURIComponent(workshop.id)}`;
+    const viewReviewsButton = document.querySelector('[data-view-reviews]');
+    if (viewReviewsButton) {
+      viewReviewsButton.href = reviewsUrl;
+    }
+
+    const viewReviewsNav = document.querySelector('[data-view-reviews-nav]');
+    if (viewReviewsNav) {
+      viewReviewsNav.href = reviewsUrl;
+    }
   }
 
   function showEmptyState() {
