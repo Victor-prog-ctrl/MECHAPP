@@ -145,6 +145,19 @@
     }
 
     article.appendChild(footer);
+
+    const actions = document.createElement('div');
+    actions.className = 'review-actions';
+
+    const viewReviewsButton = document.createElement('a');
+    viewReviewsButton.className = 'button ghost button-small';
+    viewReviewsButton.href = `./resenas-taller.html?id=${encodeURIComponent(workshop.id)}`;
+    viewReviewsButton.textContent = 'Ver reseñas';
+    viewReviewsButton.setAttribute('aria-label', `Ver todas las reseñas de ${workshop.name}`);
+
+    actions.appendChild(viewReviewsButton);
+    article.appendChild(actions);
+
     return article;
   }
 

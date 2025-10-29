@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mechapp · Reseñas del taller</title>
+    <meta
+      name="description"
+      content="Consulta todas las reseñas publicadas por clientes para un taller específico registrado en Mechapp."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../Styles/resenas-taller.css" />
+    <link rel="stylesheet" href="../Styles/chatbot.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./paginainicio.html" aria-label="Volver al inicio">
+        <img src="../assets/logo.png" alt="Logo de Mechapp" />
+        <span>Mechapp</span>
+      </a>
+      <nav class="header-actions" aria-label="Acciones de la página">
+        <a class="button ghost" href="./resenas-mecanicos.html">Reseñas destacadas</a>
+        <a class="button" data-create-review href="./redactar-resena.html">Escribir reseña</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="workshop-summary" data-workshop-summary hidden>
+        <div class="summary-hero">
+          <img data-workshop-photo alt="" loading="lazy" />
+          <div class="summary-details">
+            <span class="tag" data-workshop-specialties></span>
+            <h1 data-workshop-name></h1>
+            <p data-workshop-description></p>
+            <dl class="summary-metrics">
+              <div>
+                <dt>Calificación</dt>
+                <dd>
+                  <span data-workshop-rating></span>
+                  <small data-workshop-rating-count></small>
+                </dd>
+              </div>
+              <div>
+                <dt>Experiencia</dt>
+                <dd data-workshop-experience></dd>
+              </div>
+              <div>
+                <dt>Ubicación</dt>
+                <dd data-workshop-address></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        <div class="summary-actions">
+          <a class="button button-primary" data-create-review href="./redactar-resena.html">Escribir reseña</a>
+          <a class="button ghost" data-view-profile href="./perfil-taller.html">Ver perfil del taller</a>
+        </div>
+      </section>
+
+      <section class="reviews-section" data-reviews-section hidden aria-live="polite">
+        <div class="section-header">
+          <div>
+            <h2>Reseñas de clientes</h2>
+            <p data-review-count>0 reseñas publicadas</p>
+          </div>
+        </div>
+        <p class="reviews-empty" data-reviews-empty hidden>
+          Este taller aún no tiene reseñas registradas. Comparte tu experiencia y ayuda a otros conductores.
+        </p>
+        <ul class="review-list" data-review-list></ul>
+      </section>
+
+      <section class="empty-state" data-empty-state hidden>
+        <div class="empty-card">
+          <h2>No encontramos el taller</h2>
+          <p>
+            El enlace que abriste ya no está disponible o el taller fue removido de Mechapp. Revisa el catálogo de reseñas para
+            descubrir más talleres destacados.
+          </p>
+          <a class="button" href="./resenas-mecanicos.html">Volver a las reseñas</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../src/workshop-reviews-detail.js" defer></script>
+    <script src="../src/chatbot.js" defer></script>
+  </body>
+</html>
