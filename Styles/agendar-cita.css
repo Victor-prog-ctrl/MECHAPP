@@ -232,31 +232,33 @@ main {
 
 .calendar {
     display: grid;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 14px;
     border-radius: var(--radius-sm);
     background: rgba(15, 23, 42, 0.48);
     border: 1px solid rgba(148, 163, 184, 0.24);
+    max-width: 320px;
 }
 
 .calendar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
 }
 
 .calendar-month {
     font-weight: 600;
     color: #fff;
+    font-size: 0.95rem;
 }
 
 .calendar-nav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 999px;
     border: 1px solid rgba(148, 163, 184, 0.24);
     background: transparent;
@@ -281,12 +283,12 @@ main {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
 }
 
 .calendar-weekday {
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: rgba(226, 232, 240, 0.7);
     font-weight: 600;
 }
@@ -294,12 +296,13 @@ main {
 .calendar-day {
     width: 100%;
     aspect-ratio: 1 / 1;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid transparent;
     background: rgba(15, 23, 42, 0.58);
     color: #fff;
     font: inherit;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: border 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
