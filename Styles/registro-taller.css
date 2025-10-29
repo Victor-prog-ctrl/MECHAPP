@@ -207,6 +207,31 @@ textarea:focus {
     color: var(--text-muted);
 }
 
+.form-feedback {
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    display: none;
+}
+
+.form-feedback[data-state] {
+    display: block;
+}
+
+.form-feedback[data-state="success"] {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+    border: 1px solid rgba(5, 150, 105, 0.4);
+}
+
+.form-feedback[data-state="error"] {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.35);
+}
+
 .form-actions {
     display: flex;
     flex-direction: column;

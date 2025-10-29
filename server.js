@@ -376,6 +376,58 @@ function mapReviewRow(row) {
   };
 }
 
+function normalizeTextList(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/[,\n]/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function createWorkshopSlug(name) {
+  const baseSlug = String(name || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'taller';
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (db.prepare(`SELECT 1 FROM workshops WHERE id = ?`).get(slug)) {
+    slug = `${baseSlug}-${counter++}`;
+  }
+
+  return slug;
+}
+
+function createShortDescription(description) {
+  const text = String(description || '').trim();
+
+  if (!text) {
+    return 'Taller registrado en Mechapp.';
+  }
+
+  if (text.length <= 160) {
+    return text;
+  }
+
+  const truncated = text.slice(0, 157).replace(/[\s,;:.-]+$/g, '').trim();
+  return `${truncated}…`;
+}
+
 function ensureCertificateStatusColumn() {
   const columns = db.prepare(`PRAGMA table_info(users)`).all();
   const hasCertificateStatus = columns.some((column) => column.name === 'certificate_status');
@@ -482,32 +534,55 @@ const ALLOWED_CERTIFICATE_TYPES = new Map([
   ['image/jpg', 'jpg'],
 ]);
 
-function parseCertificateDataUrl(dataUrl) {
+const MAX_WORKSHOP_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_WORKSHOP_PHOTO_TYPES = new Map([
+  ['image/jpeg', 'jpg'],
+  ['image/png', 'png'],
+  ['image/jpg', 'jpg'],
+]);
+
+function parseBinaryDataUrl(dataUrl, { allowedTypes, maxSize, fieldLabel }) {
   if (!dataUrl || typeof dataUrl !== 'string') {
-    throw new Error('Certificado no válido.');
+    throw new Error(`Archivo de ${fieldLabel} no válido.`);
   }
 
   const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
 
   if (!matches) {
-    throw new Error('Formato de certificado no soportado.');
+    throw new Error(`Formato de ${fieldLabel} no soportado.`);
   }
 
   const mimeType = matches[1];
   const base64Data = matches[2];
 
-  if (!ALLOWED_CERTIFICATE_TYPES.has(mimeType)) {
-    throw new Error('Solo se aceptan certificados en formato JPG o PNG.');
+  if (!allowedTypes.has(mimeType)) {
+    throw new Error(`Solo se aceptan archivos en formato JPG o PNG para ${fieldLabel}.`);
   }
 
   const buffer = Buffer.from(base64Data, 'base64');
 
-  if (buffer.length > MAX_CERTIFICATE_SIZE) {
-    throw new Error('El certificado excede el tamaño máximo permitido (5MB).');
+  if (buffer.length > maxSize) {
+    throw new Error(`El archivo excede el tamaño máximo permitido (5MB).`);
   }
 
-  const extension = ALLOWED_CERTIFICATE_TYPES.get(mimeType);
+  const extension = allowedTypes.get(mimeType);
   return { buffer, extension };
+}
+
+function parseCertificateDataUrl(dataUrl) {
+  return parseBinaryDataUrl(dataUrl, {
+    allowedTypes: ALLOWED_CERTIFICATE_TYPES,
+    maxSize: MAX_CERTIFICATE_SIZE,
+    fieldLabel: 'certificado',
+  });
+}
+
+function parseWorkshopPhotoDataUrl(dataUrl) {
+  return parseBinaryDataUrl(dataUrl, {
+    allowedTypes: ALLOWED_WORKSHOP_PHOTO_TYPES,
+    maxSize: MAX_WORKSHOP_PHOTO_SIZE,
+    fieldLabel: 'fotografía del taller',
+  });
 }
 
 async function storeCertificateFile({ dataUrl }, identifier) {
@@ -520,6 +595,21 @@ async function storeCertificateFile({ dataUrl }, identifier) {
 
   await fsp.writeFile(absolutePath, buffer);
   return relativePath;
+}
+
+const workshopPhotosDir = path.join(dataDir, 'workshop-photos');
+fs.mkdirSync(workshopPhotosDir, { recursive: true });
+
+async function storeWorkshopPhotoFile(dataUrl, identifier) {
+  const { buffer, extension } = parseWorkshopPhotoDataUrl(dataUrl);
+  const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+  const safeIdentifier = String(identifier || 'workshop').replace(/[^a-zA-Z0-9-_]/g, '_');
+  const filename = `${safeIdentifier}-${uniqueSuffix}.${extension}`;
+  const relativePath = path.join('workshop-photos', filename);
+  const absolutePath = path.join(dataDir, relativePath);
+
+  await fsp.writeFile(absolutePath, buffer);
+  return `../${relativePath.replace(/\\/g, '/')}`;
 }
 
 // ===== Middlewares =====
@@ -608,6 +698,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/src', express.static(path.join(__dirname, 'src')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/data', express.static(path.join(__dirname, 'public', 'data')));
+app.use('/workshop-photos', express.static(workshopPhotosDir));
 app.use('/', express.static(path.join(__dirname, 'pages')));
 
 function requireAuth(req, res, next) {
@@ -678,6 +769,114 @@ app.get('/api/workshops/:id', (req, res) => {
   } catch (error) {
     console.error('Error obteniendo detalles del taller', error);
     res.status(500).json({ error: 'No se pudieron obtener los detalles del taller.' });
+  }
+});
+
+app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      services,
+      experienceYears,
+      address,
+      schedule,
+      phone,
+      email,
+      certifications,
+      specialties,
+      shortDescription,
+      photoDataUrl,
+    } = req.body || {};
+
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+    if (!normalizedName) {
+      return res.status(400).json({ error: 'Ingresa el nombre del taller.' });
+    }
+
+    const normalizedDescription = typeof description === 'string' ? description.trim() : '';
+    if (!normalizedDescription) {
+      return res.status(400).json({ error: 'Describe tu taller para continuar.' });
+    }
+
+    const normalizedAddress = typeof address === 'string' ? address.trim() : '';
+    if (!normalizedAddress) {
+      return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
+    }
+
+    const normalizedSchedule = typeof schedule === 'string' && schedule.trim() ? schedule.trim() : 'Horario no especificado';
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+    const parsedServices = normalizeTextList(services);
+    const parsedCertifications = normalizeTextList(certifications);
+    let parsedSpecialties = normalizeTextList(specialties);
+
+    if (!parsedSpecialties.length) {
+      parsedSpecialties = parsedServices.slice(0, 5);
+    }
+
+    if (!parsedSpecialties.length) {
+      parsedSpecialties = ['Servicios generales'];
+    }
+
+    const parsedExperience = Number.parseInt(experienceYears, 10);
+    const safeExperience = Number.isInteger(parsedExperience) && parsedExperience > 0 ? parsedExperience : 0;
+
+    const slug = createWorkshopSlug(normalizedName);
+    const computedShortDescription = createShortDescription(shortDescription || normalizedDescription);
+
+    let photoPath = '../assets/logo-oscuro.png';
+    if (photoDataUrl) {
+      try {
+        photoPath = await storeWorkshopPhotoFile(photoDataUrl, slug);
+      } catch (error) {
+        console.error('No se pudo almacenar la fotografía del taller', error);
+        return res.status(400).json({ error: error.message || 'No se pudo guardar la fotografía del taller.' });
+      }
+    }
+
+    const insert = db.prepare(
+      `INSERT INTO workshops (
+        id,
+        name,
+        short_description,
+        description,
+        experience_years,
+        address,
+        schedule,
+        phone,
+        email,
+        specialties,
+        services,
+        certifications,
+        photo
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    insert.run(
+      slug,
+      normalizedName,
+      computedShortDescription,
+      normalizedDescription,
+      safeExperience,
+      normalizedAddress,
+      normalizedSchedule,
+      normalizedPhone || null,
+      normalizedEmail || null,
+      JSON.stringify(parsedSpecialties),
+      JSON.stringify(parsedServices),
+      JSON.stringify(parsedCertifications),
+      photoPath
+    );
+
+    const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(slug);
+
+    res.status(201).json({ workshop: row ? mapWorkshopDetail(row) : null });
+  } catch (error) {
+    console.error('Error registrando taller', error);
+    res.status(500).json({ error: 'No se pudo registrar el taller en este momento.' });
   }
 });
 
