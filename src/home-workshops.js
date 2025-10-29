@@ -25,7 +25,7 @@
 
     const specialties = document.createElement('ul');
     specialties.className = 'workshop-card__specialties';
-    workshop.specialties.slice(0, 3).forEach((specialty) => {
+    (workshop.specialties || []).slice(0, 3).forEach((specialty) => {
       const item = document.createElement('li');
       item.textContent = specialty;
       specialties.appendChild(item);
@@ -34,7 +34,14 @@
 
     const rating = document.createElement('p');
     rating.className = 'workshop-card__rating';
-    rating.innerHTML = `<strong>${workshop.rating.toFixed(1)}</strong> · ${workshop.reviewsCount} reseñas`;
+    if (workshop.reviewsCount && workshop.averageRating != null) {
+      const average = Number(workshop.averageRating).toFixed(1);
+      const suffix = workshop.reviewsCount === 1 ? 'reseña' : 'reseñas';
+      rating.innerHTML = `<strong>${average}</strong> · ${workshop.reviewsCount} ${suffix}`;
+    } else {
+      rating.textContent = 'Aún no tiene reseñas';
+      rating.classList.add('workshop-card__rating--empty');
+    }
     body.appendChild(rating);
 
     const actions = document.createElement('div');
@@ -51,19 +58,43 @@
     return article;
   }
 
-  function renderHomeWorkshops() {
+  async function fetchWorkshops() {
+    const response = await fetch('/api/workshops');
+    if (!response.ok) {
+      throw new Error('No se pudieron cargar los talleres.');
+    }
+    return response.json();
+  }
+
+  async function renderHomeWorkshops() {
     const container = document.querySelector('[data-home-workshops]');
-    if (!container || !window.Mechapp?.workshops?.getSummary) {
+    if (!container) {
       return;
     }
 
-    const summary = window.Mechapp.workshops.getSummary();
-    const fragment = document.createDocumentFragment();
-    summary.forEach((workshop) => {
-      fragment.appendChild(createWorkshopCard(workshop));
-    });
-    container.innerHTML = '';
-    container.appendChild(fragment);
+    container.setAttribute('aria-busy', 'true');
+
+    try {
+      const data = await fetchWorkshops();
+      const workshops = Array.isArray(data?.workshops) ? data.workshops : [];
+
+      if (!workshops.length) {
+        container.innerHTML = '<p class="workshop-card__empty">Aún no hay talleres registrados.</p>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      workshops.forEach((workshop) => {
+        fragment.appendChild(createWorkshopCard(workshop));
+      });
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    } catch (error) {
+      console.error(error);
+      container.innerHTML = '<p class="workshop-card__empty">No pudimos mostrar los talleres en este momento.</p>';
+    } finally {
+      container.removeAttribute('aria-busy');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', renderHomeWorkshops);

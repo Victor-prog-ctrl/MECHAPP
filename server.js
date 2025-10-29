@@ -34,6 +34,348 @@ db.prepare(`
     )
 `).run();
 
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS workshops (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        short_description TEXT NOT NULL,
+        description TEXT NOT NULL,
+        experience_years INTEGER NOT NULL DEFAULT 0,
+        address TEXT NOT NULL,
+        schedule TEXT NOT NULL,
+        phone TEXT,
+        email TEXT,
+        specialties TEXT NOT NULL,
+        services TEXT NOT NULL,
+        certifications TEXT NOT NULL,
+        photo TEXT NOT NULL
+    )
+`).run();
+
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS workshop_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workshop_id TEXT NOT NULL,
+        client_id INTEGER,
+        rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        service TEXT NOT NULL,
+        visit_type TEXT NOT NULL CHECK (visit_type IN ('taller','domicilio')),
+        visit_date TEXT NOT NULL,
+        headline TEXT,
+        comment TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (workshop_id) REFERENCES workshops(id) ON DELETE CASCADE,
+        FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+`).run();
+
+const WORKSHOP_SEED = [
+  {
+    id: 'automaster-centro',
+    name: 'AutoMasters · Centro',
+    shortDescription:
+      'Especialistas en mantenimiento integral y diagnósticos electrónicos para flotas urbanas.',
+    description:
+      'AutoMasters · Centro combina tecnología de diagnóstico de última generación con un equipo certificado para resolver problemas mecánicos complejos y mantenimientos preventivos.',
+    services: [
+      'Mantenimiento general y preventivo',
+      'Diagnóstico electrónico avanzado',
+      'Reparación de frenos y suspensión',
+      'Preparación para revisión técnica',
+    ],
+    experienceYears: 12,
+    address: "Av. Libertador Bernardo O'Higgins 1234, Santiago",
+    schedule: 'Lunes a sábado de 9:00 a 19:00 hrs',
+    phone: '+56 2 2345 6789',
+    email: 'contacto@automastercentro.cl',
+    certifications: ['Bosch Service Partner', 'ISO 9001 Talleres'],
+    photo: '../assets/mantenimiento-generalf-Photoroom.png',
+    specialties: ['Mantenimiento general', 'Diagnóstico electrónico', 'Frenos'],
+  },
+  {
+    id: 'taller-ruiz',
+    name: 'Taller Ruiz',
+    shortDescription: 'Alineación, balanceo y servicios de suspensión con equipamiento de precisión.',
+    description:
+      'Taller Ruiz es reconocido por su servicio ágil y por acompañar a conductores particulares y flotas en trabajos de suspensión, dirección y neumáticos.',
+    services: [
+      'Alineación y balanceo computarizado',
+      'Reparación de suspensión y dirección',
+      'Cambio y rotación de neumáticos',
+      'Diagnóstico de vibraciones en carretera',
+    ],
+    experienceYears: 9,
+    address: 'Av. Providencia 1456, Providencia',
+    schedule: 'Lunes a viernes de 8:30 a 18:30 hrs',
+    phone: '+56 2 2765 9012',
+    email: 'contacto@tallerruiz.cl',
+    certifications: ['Hunter Elite Alignment', 'Socio Red Neumáticos Chile'],
+    photo: '../assets/aliniacion-Photoroom.png',
+    specialties: ['Alineación', 'Suspensión', 'Neumáticos'],
+  },
+  {
+    id: 'electroauto-norte',
+    name: 'ElectroAuto Norte',
+    shortDescription: 'Diagnóstico eléctrico, baterías inteligentes e inyección electrónica.',
+    description:
+      'ElectroAuto Norte atiende vehículos híbridos y convencionales con especialistas en electrónica automotriz, ofreciendo soluciones rápidas y garantizadas.',
+    services: [
+      'Diagnóstico eléctrico y electrónico',
+      'Reparación de sistemas de carga e iluminación',
+      'Mantención de baterías de litio e híbridas',
+      'Programación de módulos y sensores',
+    ],
+    experienceYears: 11,
+    address: 'Av. Recoleta 2888, Recoleta',
+    schedule: 'Lunes a sábado de 9:30 a 18:30 hrs',
+    phone: '+56 2 2890 1122',
+    email: 'hola@electroautonorte.cl',
+    certifications: ['Especialistas ASE Eléctrico', 'Autel Elite Workshop'],
+    photo: '../assets/transparent-Photoroom.png',
+    specialties: ['Diagnóstico eléctrico', 'Híbridos', 'Baterías'],
+  },
+  {
+    id: 'torque-sur',
+    name: 'Torque Sur',
+    shortDescription: 'Servicios rápidos de frenos, cambios de aceite y asistencia en ruta.',
+    description:
+      'Torque Sur entrega soluciones exprés con repuestos certificados, asistencia a domicilio y seguimiento digital del historial del vehículo.',
+    services: [
+      'Cambio de aceite y filtros',
+      'Servicio de frenos completos',
+      'Atención en ruta dentro de la comuna',
+      'Diagnóstico de motores gasolina y diésel',
+    ],
+    experienceYears: 7,
+    address: 'Gran Avenida José Miguel Carrera 7200, San Miguel',
+    schedule: 'Lunes a domingo de 10:00 a 19:30 hrs',
+    phone: '+56 9 9988 7766',
+    email: 'servicio@torquesur.cl',
+    certifications: ['Mobil Service Center', 'Certificado SEC'],
+    photo: '../assets/logo-oscuro.png',
+    specialties: ['Frenos', 'Lubricación', 'Asistencia en ruta'],
+  },
+];
+
+function seedWorkshops() {
+  const existing = db.prepare(`SELECT COUNT(*) as count FROM workshops`).get();
+  if (existing?.count) {
+    return;
+  }
+
+  const insert = db.prepare(`
+    INSERT INTO workshops (
+      id,
+      name,
+      short_description,
+      description,
+      experience_years,
+      address,
+      schedule,
+      phone,
+      email,
+      specialties,
+      services,
+      certifications,
+      photo
+    )
+    VALUES (@id, @name, @shortDescription, @description, @experienceYears, @address, @schedule, @phone, @email, @specialties, @services, @certifications, @photo)
+  `);
+
+  const insertMany = db.transaction((records) => {
+    for (const record of records) {
+      insert.run({
+        id: record.id,
+        name: record.name,
+        shortDescription: record.shortDescription,
+        description: record.description,
+        experienceYears: record.experienceYears,
+        address: record.address,
+        schedule: record.schedule,
+        phone: record.phone,
+        email: record.email,
+        specialties: JSON.stringify(record.specialties),
+        services: JSON.stringify(record.services),
+        certifications: JSON.stringify(record.certifications),
+        photo: record.photo,
+      });
+    }
+  });
+
+  insertMany(WORKSHOP_SEED);
+}
+
+seedWorkshops();
+
+function parseJsonArray(value) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('No se pudo analizar la columna JSON', error);
+    return [];
+  }
+}
+
+function normalizeAverage(value, count) {
+  if (!count || value === null || value === undefined) {
+    return null;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+
+  return Number(numeric.toFixed(1));
+}
+
+function mapWorkshopSummary(row) {
+  const reviewsCount = Number(row.reviews_count || 0);
+  const averageRating = normalizeAverage(row.average_rating, reviewsCount);
+
+  return {
+    id: row.id,
+    name: row.name,
+    shortDescription: row.short_description,
+    specialties: parseJsonArray(row.specialties),
+    photo: row.photo,
+    experienceYears: Number(row.experience_years || 0),
+    averageRating,
+    reviewsCount,
+    latestReview:
+      row.latest_comment && row.latest_rating
+        ? {
+            rating: Number(row.latest_rating),
+            comment: row.latest_comment,
+            headline: row.latest_headline || null,
+            service: row.latest_service || null,
+            visitDate: row.latest_visit_date || null,
+            visitType: row.latest_visit_type || null,
+            createdAt: row.latest_created_at,
+            clientName: row.latest_client_name || 'Cliente verificado',
+          }
+        : null,
+  };
+}
+
+function mapWorkshopDetail(row) {
+  const summary = mapWorkshopSummary(row);
+
+  return {
+    ...summary,
+    description: row.description,
+    services: parseJsonArray(row.services),
+    certifications: parseJsonArray(row.certifications),
+    address: row.address,
+    schedule: row.schedule,
+    phone: row.phone,
+    email: row.email,
+  };
+}
+
+const WORKSHOP_WITH_STATS_QUERY = `
+  WITH review_stats AS (
+    SELECT
+      workshop_id,
+      COUNT(*) AS reviews_count,
+      AVG(rating) AS average_rating
+    FROM workshop_reviews
+    GROUP BY workshop_id
+  ),
+  latest_reviews AS (
+    SELECT
+      r.id,
+      r.workshop_id,
+      r.rating,
+      r.comment,
+      r.headline,
+      r.service,
+      r.visit_date,
+      r.visit_type,
+      r.created_at,
+      COALESCE(u.name, 'Cliente verificado') AS latest_client_name,
+      ROW_NUMBER() OVER (PARTITION BY r.workshop_id ORDER BY datetime(r.created_at) DESC) AS row_number
+    FROM workshop_reviews r
+    LEFT JOIN users u ON u.id = r.client_id
+  )
+  SELECT
+    w.id,
+    w.name,
+    w.short_description,
+    w.description,
+    w.experience_years,
+    w.address,
+    w.schedule,
+    w.phone,
+    w.email,
+    w.specialties,
+    w.services,
+    w.certifications,
+    w.photo,
+    COALESCE(rs.reviews_count, 0) AS reviews_count,
+    rs.average_rating,
+    lr.rating AS latest_rating,
+    lr.comment AS latest_comment,
+    lr.headline AS latest_headline,
+    lr.service AS latest_service,
+    lr.visit_date AS latest_visit_date,
+    lr.visit_type AS latest_visit_type,
+    lr.created_at AS latest_created_at,
+    lr.latest_client_name AS latest_client_name
+  FROM workshops w
+  LEFT JOIN review_stats rs ON rs.workshop_id = w.id
+  LEFT JOIN latest_reviews lr ON lr.workshop_id = w.id AND lr.row_number = 1
+`;
+
+function computeWorkshopStats(rows) {
+  const specialtySet = new Set();
+  for (const row of rows) {
+    for (const specialty of parseJsonArray(row.specialties)) {
+      specialtySet.add(specialty);
+    }
+  }
+
+  const global = db
+    .prepare(
+      `SELECT AVG(rating) AS average_rating, COUNT(*) AS total_reviews, COUNT(DISTINCT client_id) AS verified_clients FROM workshop_reviews`
+    )
+    .get();
+
+  const totalReviews = Number(global?.total_reviews || 0);
+
+  return {
+    totalWorkshops: rows.length,
+    totalReviews,
+    averageRating: normalizeAverage(global?.average_rating, totalReviews),
+    verifiedClients: Number(global?.verified_clients || 0),
+    uniqueSpecialties: specialtySet.size,
+  };
+}
+
+function mapReviewRow(row) {
+  return {
+    id: row.id,
+    workshopId: row.workshop_id,
+    rating: Number(row.rating),
+    service: row.service,
+    visitType: row.visit_type,
+    visitDate: row.visit_date,
+    headline: row.headline || null,
+    comment: row.comment,
+    createdAt: row.created_at,
+    clientName: row.client_name || 'Cliente verificado',
+  };
+}
+
 function ensureCertificateStatusColumn() {
   const columns = db.prepare(`PRAGMA table_info(users)`).all();
   const hasCertificateStatus = columns.some((column) => column.name === 'certificate_status');
@@ -304,6 +646,164 @@ function requireMechanic(req, res, next) {
     res.status(500).json({ error: 'No se pudieron validar los permisos.' });
   }
 }
+
+app.get('/api/workshops', (req, res) => {
+  try {
+    const rows = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} ORDER BY w.name COLLATE NOCASE`).all();
+    const workshops = rows.map(mapWorkshopSummary);
+    const stats = computeWorkshopStats(rows);
+
+    res.json({ workshops, stats });
+  } catch (error) {
+    console.error('Error obteniendo talleres', error);
+    res.status(500).json({ error: 'No se pudieron obtener los talleres.' });
+  }
+});
+
+app.get('/api/workshops/:id', (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+
+  if (!workshopId) {
+    return res.status(400).json({ error: 'Identificador de taller no válido.' });
+  }
+
+  try {
+    const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(workshopId);
+
+    if (!row) {
+      return res.status(404).json({ error: 'Taller no encontrado.' });
+    }
+
+    res.json({ workshop: mapWorkshopDetail(row) });
+  } catch (error) {
+    console.error('Error obteniendo detalles del taller', error);
+    res.status(500).json({ error: 'No se pudieron obtener los detalles del taller.' });
+  }
+});
+
+app.get('/api/workshops/:id/reviews', (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+
+  if (!workshopId) {
+    return res.status(400).json({ error: 'Identificador de taller no válido.' });
+  }
+
+  const limitParam = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isInteger(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 20;
+
+  try {
+    const exists = db.prepare(`SELECT 1 FROM workshops WHERE id = ? LIMIT 1`).get(workshopId);
+    if (!exists) {
+      return res.status(404).json({ error: 'Taller no encontrado.' });
+    }
+
+    const rows = db
+      .prepare(
+        `SELECT r.id, r.workshop_id, r.rating, r.service, r.visit_type, r.visit_date, r.headline, r.comment, r.created_at, COALESCE(u.name, 'Cliente verificado') AS client_name
+         FROM workshop_reviews r
+         LEFT JOIN users u ON u.id = r.client_id
+         WHERE r.workshop_id = ?
+         ORDER BY datetime(r.created_at) DESC
+         LIMIT ?`
+      )
+      .all(workshopId, limit);
+
+    res.json({ reviews: rows.map(mapReviewRow) });
+  } catch (error) {
+    console.error('Error obteniendo reseñas', error);
+    res.status(500).json({ error: 'No se pudieron obtener las reseñas.' });
+  }
+});
+
+app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+
+  if (!workshopId) {
+    return res.status(400).json({ error: 'Identificador de taller no válido.' });
+  }
+
+  try {
+    const workshop = db.prepare(`SELECT id FROM workshops WHERE id = ?`).get(workshopId);
+    if (!workshop) {
+      return res.status(404).json({ error: 'El taller seleccionado no existe.' });
+    }
+
+    const user = db
+      .prepare(`SELECT id, name, account_type FROM users WHERE id = ?`)
+      .get(req.session.userId);
+
+    if (!user) {
+      return res.status(401).json({ error: 'No autorizado.' });
+    }
+
+    if (user.account_type !== 'cliente') {
+      return res.status(403).json({ error: 'Solo los clientes pueden publicar reseñas.' });
+    }
+
+    const {
+      rating,
+      service,
+      visitType,
+      visitDate,
+      headline,
+      comments,
+    } = req.body || {};
+
+    const parsedRating = Number.parseInt(rating, 10);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res.status(400).json({ error: 'Selecciona una calificación entre 1 y 5 estrellas.' });
+    }
+
+    const normalizedService = typeof service === 'string' ? service.trim() : '';
+    if (!normalizedService) {
+      return res.status(400).json({ error: 'Describe el servicio que recibiste.' });
+    }
+
+    const normalizedVisitType = visitType === 'domicilio' ? 'domicilio' : 'taller';
+
+    const normalizedVisitDate = typeof visitDate === 'string' ? visitDate.trim() : '';
+    if (!normalizedVisitDate || !/^\d{4}-\d{2}-\d{2}$/.test(normalizedVisitDate)) {
+      return res.status(400).json({ error: 'Ingresa la fecha de la visita en el formato AAAA-MM-DD.' });
+    }
+
+    const normalizedHeadline = typeof headline === 'string' ? headline.trim() : '';
+    const normalizedComment = typeof comments === 'string' ? comments.trim() : '';
+
+    if (!normalizedComment) {
+      return res.status(400).json({ error: 'Comparte tu experiencia con algunos detalles.' });
+    }
+
+    const insert = db
+      .prepare(
+        `INSERT INTO workshop_reviews (workshop_id, client_id, rating, service, visit_type, visit_date, headline, comment)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        workshopId,
+        user.id,
+        parsedRating,
+        normalizedService,
+        normalizedVisitType,
+        normalizedVisitDate,
+        normalizedHeadline || null,
+        normalizedComment
+      );
+
+    const saved = db
+      .prepare(
+        `SELECT r.id, r.workshop_id, r.rating, r.service, r.visit_type, r.visit_date, r.headline, r.comment, r.created_at, COALESCE(u.name, 'Cliente verificado') AS client_name
+         FROM workshop_reviews r
+         LEFT JOIN users u ON u.id = r.client_id
+         WHERE r.id = ?`
+      )
+      .get(insert.lastInsertRowid);
+
+    res.status(201).json({ message: 'Reseña enviada correctamente.', review: mapReviewRow(saved) });
+  } catch (error) {
+    console.error('Error guardando reseña', error);
+    res.status(500).json({ error: 'No se pudo guardar la reseña.' });
+  }
+});
 
 app.post('/api/register', async (req, res) => {
   let certificatePath = null;

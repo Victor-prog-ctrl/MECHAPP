@@ -68,8 +68,17 @@
     }
 
     populateText('[data-workshop-experience]', `${workshop.experienceYears} años`);
-    populateText('[data-workshop-rating]', `${workshop.rating.toFixed(1)} ★`);
-    populateText('[data-workshop-rating-count]', `(${workshop.reviewsCount} reseñas verificadas)`);
+
+    const ratingValue =
+      workshop.reviewsCount && workshop.averageRating != null
+        ? `${Number(workshop.averageRating).toFixed(1)} ★`
+        : 'Sin calificación';
+    const reviewsLabel = !workshop.reviewsCount
+      ? '(Aún sin reseñas)'
+      : `(${workshop.reviewsCount} ${workshop.reviewsCount === 1 ? 'reseña verificada' : 'reseñas verificadas'})`;
+
+    populateText('[data-workshop-rating]', ratingValue);
+    populateText('[data-workshop-rating-count]', reviewsLabel);
     populateText('[data-workshop-schedule]', workshop.schedule);
     populateText('[data-workshop-address]', workshop.address);
     populateLink('[data-workshop-phone]', workshop.phone, 'tel:');
@@ -99,15 +108,34 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const workshopId = getWorkshopIdFromQuery();
-    const workshop = window.Mechapp?.workshops?.findById(workshopId);
+  async function fetchWorkshop(id) {
+    const response = await fetch(`/api/workshops/${encodeURIComponent(id)}`);
+    if (!response.ok) {
+      throw new Error('No se pudo obtener la información del taller.');
+    }
+    return response.json();
+  }
 
-    if (!workshop) {
+  async function initializeWorkshopProfile() {
+    const workshopId = getWorkshopIdFromQuery();
+    if (!workshopId) {
       showEmptyState();
       return;
     }
 
-    renderWorkshop(workshop);
-  });
+    try {
+      const data = await fetchWorkshop(workshopId);
+      if (!data?.workshop) {
+        showEmptyState();
+        return;
+      }
+
+      renderWorkshop(data.workshop);
+    } catch (error) {
+      console.error(error);
+      showEmptyState();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initializeWorkshopProfile);
 })();
