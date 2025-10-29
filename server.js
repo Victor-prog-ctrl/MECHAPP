@@ -1183,6 +1183,62 @@ app.get('/api/mechanics', requireAuth, (req, res) => {
   }
 });
 
+app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
+  try {
+    const mechanicId = Number.parseInt(req.query.mechanicId, 10);
+
+    if (!Number.isInteger(mechanicId) || mechanicId <= 0) {
+      return res.json({ unavailableDays: [] });
+    }
+
+    const mechanic = db
+      .prepare(
+        `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
+      )
+      .get(mechanicId);
+
+    if (!mechanic) {
+      return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endLimit = new Date(today);
+    endLimit.setMonth(endLimit.getMonth() + 6);
+    endLimit.setHours(23, 59, 59, 999);
+
+    const formatDate = (value) => {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day = String(value.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const start = formatDate(today);
+    const end = formatDate(endLimit);
+
+    const rows = db
+      .prepare(
+        `SELECT DATE(scheduled_for) AS day
+         FROM appointments
+         WHERE mechanic_id = ?
+           AND DATE(scheduled_for) BETWEEN DATE(?) AND DATE(?)
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')
+         GROUP BY day`
+      )
+      .all(mechanicId, start, end);
+
+    const unavailableDays = rows
+      .map((row) => (typeof row.day === 'string' ? row.day : null))
+      .filter((day) => typeof day === 'string');
+
+    res.json({ unavailableDays });
+  } catch (error) {
+    console.error('Error obteniendo disponibilidad de citas', error);
+    res.status(500).json({ error: 'No se pudo obtener la disponibilidad de citas.' });
+  }
+});
+
 app.post('/api/appointments', requireAuth, (req, res) => {
   try {
     const currentUser = db
