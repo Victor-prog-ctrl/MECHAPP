@@ -68,6 +68,16 @@
                             ></textarea>
                         </div>
                         <div class="field">
+                            <label for="specialties">Especialidades principales</label>
+                            <textarea
+                                id="specialties"
+                                name="specialties"
+                                rows="2"
+                                placeholder="Suspensión, frenos, motor, eléctrico"
+                            ></textarea>
+                            <p class="help-text">Separa cada especialidad con comas o saltos de línea.</p>
+                        </div>
+                        <div class="field">
                             <label for="experience-years">Años de experiencia</label>
                             <input
                                 type="number"
@@ -141,6 +151,7 @@
                             <label for="privacy">Acepto compartir la información de mi taller en Mechapp.</label>
                         </div>
                     </fieldset>
+                    <p class="form-feedback" role="status" aria-live="polite" data-workshop-feedback hidden></p>
                     <div class="form-actions">
                         <button type="submit" class="button button-primary">Guardar taller</button>
                         <a class="button ghost" href="./paginainicio.html">Cancelar</a>
@@ -149,6 +160,7 @@
             </section>
         </main>
 
+        <script src="../src/workshop-registration.js" defer></script>
         <script src="../src/chatbot.js" defer></script>
     </body>
 </html>
