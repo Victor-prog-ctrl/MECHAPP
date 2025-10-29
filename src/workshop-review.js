@@ -4,25 +4,22 @@
     return params.get('id');
   }
 
-  function populateWorkshopSelect(defaultId) {
-    const select = document.querySelector('[data-workshop-select]');
-    if (!select || !window.Mechapp?.workshops?.getSummary) {
+  function showFeedback(message, isError = false) {
+    const feedback = document.querySelector('[data-review-feedback]');
+    if (!feedback) {
       return;
     }
+    feedback.textContent = message;
+    feedback.hidden = false;
+    feedback.classList.toggle('error', Boolean(isError));
+  }
 
-    const summary = window.Mechapp.workshops.getSummary();
-    const fragment = document.createDocumentFragment();
-    summary.forEach((workshop) => {
-      const option = document.createElement('option');
-      option.value = workshop.id;
-      option.textContent = workshop.name;
-      fragment.appendChild(option);
-    });
-
-    select.appendChild(fragment);
-
-    if (defaultId && summary.some((workshop) => workshop.id === defaultId)) {
-      select.value = defaultId;
+  function resetFeedback() {
+    const feedback = document.querySelector('[data-review-feedback]');
+    if (feedback) {
+      feedback.hidden = true;
+      feedback.classList.remove('error');
+      feedback.textContent = '';
     }
   }
 
@@ -56,26 +53,45 @@
     });
   }
 
-  function showFeedback(message, isError = false) {
-    const feedback = document.querySelector('[data-review-feedback]');
-    if (!feedback) {
+  async function populateWorkshopSelect(defaultId) {
+    const select = document.querySelector('[data-workshop-select]');
+    if (!select) {
       return;
     }
-    feedback.textContent = message;
-    feedback.hidden = false;
-    feedback.classList.toggle('error', Boolean(isError));
-  }
 
-  function resetFeedback() {
-    const feedback = document.querySelector('[data-review-feedback]');
-    if (feedback) {
-      feedback.hidden = true;
-      feedback.classList.remove('error');
-      feedback.textContent = '';
+    select.disabled = true;
+
+    try {
+      const response = await fetch('/api/workshops');
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar los talleres.');
+      }
+      const data = await response.json();
+      const workshops = Array.isArray(data?.workshops) ? data.workshops : [];
+
+      const fragment = document.createDocumentFragment();
+      workshops.forEach((workshop) => {
+        const option = document.createElement('option');
+        option.value = workshop.id;
+        option.textContent = workshop.name;
+        fragment.appendChild(option);
+      });
+
+      select.innerHTML = '<option value="">Selecciona un taller</option>';
+      select.appendChild(fragment);
+
+      if (defaultId && workshops.some((workshop) => workshop.id === defaultId)) {
+        select.value = defaultId;
+      }
+    } catch (error) {
+      console.error(error);
+      showFeedback('No pudimos cargar el listado de talleres. Intenta nuevamente más tarde.', true);
+    } finally {
+      select.disabled = false;
     }
   }
 
-  function handleSubmit(event) {
+  async function submitReview(event) {
     event.preventDefault();
     const form = event.currentTarget;
     resetFeedback();
@@ -88,17 +104,61 @@
 
     const formData = new FormData(form);
     const workshopId = formData.get('workshop');
-    const workshop = window.Mechapp?.workshops?.findById(workshopId);
+    if (!workshopId) {
+      showFeedback('Selecciona un taller antes de enviar la reseña.', true);
+      return;
+    }
 
-    showFeedback(
-      `¡Gracias por compartir tu experiencia con ${workshop?.name || 'el taller seleccionado'}! ` +
-        'Tu reseña será revisada y publicada una vez validada.',
-      false
-    );
-    form.reset();
-    const select = document.querySelector('[data-workshop-select]');
-    if (select && workshopId) {
-      select.value = workshopId;
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
+    const payload = {
+      rating: formData.get('rating'),
+      service: formData.get('service'),
+      visitType: formData.get('visit-type'),
+      visitDate: formData.get('visit-date'),
+      headline: formData.get('headline'),
+      comments: formData.get('comments'),
+    };
+
+    try {
+      const response = await fetch(`/api/workshops/${encodeURIComponent(workshopId)}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          showFeedback('Debes iniciar sesión como cliente para compartir una reseña.', true);
+          return;
+        }
+        const error = await response.json().catch(() => ({}));
+        showFeedback(error?.error || 'No pudimos guardar tu reseña. Intenta nuevamente.', true);
+        return;
+      }
+
+      const data = await response.json();
+      const thanksMessage = data?.message
+        ? data.message
+        : '¡Gracias por compartir tu experiencia! Tu reseña quedó registrada.';
+      showFeedback(thanksMessage, false);
+      form.reset();
+      const select = document.querySelector('[data-workshop-select]');
+      if (select && workshopId) {
+        select.value = workshopId;
+      }
+    } catch (error) {
+      console.error(error);
+      showFeedback('No pudimos guardar tu reseña. Verifica tu conexión e inténtalo nuevamente.', true);
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
     }
   }
 
@@ -109,7 +169,7 @@
 
     const form = document.getElementById('review-form');
     if (form) {
-      form.addEventListener('submit', handleSubmit);
+      form.addEventListener('submit', submitReview);
     }
   });
 })();

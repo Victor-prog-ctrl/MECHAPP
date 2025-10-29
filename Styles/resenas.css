@@ -322,6 +322,21 @@ main {
   line-height: 1.6;
 }
 
+.review-comment--empty {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.review-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
 .review-footer {
   display: flex;
   justify-content: space-between;
