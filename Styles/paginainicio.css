@@ -478,7 +478,7 @@ main {
 
 .workshop-card__image {
     position: relative;
-    padding-top: 60%;
+    padding-top: 30%;
     background: var(--surface);
 }
 
