@@ -31,15 +31,34 @@ function getVisitTypeLabel(visitType) {
 }
 
 function getStatusLabel(status) {
-    switch (status) {
+    const normalized = typeof status === "string" ? status.toLowerCase() : "";
+
+    switch (normalized) {
         case "confirmado":
             return "Confirmado";
         case "completado":
             return "Completado";
         case "cancelado":
             return "Cancelado";
+        case "rechazado":
+            return "Rechazado";
         default:
             return "Pendiente";
+    }
+}
+
+function getStatusClass(status) {
+    const normalized = typeof status === "string" ? status.toLowerCase() : "";
+
+    switch (normalized) {
+        case "completado":
+        case "confirmado":
+            return "success";
+        case "cancelado":
+        case "rechazado":
+            return "cancelled";
+        default:
+            return "pending";
     }
 }
 
@@ -56,6 +75,22 @@ function formatDateTime(dateString) {
         }).format(date);
     } catch (error) {
         console.error("No se pudo formatear la fecha y hora", error);
+        return dateString;
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) {
+        return "";
+    }
+
+    try {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat("es", {
+            dateStyle: "long",
+        }).format(date);
+    } catch (error) {
+        console.error("No se pudo formatear la fecha", error);
         return dateString;
     }
 }
@@ -225,6 +260,87 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     container.appendChild(fragment);
 }
 
+function renderClientHistory(history, { errorMessage } = {}) {
+    const container = document.querySelector("[data-client-history]");
+    const emptyState = document.querySelector("[data-client-history-empty]");
+
+    if (!container) {
+        return;
+    }
+
+    const records = Array.isArray(history) ? history : [];
+
+    if (!records.length) {
+        container.innerHTML = "";
+        if (emptyState) {
+            emptyState.textContent =
+                errorMessage ||
+                "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.";
+            emptyState.hidden = false;
+        }
+        return;
+    }
+
+    if (emptyState) {
+        emptyState.hidden = true;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    records.forEach((record) => {
+        const article = document.createElement("article");
+        article.className = "history-item";
+
+        const info = document.createElement("div");
+
+        const title = document.createElement("h3");
+        const workshopName = record?.workshop?.name ? String(record.workshop.name).trim() : "";
+        const mechanicName = record?.mechanic?.name ? String(record.mechanic.name).trim() : "";
+        title.textContent = workshopName || mechanicName || "Visita al taller";
+        info.appendChild(title);
+
+        const metaParts = [];
+
+        if (record?.service) {
+            metaParts.push(String(record.service));
+        }
+
+        const formattedDate = formatDate(record?.scheduledFor);
+        if (formattedDate) {
+            metaParts.push(formattedDate);
+        }
+
+        if (record?.visitType) {
+            metaParts.push(getVisitTypeLabel(record.visitType));
+        }
+
+        const locationDetail = record?.workshop?.address || record?.address;
+        if (locationDetail) {
+            metaParts.push(String(locationDetail));
+        }
+
+        if (metaParts.length) {
+            const meta = document.createElement("p");
+            meta.className = "item-meta";
+            meta.textContent = metaParts.filter(Boolean).join(" · ");
+            info.appendChild(meta);
+        }
+
+        article.appendChild(info);
+
+        const statusBadge = document.createElement("span");
+        const statusClass = getStatusClass(record?.status);
+        statusBadge.className = `status ${statusClass}`;
+        statusBadge.textContent = getStatusLabel(record?.status);
+        article.appendChild(statusBadge);
+
+        fragment.appendChild(article);
+    });
+
+    container.innerHTML = "";
+    container.appendChild(fragment);
+}
+
 function renderCompletedAppointmentsMetric(isMechanic, metrics) {
     const card = document.querySelector("[data-profile-completed-appointments-card]");
     if (!card) {
@@ -336,6 +452,26 @@ async function fetchMechanicRequests() {
     return Array.isArray(data?.requests) ? data.requests : [];
 }
 
+async function fetchClientHistory() {
+    const response = await fetch("/api/profile/history");
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return [];
+    }
+
+    if (response.status === 403) {
+        return [];
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudo obtener el historial de visitas.");
+    }
+
+    const data = await response.json();
+    return Array.isArray(data?.history) ? data.history : [];
+}
+
 async function setupProfilePage() {
     try {
         const profile = await fetchProfile();
@@ -363,6 +499,15 @@ async function setupProfilePage() {
             }
         } else {
             renderMechanicRequests([]);
+            try {
+                const history = await fetchClientHistory();
+                renderClientHistory(history);
+            } catch (error) {
+                console.error(error);
+                renderClientHistory([], {
+                    errorMessage: "No se pudo cargar tu historial de visitas. Intenta nuevamente más tarde.",
+                });
+            }
         }
     } catch (error) {
         console.error(error);

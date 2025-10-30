@@ -393,6 +393,11 @@ main {
     color: #a16207;
 }
 
+.status.cancelled {
+    background: rgba(248, 113, 113, 0.12);
+    color: #b91c1c;
+}
+
 .mechanic-rating {
     display: flex;
     flex-direction: column;
