@@ -312,6 +312,7 @@ function mapWorkshopSummary(row) {
     name: row.name,
     shortDescription: row.short_description,
     specialties: parseJsonArray(row.specialties),
+    services: parseJsonArray(row.services),
     photo: row.photo,
     experienceYears: Number(row.experience_years || 0),
     averageRating,
