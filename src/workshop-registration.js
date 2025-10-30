@@ -246,7 +246,7 @@
       }
 
       if (!payload.services.length) {
-        showFeedback('Selecciona al menos un servicio destacado.', 'error');
+        showFeedback('Selecciona al menos un servicio que ofreces.', 'error');
         return;
       }
 
