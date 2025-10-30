@@ -23,14 +23,26 @@
     description.textContent = workshop.shortDescription;
     body.appendChild(description);
 
-    const specialties = document.createElement('ul');
-    specialties.className = 'workshop-card__specialties';
-    (workshop.specialties || []).slice(0, 3).forEach((specialty) => {
+    const highlights = document.createElement('ul');
+    highlights.className = 'workshop-card__specialties';
+
+    const services = Array.isArray(workshop.services) ? workshop.services : [];
+    const specialties = Array.isArray(workshop.specialties) ? workshop.specialties : [];
+    const highlightItems = services.length ? services : specialties;
+
+    highlightItems.slice(0, 3).forEach((highlight) => {
       const item = document.createElement('li');
-      item.textContent = specialty;
-      specialties.appendChild(item);
+      item.textContent = highlight;
+      highlights.appendChild(item);
     });
-    body.appendChild(specialties);
+
+    if (!highlightItems.length) {
+      const item = document.createElement('li');
+      item.textContent = 'Servicios próximamente disponibles';
+      highlights.appendChild(item);
+    }
+
+    body.appendChild(highlights);
 
     const rating = document.createElement('p');
     rating.className = 'workshop-card__rating';
