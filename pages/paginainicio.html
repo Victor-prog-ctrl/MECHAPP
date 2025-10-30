@@ -106,24 +106,6 @@
       </div>
       <div class="search-results" id="search-results" aria-live="polite" hidden></div>
 
-      <div class="services-search" data-services-search hidden>
-        <div class="services-header">
-          <h3>Qué servicios buscas</h3>
-          <p>Explora los servicios disponibles y descubre talleres especializados.</p>
-        </div>
-        <div class="services-carousel">
-          <button class="services-nav services-nav--prev" type="button" aria-label="Ver servicios anteriores" data-service-prev>
-            <span aria-hidden="true">&#10094;</span>
-          </button>
-          <div class="services-track-wrapper" data-service-wrapper>
-            <div class="services-track" data-service-track></div>
-          </div>
-          <button class="services-nav services-nav--next" type="button" aria-label="Ver servicios siguientes" data-service-next>
-            <span aria-hidden="true">&#10095;</span>
-          </button>
-        </div>
-        <div class="service-results search-results" id="service-results" aria-live="polite" hidden></div>
-      </div>
     </section>
 
     <!-- ===== Sección de ubicación con Google Maps ===== -->
@@ -271,20 +253,11 @@
 
       applyVisibilityState();
 
-      const servicesSearchContainer = document.querySelector("[data-services-search]");
-      const servicesTrack = document.querySelector("[data-service-track]");
-      const serviceWrapper = document.querySelector("[data-service-wrapper]");
-      const servicePrevButton = document.querySelector("[data-service-prev]");
-      const serviceNextButton = document.querySelector("[data-service-next]");
-      const serviceResults = document.getElementById("service-results");
-
       const SEARCH_LOADING_MESSAGE = '<p class="empty-results">Estamos cargando los talleres…</p>';
       const SEARCH_ERROR_MESSAGE = '<p class="empty-results">No se pudieron cargar los talleres. Intenta nuevamente más tarde.</p>';
       const SEARCH_EMPTY_MESSAGE = '<p class="empty-results">No encontramos talleres que coincidan con tu búsqueda.</p>';
 
       let workshops = [];
-      let serviceEntries = [];
-      let activeServiceKey = null;
       let workshopsReady = false;
       let workshopsLoadError = false;
 
@@ -339,194 +312,6 @@
         searchResults.appendChild(fragment);
       }
 
-      function updateActiveServiceButton(serviceKey) {
-        if (!servicesTrack) {
-          return;
-        }
-        servicesTrack.querySelectorAll(".service-pill").forEach((button) => {
-          const isActive = button.dataset.serviceKey === serviceKey;
-          button.classList.toggle("service-pill--active", isActive);
-          button.setAttribute("aria-pressed", isActive ? "true" : "false");
-        });
-      }
-
-      function renderServiceResults(entry) {
-        if (!serviceResults) {
-          return;
-        }
-
-        if (!entry) {
-          serviceResults.innerHTML = "";
-          serviceResults.setAttribute("hidden", "");
-          updateActiveServiceButton(null);
-          return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        const heading = document.createElement("h4");
-        heading.className = "service-results__title";
-        heading.textContent = `Talleres que ofrecen ${entry.name}`;
-        fragment.appendChild(heading);
-
-        if (!entry.workshops.length) {
-          const empty = document.createElement("p");
-          empty.className = "empty-results";
-          empty.textContent = "No encontramos talleres con este servicio.";
-          fragment.appendChild(empty);
-        } else {
-          entry.workshops.forEach((workshop) => {
-            fragment.appendChild(createWorkshopResult(workshop));
-          });
-        }
-
-        serviceResults.innerHTML = "";
-        serviceResults.appendChild(fragment);
-        serviceResults.removeAttribute("hidden");
-        updateActiveServiceButton(entry.key);
-      }
-
-      function getServiceScrollAmount() {
-        if (!serviceWrapper || !servicesTrack) {
-          return 0;
-        }
-
-        const firstPill = servicesTrack.querySelector(".service-pill");
-        if (!firstPill) {
-          return serviceWrapper.clientWidth;
-        }
-
-        const pillWidth = firstPill.getBoundingClientRect().width;
-        const styles = window.getComputedStyle(servicesTrack);
-        const gap = [styles.columnGap, styles.gap, styles.rowGap]
-          .map((value) => {
-            const parsed = Number.parseFloat(value);
-            return Number.isNaN(parsed) ? 0 : parsed;
-          })
-          .find((value) => value > 0) || 0;
-
-        return pillWidth + gap;
-      }
-
-      function updateServiceNavButtons() {
-        if (!serviceWrapper || !servicePrevButton || !serviceNextButton || !servicesTrack) {
-          return;
-        }
-
-        const hasContent = servicesTrack.children.length > 0 && !servicesTrack.classList.contains("services-track--empty");
-        const maxScroll = Math.max(0, serviceWrapper.scrollWidth - serviceWrapper.clientWidth);
-        const currentScroll = serviceWrapper.scrollLeft;
-
-        servicePrevButton.disabled = !hasContent || currentScroll <= 0;
-        serviceNextButton.disabled = !hasContent || currentScroll >= maxScroll - 1;
-      }
-
-      function scrollServices(direction) {
-        if (!serviceWrapper) {
-          return;
-        }
-        const amount = getServiceScrollAmount();
-        if (!amount) {
-          return;
-        }
-        serviceWrapper.scrollBy({ left: direction * amount, behavior: "smooth" });
-      }
-
-      function handleServiceSelection(serviceKey) {
-        if (!serviceKey) {
-          return;
-        }
-
-        if (activeServiceKey === serviceKey) {
-          activeServiceKey = null;
-          renderServiceResults(null);
-          return;
-        }
-
-        activeServiceKey = serviceKey;
-        const entry = serviceEntries.find((item) => item.key === serviceKey) || null;
-        renderServiceResults(entry);
-      }
-
-      if (servicePrevButton && serviceNextButton && serviceWrapper) {
-        servicePrevButton.addEventListener("click", () => scrollServices(-1));
-        serviceNextButton.addEventListener("click", () => scrollServices(1));
-        serviceWrapper.addEventListener("scroll", updateServiceNavButtons, { passive: true });
-        window.addEventListener("resize", updateServiceNavButtons);
-      }
-
-      function buildServiceEntries(list) {
-        if (!servicesTrack || !servicesSearchContainer) {
-          return;
-        }
-
-        const map = new Map();
-        list.forEach((workshop) => {
-          const serviceList = Array.isArray(workshop.services) ? workshop.services : [];
-          const seenServiceKeys = new Set();
-          serviceList.forEach((serviceName) => {
-            if (!serviceName || typeof serviceName !== "string") {
-              return;
-            }
-            const trimmed = serviceName.trim().replace(/\s+/g, " ");
-            if (!trimmed) {
-              return;
-            }
-            const key = normalizeText(trimmed).replace(/\s+/g, " ");
-            if (!key) {
-              return;
-            }
-            if (seenServiceKeys.has(key)) {
-              return;
-            }
-            seenServiceKeys.add(key);
-
-            if (!map.has(key)) {
-              map.set(key, { key, name: trimmed, workshops: [], workshopIds: new Set() });
-            }
-            const entry = map.get(key);
-            if (!entry.workshopIds.has(workshop.id)) {
-              entry.workshopIds.add(workshop.id);
-              entry.workshops.push(workshop);
-            }
-          });
-        });
-
-        serviceEntries = Array.from(map.values())
-          .map(({ key, name, workshops }) => ({ key, name, workshops }))
-          .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
-
-        servicesTrack.classList.remove("services-track--empty");
-        servicesTrack.innerHTML = "";
-        activeServiceKey = null;
-        updateActiveServiceButton(null);
-        renderServiceResults(null);
-
-        if (!serviceEntries.length) {
-          servicesSearchContainer.hidden = false;
-          servicesTrack.classList.add("services-track--empty");
-          servicesTrack.innerHTML = '<p class="services-empty-message empty-results">Aún no hay servicios registrados.</p>';
-          if (servicePrevButton) { servicePrevButton.disabled = true; }
-          if (serviceNextButton) { serviceNextButton.disabled = true; }
-          return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        serviceEntries.forEach((entry) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "service-pill";
-          button.textContent = entry.name;
-          button.dataset.serviceKey = entry.key;
-          button.setAttribute("aria-pressed", "false");
-          button.addEventListener("click", () => handleServiceSelection(entry.key));
-          fragment.appendChild(button);
-        });
-
-        servicesTrack.appendChild(fragment);
-        servicesSearchContainer.hidden = false;
-        updateServiceNavButtons();
-      }
-
       async function loadWorkshops() {
         workshopsReady = false;
         workshopsLoadError = false;
@@ -538,7 +323,6 @@
           const data = await response.json();
           workshops = Array.isArray(data?.workshops) ? data.workshops : [];
           workshopsReady = true;
-          buildServiceEntries(workshops);
           if (searchInput && searchInput.value.trim()) {
             searchInput.dispatchEvent(new Event("input"));
           }
@@ -547,22 +331,6 @@
           workshops = [];
           workshopsReady = false;
           workshopsLoadError = true;
-          if (servicesSearchContainer) {
-            servicesSearchContainer.hidden = false;
-          }
-          if (serviceResults) {
-            serviceResults.innerHTML = '<p class="empty-results">No se pudieron cargar los servicios en este momento.</p>';
-            serviceResults.removeAttribute("hidden");
-          }
-          if (servicesTrack) {
-            servicesTrack.classList.add("services-track--empty");
-            servicesTrack.innerHTML = '<p class="services-empty-message empty-results">Intenta nuevamente más tarde.</p>';
-            activeServiceKey = null;
-            updateActiveServiceButton(null);
-          }
-          if (servicePrevButton) { servicePrevButton.disabled = true; }
-          if (serviceNextButton) { serviceNextButton.disabled = true; }
-          updateServiceNavButtons();
         }
       }
 
