@@ -338,7 +338,7 @@ main {
 }
 
 .history,
-.scores {
+.mechanic-rating {
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
@@ -393,38 +393,55 @@ main {
     color: #a16207;
 }
 
-.scores-table {
-    display: grid;
-    gap: 14px;
+.mechanic-rating {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
-.table-header,
-.table-row {
-    display: grid;
-    grid-template-columns: 2fr 2fr 1fr 1fr;
-    gap: 16px;
+.mechanic-rating__summary {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    padding: 16px 20px;
-    border-radius: var(--radius-sm);
+    gap: 24px;
 }
 
-.table-header {
-    background: var(--surface-alt);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    color: var(--text);
-}
-
-.table-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-}
-
-.table-row .rating {
+.mechanic-rating__value {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: clamp(2rem, 4vw, 2.75rem);
     font-weight: 700;
     color: var(--accent);
+}
+
+.mechanic-rating__value svg {
+    width: 48px;
+    height: 48px;
+    fill: currentColor;
+}
+
+.mechanic-rating__value[data-state="empty"] {
+    color: var(--text-muted);
+}
+
+.mechanic-rating__value[data-state="empty"] svg {
+    opacity: 0.4;
+}
+
+.mechanic-rating__value strong {
+    line-height: 1;
+}
+
+.mechanic-rating__details {
+    color: var(--text-muted);
+    font-size: 1rem;
+    max-width: 520px;
+}
+
+.mechanic-rating__empty {
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 .mechanic-requests {
@@ -544,14 +561,15 @@ main {
 
     .profile-summary,
     .history,
-    .scores,
+    .mechanic-rating,
     .mechanic-requests {
         padding: 28px;
     }
 
-    .table-header,
-    .table-row {
-        grid-template-columns: 1fr;
+    .mechanic-rating__summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
     }
 
     .subscription-input-group {

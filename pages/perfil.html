@@ -124,7 +124,12 @@
             </p>
         </section>
 
-        <section class="history" id="historial" aria-labelledby="historial-title">
+        <section
+            class="history"
+            id="historial"
+            aria-labelledby="historial-title"
+            data-visible-for="cliente"
+        >
             <div class="section-header">
                 <div>
                     <h2 id="historial-title">Historial de talleres visitados</h2>
@@ -157,40 +162,34 @@
             </div>
         </section>
 
-        <section class="scores" id="puntuaciones" aria-labelledby="scores-title">
+        <section
+            class="mechanic-rating"
+            aria-labelledby="mechanic-rating-title"
+            data-mechanic-rating
+            data-visible-for="mecanico"
+            hidden
+        >
             <div class="section-header">
                 <div>
-                    <h2 id="scores-title">Puntuaciones y comentarios</h2>
-                    <p>Consulta las valoraciones que has dejado a los talleres.</p>
+                    <h2 id="mechanic-rating-title">Tu puntuación</h2>
+                    <p>Consulta la calificación promedio que tus clientes han otorgado a tu taller.</p>
                 </div>
-                <a class="button ghost" href="#">Nueva reseña</a>
+                <a class="button ghost" data-mechanic-rating-link hidden href="#">Ver reseñas</a>
             </div>
-            <div class="scores-table" role="table" aria-label="Historial de puntuaciones">
-                <div class="table-header" role="row">
-                    <span role="columnheader">Taller</span>
-                    <span role="columnheader">Servicio</span>
-                    <span role="columnheader">Fecha</span>
-                    <span role="columnheader">Puntuación</span>
+            <div class="mechanic-rating__summary">
+                <div class="mechanic-rating__value" data-mechanic-rating-value aria-live="polite">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86L2 9.27l7.1-1.01L12 2z" />
+                    </svg>
+                    <strong>–</strong>
                 </div>
-                <div class="table-row" role="row">
-                    <span role="cell">AutoMasters · Centro</span>
-                    <span role="cell">Revisión general</span>
-                    <span role="cell">12/04/2024</span>
-                    <span role="cell" class="rating">5.0</span>
-                </div>
-                <div class="table-row" role="row">
-                    <span role="cell">Taller Ruiz</span>
-                    <span role="cell">Alineación y balanceo</span>
-                    <span role="cell">22/02/2024</span>
-                    <span role="cell" class="rating">4.8</span>
-                </div>
-                <div class="table-row" role="row">
-                    <span role="cell">ElectroAuto Norte</span>
-                    <span role="cell">Diagnóstico eléctrico</span>
-                    <span role="cell">15/01/2024</span>
-                    <span role="cell" class="rating">4.7</span>
-                </div>
+                <p class="mechanic-rating__details" data-mechanic-rating-reviews>
+                    Registra tu taller para comenzar a recibir reseñas de tus clientes.
+                </p>
             </div>
+            <p class="mechanic-rating__empty" data-mechanic-rating-empty hidden>
+                Aún no tienes reseñas publicadas. Pide a tus clientes que compartan su experiencia después de cada servicio.
+            </p>
         </section>
     </main>
 

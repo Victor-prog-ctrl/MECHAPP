@@ -48,7 +48,8 @@ db.prepare(`
         specialties TEXT NOT NULL,
         services TEXT NOT NULL,
         certifications TEXT NOT NULL,
-        photo TEXT NOT NULL
+        photo TEXT NOT NULL,
+        owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL
     )
 `).run();
 
@@ -177,9 +178,10 @@ function seedWorkshops() {
       specialties,
       services,
       certifications,
-      photo
+      photo,
+      owner_id
     )
-    VALUES (@id, @name, @shortDescription, @description, @experienceYears, @address, @schedule, @phone, @email, @specialties, @services, @certifications, @photo)
+    VALUES (@id, @name, @shortDescription, @description, @experienceYears, @address, @schedule, @phone, @email, @specialties, @services, @certifications, @photo, @ownerId)
   `);
 
   const insertMany = db.transaction((records) => {
@@ -198,6 +200,7 @@ function seedWorkshops() {
         services: JSON.stringify(record.services),
         certifications: JSON.stringify(record.certifications),
         photo: record.photo,
+        ownerId: null,
       });
     }
   });
@@ -236,6 +239,41 @@ function normalizeAverage(value, count) {
   }
 
   return Number(numeric.toFixed(1));
+}
+
+function getMechanicWorkshopSummary(mechanicId) {
+  if (!mechanicId) {
+    return null;
+  }
+
+  const row = db
+    .prepare(
+      `SELECT
+         w.id,
+         w.name,
+         COUNT(r.id) AS reviews_count,
+         AVG(r.rating) AS average_rating
+       FROM workshops w
+       LEFT JOIN workshop_reviews r ON r.workshop_id = w.id
+       WHERE w.owner_id = ?
+       GROUP BY w.id
+       ORDER BY reviews_count DESC, w.rowid DESC
+       LIMIT 1`
+    )
+    .get(mechanicId);
+
+  if (!row) {
+    return null;
+  }
+
+  const reviewsCount = Number(row.reviews_count || 0);
+
+  return {
+    id: row.id,
+    name: row.name,
+    reviewsCount,
+    averageRating: normalizeAverage(row.average_rating, reviewsCount),
+  };
 }
 
 function mapWorkshopSummary(row) {
@@ -450,6 +488,19 @@ function ensureCertificatePathColumn() {
 
 ensureCertificateStatusColumn();
 ensureCertificatePathColumn();
+
+function ensureWorkshopOwnerColumn() {
+  const columns = db.prepare(`PRAGMA table_info(workshops)`).all();
+  const hasOwnerId = columns.some((column) => column.name === 'owner_id');
+
+  if (!hasOwnerId) {
+    db.prepare(
+      `ALTER TABLE workshops ADD COLUMN owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL`
+    ).run();
+  }
+}
+
+ensureWorkshopOwnerColumn();
 
 function ensureAppointmentsTable() {
   db.prepare(`
@@ -850,9 +901,10 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
         specialties,
         services,
         certifications,
-        photo
+        photo,
+        owner_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
     insert.run(
@@ -868,7 +920,8 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
       JSON.stringify(parsedSpecialties),
       JSON.stringify(parsedServices),
       JSON.stringify(parsedCertifications),
-      photoPath
+      photoPath,
+      req.session.userId
     );
 
     const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(slug);
@@ -1152,6 +1205,8 @@ app.get('/api/profile', requireAuth, (req, res) => {
       email: user.email,
       accountType: user.account_type,
       createdAt: user.created_at,
+      mechanicWorkshop:
+        user.account_type === 'mecanico' ? getMechanicWorkshopSummary(user.id) : null,
     });
   } catch (error) {
     console.error('Error obteniendo perfil', error);
