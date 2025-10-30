@@ -276,6 +276,33 @@ function getMechanicWorkshopSummary(mechanicId) {
   };
 }
 
+function getMechanicAppointmentsSummary(mechanicId) {
+  if (!mechanicId) {
+    return {
+      completedAppointmentsLast12Months: 0,
+      completedAppointmentsTotal: 0,
+    };
+  }
+
+  const row = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN status = 'completado' AND datetime(scheduled_for) >= datetime('now', '-12 months') THEN 1 ELSE 0 END) AS completed_last_12_months,
+         SUM(CASE WHEN status = 'completado' THEN 1 ELSE 0 END) AS completed_total
+       FROM appointments
+       WHERE mechanic_id = ?`
+    )
+    .get(mechanicId);
+
+  const completedLast12Months = Number(row?.completed_last_12_months) || 0;
+  const completedTotal = Number(row?.completed_total) || 0;
+
+  return {
+    completedAppointmentsLast12Months: completedLast12Months,
+    completedAppointmentsTotal: completedTotal,
+  };
+}
+
 function mapWorkshopSummary(row) {
   const reviewsCount = Number(row.reviews_count || 0);
   const averageRating = normalizeAverage(row.average_rating, reviewsCount);
@@ -1207,6 +1234,8 @@ app.get('/api/profile', requireAuth, (req, res) => {
       createdAt: user.created_at,
       mechanicWorkshop:
         user.account_type === 'mecanico' ? getMechanicWorkshopSummary(user.id) : null,
+      mechanicMetrics:
+        user.account_type === 'mecanico' ? getMechanicAppointmentsSummary(user.id) : null,
     });
   } catch (error) {
     console.error('Error obteniendo perfil', error);
