@@ -320,15 +320,15 @@ function mapWorkshopSummary(row) {
     latestReview:
       row.latest_comment && row.latest_rating
         ? {
-            rating: Number(row.latest_rating),
-            comment: row.latest_comment,
-            headline: row.latest_headline || null,
-            service: row.latest_service || null,
-            visitDate: row.latest_visit_date || null,
-            visitType: row.latest_visit_type || null,
-            createdAt: row.latest_created_at,
-            clientName: row.latest_client_name || 'Cliente verificado',
-          }
+          rating: Number(row.latest_rating),
+          comment: row.latest_comment,
+          headline: row.latest_headline || null,
+          service: row.latest_service || null,
+          visitDate: row.latest_visit_date || null,
+          visitType: row.latest_visit_type || null,
+          createdAt: row.latest_created_at,
+          clientName: row.latest_client_name || 'Cliente verificado',
+        }
         : null,
   };
 }
@@ -497,18 +497,18 @@ function mapAppointmentHistoryRow(row) {
     createdAt: row.created_at,
     mechanic: hasMechanic
       ? {
-          id: mechanicId,
-          name: row.mechanic_name || null,
-          email: row.mechanic_email || null,
-        }
+        id: mechanicId,
+        name: row.mechanic_name || null,
+        email: row.mechanic_email || null,
+      }
       : null,
     workshop: row.workshop_id
       ? {
-          id: row.workshop_id,
-          name: row.workshop_name || null,
-          address: row.workshop_address || null,
-          photo: row.workshop_photo || null,
-        }
+        id: row.workshop_id,
+        name: row.workshop_name || null,
+        address: row.workshop_address || null,
+        photo: row.workshop_photo || null,
+      }
       : null,
   };
 }
@@ -770,43 +770,89 @@ async function storeWorkshopPhotoFile(dataUrl, identifier) {
   await fsp.writeFile(absolutePath, buffer);
   return `../${relativePath.replace(/\\/g, '/')}`;
 }
+// ----- BYPASS de seguridad SOLO para agendar-cita.html (test) -----
+const noSecurityHeaders = (req, res, next) => {
+  // Quitamos headers que rompen el popup/iframe de PayPal SOLO en esta ruta
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Cross-Origin-Opener-Policy');
+  res.removeHeader('Cross-Origin-Embedder-Policy');
+  res.removeHeader('Cross-Origin-Resource-Policy');
+  res.removeHeader('X-Frame-Options');
+  next();
+};
+
+// Sirve la página sin Helmet ni CSP para aislar el problema
+app.get('/pages/agendar-cita.html', noSecurityHeaders, (req, res) => {
+  res.sendFile(path.join(__dirname, 'pages', 'agendar-cita.html'));
+});
+
 
 // ===== Middlewares =====
 
 
 app.use(helmet({
   contentSecurityPolicy: {
-    useDefaults: true,
+    crossOriginEmbedderPolicy: false,
     directives: {
-      // No fuerces HTTPS en dev
+      // Evitar forzar HTTPS en desarrollo
       "upgrade-insecure-requests": null,
       "block-all-mixed-content": null,
 
       "default-src": ["'self'"],
 
-      // ✅ Scripts permitidos (añadimos Google Maps)
+      // ✅ Scripts: PayPal, Google Maps, Leaflet, EmailJS, etc.
       "script-src": [
         "'self'",
         "'unsafe-inline'",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com",
         "https://unpkg.com",
         "https://cdn.jsdelivr.net",
         "https://maps.googleapis.com",
         "https://maps.gstatic.com"
       ],
 
-      // ✅ Estilos (Maps usa gstatic para CSS internos)
-      "style-src": [
+      "script-src-elem": [
         "'self'",
         "'unsafe-inline'",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com",
         "https://unpkg.com",
-        "https://fonts.googleapis.com",
+        "https://cdn.jsdelivr.net",
+        "https://maps.googleapis.com",
         "https://maps.gstatic.com"
       ],
 
-      // ✅ Imágenes (incluye sprites/tiles de Google)
+      // ✅ iframes: PayPal
+      "frame-src": [
+        "'self'",
+        "https://www.sandbox.paypal.com",
+        "https://www.paypal.com",
+        "https://*.paypal.com"
+      ],
+      "child-src": [
+        "'self'",
+        "https://www.paypal.com",
+        "https://*.paypal.com"
+      ],
+
+      // ✅ XHR/Fetch: PayPal + Google + EmailJS
+      "connect-src": [
+        "'self'",
+        "https://www.sandbox.paypal.com",
+        "https://api-m.sandbox.paypal.com",
+        "https://api-m.paypal.com",
+        "https://unpkg.com",
+        "https://api.emailjs.com",
+        "https://maps.googleapis.com"
+      ],
+
+      // ✅ Imágenes (incluye PayPal y Maps)
       "img-src": [
         "'self'",
         "data:",
+        "https://www.paypalobjects.com",
+        "https://*.paypal.com",
         "https://unpkg.com",
         "https://*.tile.openstreetmap.org",
         "https://*.openstreetmap.org",
@@ -815,24 +861,30 @@ app.use(helmet({
         "https://images.unsplash.com"
       ],
 
+      // ✅ Estilos (PayPal usa algunos inline)
+      "style-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://fonts.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
+
       // ✅ Fuentes
       "font-src": [
         "'self'",
         "https://fonts.gstatic.com"
       ],
 
-      // ✅ XHR/Fetch (Google Maps + EmailJS + unpkg)
-      "connect-src": [
-        "'self'",
-        "https://unpkg.com",
-        "https://api.emailjs.com",
-        "https://maps.googleapis.com"
-      ],
-    },
+      // Opcional: seguridad de frames
+      "frame-ancestors": ["'self'"]
+    }
   },
+  crossOriginOpenerPolicy: { policy: 'unsafe-none' },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false
 }));
+
 
 
 app.use(express.json({ limit: '10mb' }));
@@ -1447,8 +1499,8 @@ app.get('/api/profile', requireAuth, (req, res) => {
     const user = db
       .prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`)
       .get(
-      req.session.userId
-    );
+        req.session.userId
+      );
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -1723,9 +1775,9 @@ app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) =
         clientLocation:
           request.client_latitude !== null && request.client_longitude !== null
             ? {
-                latitude: request.client_latitude,
-                longitude: request.client_longitude,
-              }
+              latitude: request.client_latitude,
+              longitude: request.client_longitude,
+            }
             : null,
       })),
     });
