@@ -438,7 +438,8 @@ main {
 }
 
 .card-grid,
-.services {
+.services,
+.workshops {
     background: var(--surface);
     color: var(--text);
     border-radius: var(--radius-lg);
@@ -449,13 +450,104 @@ main {
 }
 
 .card-grid::after,
-.services::after {
+.services::after,
+.workshops::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     border: 1px solid rgba(15, 23, 42, 0.06);
     pointer-events: none;
+}
+
+.workshops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.workshop-card {
+    background: var(--surface-alt);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.workshop-card__image {
+    position: relative;
+    padding-top: 30%;
+    background: var(--surface);
+}
+
+.workshop-card__image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.workshop-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+}
+
+.workshop-card__body h3 {
+    font-size: 1.1rem;
+}
+
+.workshop-card__body p {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.workshop-card__specialties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.workshop-card__specialties li {
+    background: rgba(249, 115, 22, 0.14);
+    color: var(--accent);
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.workshop-card__rating {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.workshop-card__rating strong {
+    color: var(--text);
+}
+
+.workshop-card__rating--empty {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.workshop-card__empty {
+    background: var(--surface-alt);
+    border-radius: var(--radius-md);
+    padding: 32px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.workshop-card__actions {
+    margin-top: auto;
 }
 
 .grid {
@@ -611,6 +703,7 @@ main {
     .hero,
     .card-grid,
     .services,
+    .workshops,
     .search-section,
     .location-section {
         padding: 28px;

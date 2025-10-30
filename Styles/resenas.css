@@ -110,6 +110,11 @@ main {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+.button.button-small {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
 .button-primary {
   background: var(--accent);
   color: #fff;
@@ -322,6 +327,21 @@ main {
   line-height: 1.6;
 }
 
+.review-comment--empty {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.review-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
 .review-footer {
   display: flex;
   justify-content: space-between;
@@ -333,6 +353,16 @@ main {
 .review-footer time {
   font-weight: 600;
   color: var(--accent);
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.review-actions .button {
+  margin-left: auto;
 }
 
 @media (max-width: 900px) {

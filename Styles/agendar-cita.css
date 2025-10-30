@@ -220,9 +220,128 @@ main {
     gap: 20px;
 }
 
-.field {
+.field { 
+    display: grid; 
+    gap: 8px; 
+}
+
+.field-helper {
+    font-size: 0.9rem;
+    color: rgba(226, 232, 240, 0.78);
+}
+
+.calendar {
     display: grid;
-    gap: 8px;
+    gap: 10px;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(15, 23, 42, 0.48);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    max-width: 320px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.calendar-month {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.calendar-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.calendar-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.calendar-nav:not(:disabled):hover,
+.calendar-nav:not(:disabled):focus-visible {
+    background: rgba(249, 115, 22, 0.18);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(226, 232, 240, 0.7);
+    font-weight: 600;
+}
+
+.calendar-day {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: rgba(15, 23, 42, 0.58);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.calendar-day:hover,
+.calendar-day:focus-visible {
+    border-color: rgba(249, 115, 22, 0.48);
+    outline: none;
+}
+
+.calendar-day.is-outside {
+    color: rgba(148, 163, 184, 0.52);
+    background: rgba(15, 23, 42, 0.32);
+}
+
+.calendar-day.is-unavailable {
+    background: rgba(148, 163, 184, 0.16);
+    color: rgba(148, 163, 184, 0.6);
+    cursor: not-allowed;
+}
+
+.calendar-day.is-unavailable:hover,
+.calendar-day.is-unavailable:focus-visible {
+    border-color: transparent;
+}
+
+.calendar-day.is-today {
+    border-color: rgba(249, 115, 22, 0.4);
+}
+
+.calendar-day.is-selected {
+    background: var(--accent);
+    color: #0f172a;
+    border-color: transparent;
+}
+
+.calendar-day:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .field label {

@@ -60,6 +60,16 @@
       </div>
     </section>
 
+    <section class="workshops" aria-labelledby="workshops-title">
+      <div class="section-header">
+        <div>
+          <h2 id="workshops-title">Talleres verificados en Mechapp</h2>
+          <p>Conoce a los especialistas inscritos y accede a su perfil para solicitar servicios o dejar una reseña.</p>
+        </div>
+      </div>
+      <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+    </section>
+
     <section class="search-section" aria-labelledby="buscador">
       <div class="section-header">
         <div>
@@ -72,43 +82,6 @@
         <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
       </div>
       <div class="search-results" id="search-results" aria-live="polite"></div>
-    </section>
-
-    <section class="services" id="citas" aria-labelledby="servicios">
-      <div class="section-header">
-        <div>
-          <h2 id="servicios">Servicios Populares</h2>
-          <p>Agenda los servicios más solicitados por nuestros clientes.</p>
-        </div>
-        <a class="button" href="#citas">Explorar</a>
-      </div>
-      <div class="grid">
-        <article class="service-card">
-          <img src="assets/mantenimiento-generalf-Photoroom.png" width="60" height="60">
-
-          <div>
-            <h3>Mantenimiento General</h3>
-            <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
-        <article class="service-card">
-          <img src="assets/transparent-Photoroom.png" width="60" height="60">
-          <div>
-            <h3>Diagnóstico Eléctrico</h3>
-            <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
-        <article class="service-card">
-          <img src="assets/aliniacion-Photoroom.png" width="60" height="60">
-          <div>
-            <h3>Alineación y Balanceo</h3>
-            <p>Mejora el rendimiento y la seguridad en carretera.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
-      </div>
     </section>
 
     <!-- ===== Sección de ubicación con Google Maps ===== -->
@@ -171,6 +144,8 @@
       <p>soporte@autoserv.com</p>
     </div>
   </footer>
+
+  <script src="../src/home-workshops.js" defer></script>
 
   <!-- Tu lógica general (búsqueda) la dejé intacta -->
   <script>
