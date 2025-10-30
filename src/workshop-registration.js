@@ -110,15 +110,24 @@
     }
 
     const optionWidth = firstOption.getBoundingClientRect().width;
+    const wrapperWidth = serviceWrapper.getBoundingClientRect().width;
     const styles = window.getComputedStyle(serviceTrack);
-    const gap = [styles.columnGap, styles.gap, styles.rowGap]
+    const gap = [styles.getPropertyValue('column-gap'), styles.getPropertyValue('gap'), styles.getPropertyValue('row-gap')]
       .map((value) => {
         const parsed = Number.parseFloat(value);
         return Number.isNaN(parsed) ? 0 : parsed;
       })
       .find((value) => value > 0) || 0;
 
-    return optionWidth + gap;
+    const optionWidthWithGap = optionWidth + gap;
+    if (!optionWidthWithGap) {
+      return wrapperWidth || 0;
+    }
+
+    const visibleCount = Math.max(1, Math.round(wrapperWidth / optionWidthWithGap));
+    const amount = visibleCount * optionWidthWithGap;
+
+    return Math.max(optionWidthWithGap, amount);
   }
 
   function updateServiceNavButtons() {

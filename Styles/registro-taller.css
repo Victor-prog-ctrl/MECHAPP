@@ -208,6 +208,7 @@ label {
 
 .service-track-wrapper {
     flex: 1;
+    min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -219,14 +220,17 @@ label {
 }
 
 .service-track {
-    --service-card-width: clamp(220px, calc((100% - 32px) / 3), 320px);
+    --service-gap: 16px;
     display: flex;
-    gap: 16px;
+    gap: var(--service-gap);
     padding: 4px;
+    scroll-snap-type: x mandatory;
 }
 
 .service-option {
-    flex: 0 0 var(--service-card-width);
+    flex: 0 0 calc((100% - (2 * var(--service-gap))) / 3);
+    max-width: 320px;
+    min-width: 200px;
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -235,6 +239,7 @@ label {
     border: 1px solid var(--border);
     background: var(--surface-muted);
     cursor: pointer;
+    scroll-snap-align: start;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
@@ -254,13 +259,28 @@ label {
     color: var(--text);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
     .service-nav {
         display: none;
     }
 
+    .service-track-wrapper {
+        overflow-x: auto;
+    }
+
     .service-track {
-        --service-card-width: min(280px, 100%);
+        --service-gap: 14px;
+    }
+
+    .service-option {
+        flex: 0 0 min(280px, 100%);
+        max-width: none;
+    }
+}
+
+@media (min-width: 768px) {
+    .service-track-wrapper {
+        overflow: hidden;
     }
 }
 
