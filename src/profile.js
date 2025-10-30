@@ -225,6 +225,48 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     container.appendChild(fragment);
 }
 
+function renderCompletedAppointmentsMetric(isMechanic, metrics) {
+    const card = document.querySelector("[data-profile-completed-appointments-card]");
+    if (!card) {
+        return;
+    }
+
+    const valueElement = card.querySelector("[data-profile-completed-appointments-value]");
+    const captionElement = card.querySelector("[data-profile-completed-appointments-caption]");
+
+    if (!isMechanic) {
+        if (valueElement) {
+            valueElement.textContent = "0";
+        }
+        if (captionElement) {
+            captionElement.textContent = "En los últimos 12 meses";
+        }
+        card.removeAttribute("aria-label");
+        return;
+    }
+
+    const completedLast12Months = Number(metrics?.completedAppointmentsLast12Months ?? 0);
+    const completedTotal = Number(metrics?.completedAppointmentsTotal ?? completedLast12Months);
+
+    if (valueElement) {
+        valueElement.textContent = String(completedLast12Months);
+    }
+
+    if (captionElement) {
+        captionElement.textContent =
+            completedTotal > completedLast12Months
+                ? `En los últimos 12 meses · ${completedTotal} en total`
+                : "En los últimos 12 meses";
+    }
+
+    card.setAttribute(
+        "aria-label",
+        completedTotal > completedLast12Months
+            ? `Citas completadas en los últimos 12 meses: ${completedLast12Months}. Total histórico: ${completedTotal}.`
+            : `Citas completadas en los últimos 12 meses: ${completedLast12Months}.`,
+    );
+}
+
 function renderAverageRatingMetric(workshop) {
     const card = document.querySelector("[data-profile-average-rating-card]");
     if (!card) {
@@ -306,6 +348,7 @@ async function setupProfilePage() {
         const isMechanic = profile.accountType === "mecanico";
         toggleMechanicSection(isMechanic);
         toggleAudienceSections(isMechanic);
+        renderCompletedAppointmentsMetric(isMechanic, profile.mechanicMetrics || null);
         renderAverageRatingMetric(isMechanic ? profile.mechanicWorkshop || null : null);
 
         if (isMechanic) {
