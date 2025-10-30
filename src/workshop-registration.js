@@ -43,6 +43,17 @@
   const serviceWrapper = serviceOptionsContainer?.querySelector('[data-service-wrapper]');
   const servicePrevButton = serviceOptionsContainer?.querySelector('[data-service-prev]');
   const serviceNextButton = serviceOptionsContainer?.querySelector('[data-service-next]');
+  const selectedServicesContainer = form.querySelector('[data-selected-services]');
+  const selectedServicesList = selectedServicesContainer?.querySelector('[data-selected-services-list]');
+  const selectedServicesEmpty = selectedServicesContainer?.querySelector('[data-selected-services-empty]');
+
+  function escapeSelector(value) {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+      return CSS.escape(value);
+    }
+
+    return String(value).replace(/([\0-\x1F\x7F"#,:;<=>?@\[\]\\^`{|}~])/g, '\\$1');
+  }
 
   function toggleSubmitting(isSubmitting) {
     if (submitButton) {
@@ -198,6 +209,58 @@
       }
     }
     updateServiceNavButtons();
+    renderSelectedServices();
+  }
+
+  function getCheckedServices() {
+    if (!serviceTrack) {
+      return [];
+    }
+
+    return Array.from(serviceTrack.querySelectorAll('input[name="services"]:checked'));
+  }
+
+  function renderSelectedServices() {
+    if (!selectedServicesContainer || !selectedServicesList) {
+      return;
+    }
+
+    const checked = getCheckedServices();
+    const hasSelections = checked.length > 0;
+
+    selectedServicesContainer.hidden = false;
+
+    if (selectedServicesEmpty) {
+      selectedServicesEmpty.hidden = hasSelections;
+    }
+
+    selectedServicesList.innerHTML = '';
+
+    if (!hasSelections) {
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    checked.forEach((input) => {
+      const item = document.createElement('span');
+      item.className = 'selected-services__item';
+
+      const text = document.createElement('span');
+      text.textContent = input.value;
+
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.dataset.removeService = input.value;
+      removeButton.setAttribute('aria-label', `Quitar ${input.value} de los servicios seleccionados`);
+      removeButton.textContent = 'Quitar';
+
+      item.appendChild(text);
+      item.appendChild(removeButton);
+      fragment.appendChild(item);
+    });
+
+    selectedServicesList.appendChild(fragment);
   }
 
   renderServiceOptions();
@@ -212,6 +275,41 @@
 
   if (serviceWrapper) {
     serviceWrapper.addEventListener('scroll', updateServiceNavButtons, { passive: true });
+  }
+
+  if (serviceTrack) {
+    serviceTrack.addEventListener('change', (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.matches('input[name="services"]')) {
+        renderSelectedServices();
+      }
+    });
+  }
+
+  if (selectedServicesList) {
+    selectedServicesList.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest('button[data-remove-service]');
+      if (!button) {
+        return;
+      }
+
+      const value = button.dataset.removeService;
+      if (!value || !serviceTrack) {
+        return;
+      }
+
+      const selector = `input[name="services"][value="${escapeSelector(value)}"]`;
+      const checkbox = serviceTrack.querySelector(selector);
+      if (checkbox) {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
   }
 
   window.addEventListener('resize', updateServiceNavButtons);
