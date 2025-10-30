@@ -968,6 +968,9 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
     const parsedServices = normalizeTextList(services);
+    if (!parsedServices.length) {
+      return res.status(400).json({ error: 'Selecciona al menos un servicio destacado.' });
+    }
     const parsedCertifications = normalizeTextList(certifications);
     let parsedSpecialties = normalizeTextList(specialties);
 

@@ -59,13 +59,34 @@
                             ></textarea>
                         </div>
                         <div class="field">
-                            <label for="services">Servicios destacados</label>
-                            <textarea
-                                id="services"
-                                name="services"
-                                rows="3"
-                                placeholder="Mantenimiento preventivo, reparación de motor, diagnósticos eléctricos, etc."
-                            ></textarea>
+                            <span class="field-label" id="services-label">Servicios destacados</span>
+                            <p class="help-text">Selecciona los servicios que ofreces en tu taller.</p>
+                            <div class="service-options" data-service-options>
+                                <button
+                                    class="service-nav service-nav--prev"
+                                    type="button"
+                                    aria-label="Ver servicios anteriores"
+                                    data-service-prev
+                                >
+                                    <span aria-hidden="true">&#10094;</span>
+                                </button>
+                                <div class="service-track-wrapper" data-service-wrapper>
+                                    <div
+                                        class="service-track"
+                                        data-service-track
+                                        role="group"
+                                        aria-labelledby="services-label"
+                                    ></div>
+                                </div>
+                                <button
+                                    class="service-nav service-nav--next"
+                                    type="button"
+                                    aria-label="Ver servicios siguientes"
+                                    data-service-next
+                                >
+                                    <span aria-hidden="true">&#10095;</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="field">
                             <label for="specialties">Especialidades principales</label>
