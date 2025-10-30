@@ -125,11 +125,20 @@ main {
     gap: 32px;
 }
 
+.workshop-form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 100%;
+}
+
 fieldset {
     border: none;
     display: flex;
     flex-direction: column;
     gap: 24px;
+    width: 100%;
+    min-width: 0;
 }
 
 legend {
@@ -144,6 +153,8 @@ legend {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+    min-width: 0;
 }
 
 .field-group {
@@ -175,6 +186,8 @@ label {
     align-items: center;
     gap: 12px;
     padding: 4px 0;
+    width: 100%;
+    min-width: 0;
 }
 
 .service-nav {
@@ -305,6 +318,8 @@ input[type="email"],
 input[type="tel"],
 input[type="file"],
 textarea {
+    width: 100%;
+    max-width: 100%;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     padding: 14px 16px;
