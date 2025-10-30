@@ -48,6 +48,9 @@
                         <a class="button" href="./editar-nombre.html">Cambiar nombre</a>
                         <a class="button" href="./editar-correo.html">Cambiar correo</a>
                         <a class="button" href="./cambiar-contrasena.html">Cambiar contraseña</a>
+                        <button type="button" class="button" data-workshop-manage-button hidden>
+                            Gestionar mi taller
+                        </button>
                     </div>
                 </div>
             </div>
@@ -102,6 +105,144 @@
             </aside>
             <!-- ===== Fin suscripción ===== -->
 
+        </section>
+
+        <section class="workshop-management" id="workshop-management" data-workshop-panel hidden>
+            <div class="section-header">
+                <div>
+                    <h2 id="workshop-management-title">Mi taller</h2>
+                    <p>Consulta y actualiza la información que ven tus clientes.</p>
+                </div>
+                <button type="button" class="button ghost" data-workshop-close hidden>Ocultar sección</button>
+            </div>
+
+            <div class="workshop-status" data-workshop-status hidden></div>
+
+            <div class="workshop-overview" data-workshop-overview hidden>
+                <img src="" alt="" data-workshop-photo hidden />
+                <div class="workshop-overview__info">
+                    <h3 data-workshop-name></h3>
+                    <p class="workshop-summary" data-workshop-summary></p>
+                    <dl class="workshop-meta">
+                        <div>
+                            <dt>Especialidades</dt>
+                            <dd data-workshop-specialties></dd>
+                        </div>
+                        <div>
+                            <dt>Años de experiencia</dt>
+                            <dd data-workshop-experience></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <p class="empty-state" data-workshop-empty hidden></p>
+
+            <form
+                class="workshop-form"
+                data-workshop-form
+                novalidate
+                hidden
+                aria-labelledby="workshop-management-title"
+            >
+                <div class="form-grid">
+                    <label class="form-field">
+                        <span>Nombre del taller</span>
+                        <input type="text" name="workshop-name" autocomplete="organization" required />
+                    </label>
+
+                    <label class="form-field">
+                        <span>Descripción breve</span>
+                        <textarea
+                            name="workshop-summary"
+                            rows="2"
+                            maxlength="200"
+                            placeholder="Escribe una descripción corta para mostrar en listados"
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field form-field--wide">
+                        <span>Descripción completa</span>
+                        <textarea
+                            name="workshop-description"
+                            rows="5"
+                            required
+                            placeholder="Describe los servicios, equipo y la experiencia de tu taller"
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Servicios destacados</span>
+                        <textarea
+                            name="workshop-services"
+                            rows="3"
+                            placeholder="Escribe uno por línea o separados por comas"
+                            required
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Especialidades</span>
+                        <textarea
+                            name="workshop-specialties"
+                            rows="3"
+                            placeholder="Escribe uno por línea o separados por comas"
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Certificaciones</span>
+                        <textarea
+                            name="workshop-certifications"
+                            rows="3"
+                            placeholder="Escribe una certificación por línea o separada por comas"
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Años de experiencia</span>
+                        <input
+                            type="number"
+                            name="experience-years"
+                            min="0"
+                            inputmode="numeric"
+                            placeholder="Ej. 5"
+                        />
+                    </label>
+
+                    <label class="form-field">
+                        <span>Dirección</span>
+                        <input type="text" name="workshop-address" autocomplete="street-address" required />
+                    </label>
+
+                    <label class="form-field">
+                        <span>Horario de atención</span>
+                        <input type="text" name="workshop-schedule" placeholder="Ej. Lunes a viernes de 9:00 a 18:00" />
+                    </label>
+
+                    <label class="form-field">
+                        <span>Teléfono</span>
+                        <input type="tel" name="workshop-phone" autocomplete="tel" />
+                    </label>
+
+                    <label class="form-field">
+                        <span>Correo de contacto</span>
+                        <input type="email" name="workshop-email" autocomplete="email" />
+                    </label>
+
+                    <label class="form-field form-field--file">
+                        <span>Fotografía del taller</span>
+                        <input type="file" name="workshop-photo" accept="image/*" />
+                        <small>Selecciona una nueva imagen solo si deseas reemplazar la actual.</small>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="button" data-workshop-submit>Guardar cambios</button>
+                </div>
+
+                <p class="form-feedback" data-workshop-feedback hidden aria-live="polite"></p>
+            </form>
         </section>
 
         <section

@@ -112,6 +112,73 @@ function pluralize(count, singular, plural) {
     return count === 1 ? singular : plural;
 }
 
+function parseTextList(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+            .filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(/[,\n]/)
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+
+    return [];
+}
+
+function formatListForTextarea(values) {
+    if (!Array.isArray(values) || !values.length) {
+        return "";
+    }
+
+    return values.join("\n");
+}
+
+function updateMessage(element, message, type = "info") {
+    if (!element) {
+        return;
+    }
+
+    const text = message ? String(message) : "";
+    element.textContent = text;
+    element.hidden = text.length === 0;
+    element.classList.remove("info", "success", "error");
+
+    if (text) {
+        element.classList.add(type);
+    }
+}
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!(file instanceof File)) {
+            resolve("");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            resolve(typeof reader.result === "string" ? reader.result : "");
+        });
+        reader.addEventListener("error", () => {
+            reject(reader.error || new Error("No se pudo leer el archivo seleccionado."));
+        });
+        reader.readAsDataURL(file);
+    });
+}
+
+const workshopState = {
+    id: null,
+    data: null,
+    loaded: false,
+    loading: false,
+};
+
+let currentProfile = null;
+
 async function fetchProfile() {
     const response = await fetch("/api/profile");
     if (response.status === 401) {
@@ -432,6 +499,459 @@ function renderAverageRatingMetric(workshop) {
     );
 }
 
+function populateWorkshopOverview(elements, workshop) {
+    const { container, photo, name, summary, specialties, experience } = elements;
+
+    if (!container) {
+        return;
+    }
+
+    if (!workshop) {
+        container.hidden = true;
+        if (photo) {
+            photo.hidden = true;
+        }
+        return;
+    }
+
+    container.hidden = false;
+
+    if (photo) {
+        if (workshop.photo) {
+            photo.src = workshop.photo;
+            photo.alt = `Foto del taller ${workshop.name || ""}`;
+            photo.hidden = false;
+        } else {
+            photo.hidden = true;
+        }
+    }
+
+    if (name) {
+        name.textContent = workshop.name || "Mi taller";
+    }
+
+    if (summary) {
+        summary.textContent = workshop.shortDescription || workshop.description || "";
+    }
+
+    if (specialties) {
+        const list = Array.isArray(workshop.specialties) && workshop.specialties.length
+            ? workshop.specialties.join(", ")
+            : "Sin especialidades registradas";
+        specialties.textContent = list;
+    }
+
+    if (experience) {
+        const years = Number(workshop.experienceYears || 0);
+        experience.textContent = years > 0 ? `${years} ${pluralize(years, "año", "años")}` : "No especificado";
+    }
+}
+
+function populateWorkshopForm(form, workshop) {
+    if (!form || !workshop) {
+        return;
+    }
+
+    const fieldValues = {
+        "workshop-name": workshop.name || "",
+        "workshop-summary": workshop.shortDescription || "",
+        "workshop-description": workshop.description || "",
+        "workshop-services": formatListForTextarea(workshop.services),
+        "workshop-specialties": formatListForTextarea(workshop.specialties),
+        "workshop-certifications": formatListForTextarea(workshop.certifications),
+        "experience-years": workshop.experienceYears ? String(workshop.experienceYears) : "",
+        "workshop-address": workshop.address || "",
+        "workshop-schedule": workshop.schedule || "",
+        "workshop-phone": workshop.phone || "",
+        "workshop-email": workshop.email || "",
+    };
+
+    Object.entries(fieldValues).forEach(([name, value]) => {
+        const field = form.elements.namedItem(name);
+        if (field && typeof field === "object" && "value" in field) {
+            field.value = value ?? "";
+        }
+    });
+
+    const photoInput = form.querySelector('input[name="workshop-photo"]');
+    if (photoInput) {
+        photoInput.value = "";
+    }
+
+    form.hidden = false;
+}
+
+function setupWorkshopManagement(profile) {
+    const manageButton = document.querySelector("[data-workshop-manage-button]");
+    const panel = document.querySelector("[data-workshop-panel]");
+
+    if (!manageButton || !panel) {
+        return;
+    }
+
+    const isMechanic = profile.accountType === "mecanico";
+    if (!isMechanic) {
+        manageButton.hidden = true;
+        panel.hidden = true;
+        return;
+    }
+
+    workshopState.id = profile?.mechanicWorkshop?.id || null;
+    workshopState.data = null;
+    workshopState.loaded = false;
+    workshopState.loading = false;
+
+    manageButton.hidden = false;
+    manageButton.setAttribute("aria-controls", "workshop-management");
+    manageButton.setAttribute("aria-expanded", "false");
+
+    const closeButton = panel.querySelector("[data-workshop-close]");
+    const statusElement = panel.querySelector("[data-workshop-status]");
+    const emptyStateElement = panel.querySelector("[data-workshop-empty]");
+    const form = panel.querySelector("[data-workshop-form]");
+    const feedbackElement = panel.querySelector("[data-workshop-feedback]");
+    const submitButton = panel.querySelector("[data-workshop-submit]");
+
+    const overviewElements = {
+        container: panel.querySelector("[data-workshop-overview]") || null,
+        photo: panel.querySelector("[data-workshop-photo]") || null,
+        name: panel.querySelector("[data-workshop-name]") || null,
+        summary: panel.querySelector("[data-workshop-summary]") || null,
+        specialties: panel.querySelector("[data-workshop-specialties]") || null,
+        experience: panel.querySelector("[data-workshop-experience]") || null,
+    };
+
+    if (profile?.mechanicWorkshop) {
+        populateWorkshopOverview(overviewElements, profile.mechanicWorkshop);
+    }
+
+    function showEmptyState(message) {
+        if (emptyStateElement) {
+            emptyStateElement.innerHTML = message;
+            emptyStateElement.hidden = false;
+        }
+
+        if (form) {
+            form.hidden = true;
+        }
+
+        populateWorkshopOverview(overviewElements, null);
+    }
+
+    function hideEmptyState() {
+        if (emptyStateElement) {
+            emptyStateElement.hidden = true;
+        }
+    }
+
+    async function loadWorkshop() {
+        if (workshopState.loading || workshopState.loaded) {
+            return;
+        }
+
+        if (!workshopState.id) {
+            showEmptyState(
+                'Todavía no has registrado un taller. <a href="./registro-taller.html">Regístralo ahora</a> para compartir tu información con los clientes.',
+            );
+            updateMessage(statusElement, "", "info");
+            workshopState.loaded = true;
+            return;
+        }
+
+        workshopState.loading = true;
+        updateMessage(statusElement, "Cargando información del taller...", "info");
+        hideEmptyState();
+
+        if (form) {
+            form.hidden = true;
+        }
+
+        try {
+            const response = await fetch(`/api/workshops/${encodeURIComponent(workshopState.id)}`);
+
+            if (response.status === 401) {
+                window.location.href = "./login.html";
+                return;
+            }
+
+            if (response.status === 403) {
+                updateMessage(
+                    statusElement,
+                    "No tienes permisos para editar este taller. Contacta a soporte si crees que es un error.",
+                    "error",
+                );
+                showEmptyState(
+                    "No tienes permisos para editar este taller. Contacta a soporte si necesitas ayuda.",
+                );
+                workshopState.loaded = true;
+                return;
+            }
+
+            if (response.status === 404) {
+                updateMessage(statusElement, "", "info");
+                showEmptyState(
+                    'No encontramos los datos de tu taller. Puedes <a href="./registro-taller.html">registrarlo nuevamente</a> para que aparezca en la plataforma.',
+                );
+                workshopState.id = null;
+                workshopState.loaded = true;
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("No se pudo obtener la información del taller.");
+            }
+
+            const data = await response.json();
+            const workshop = data?.workshop || null;
+
+            if (!workshop) {
+                throw new Error("No se pudo obtener la información del taller.");
+            }
+
+            workshopState.data = workshop;
+            workshopState.loaded = true;
+            updateMessage(statusElement, "", "info");
+            hideEmptyState();
+            populateWorkshopOverview(overviewElements, workshop);
+            populateWorkshopForm(form, workshop);
+
+            if (feedbackElement) {
+                updateMessage(feedbackElement, "", "info");
+            }
+        } catch (error) {
+            console.error(error);
+            workshopState.loaded = false;
+            updateMessage(
+                statusElement,
+                "No pudimos cargar los datos del taller. Intenta nuevamente más tarde.",
+                "error",
+            );
+        } finally {
+            workshopState.loading = false;
+        }
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        if (!form || !submitButton) {
+            return;
+        }
+
+        if (!workshopState.id) {
+            updateMessage(
+                feedbackElement,
+                "Necesitas registrar un taller antes de poder actualizar sus datos.",
+                "error",
+            );
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = {
+            name: String(formData.get("workshop-name") || "").trim(),
+            shortDescription: String(formData.get("workshop-summary") || "").trim(),
+            description: String(formData.get("workshop-description") || "").trim(),
+            services: parseTextList(formData.get("workshop-services")),
+            specialties: parseTextList(formData.get("workshop-specialties")),
+            certifications: parseTextList(formData.get("workshop-certifications")),
+            experienceYears: String(formData.get("experience-years") || "").trim(),
+            address: String(formData.get("workshop-address") || "").trim(),
+            schedule: String(formData.get("workshop-schedule") || "").trim(),
+            phone: String(formData.get("workshop-phone") || "").trim(),
+            email: String(formData.get("workshop-email") || "").trim().toLowerCase(),
+        };
+
+        if (!payload.name) {
+            updateMessage(feedbackElement, "Ingresa el nombre del taller.", "error");
+            const nameField = form.elements.namedItem("workshop-name");
+            if (nameField && typeof nameField === "object" && typeof nameField.focus === "function") {
+                nameField.focus();
+            }
+            return;
+        }
+
+        if (!payload.description) {
+            updateMessage(feedbackElement, "Describe tu taller para continuar.", "error");
+            const descriptionField = form.elements.namedItem("workshop-description");
+            if (descriptionField && typeof descriptionField === "object" && typeof descriptionField.focus === "function") {
+                descriptionField.focus();
+            }
+            return;
+        }
+
+        if (!payload.address) {
+            updateMessage(feedbackElement, "Ingresa la dirección del taller.", "error");
+            const addressField = form.elements.namedItem("workshop-address");
+            if (addressField && typeof addressField === "object" && typeof addressField.focus === "function") {
+                addressField.focus();
+            }
+            return;
+        }
+
+        if (!payload.services.length) {
+            updateMessage(
+                feedbackElement,
+                "Especifica al menos un servicio destacado que ofrezcas.",
+                "error",
+            );
+            const servicesField = form.elements.namedItem("workshop-services");
+            if (servicesField && typeof servicesField === "object" && typeof servicesField.focus === "function") {
+                servicesField.focus();
+            }
+            return;
+        }
+
+        const parsedExperience = Number.parseInt(payload.experienceYears, 10);
+        payload.experienceYears = Number.isInteger(parsedExperience) && parsedExperience >= 0 ? parsedExperience : 0;
+
+        const photoFile = formData.get("workshop-photo");
+        if (photoFile instanceof File && photoFile.size > 0) {
+            try {
+                payload.photoDataUrl = await readFileAsDataUrl(photoFile);
+            } catch (error) {
+                console.error(error);
+                updateMessage(
+                    feedbackElement,
+                    "No se pudo leer la imagen seleccionada. Intenta con un archivo diferente.",
+                    "error",
+                );
+                return;
+            }
+        }
+
+        updateMessage(feedbackElement, "Guardando cambios...", "info");
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(`/api/workshops/${encodeURIComponent(workshopState.id)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.status === 401) {
+                window.location.href = "./login.html";
+                return;
+            }
+
+            if (response.status === 403) {
+                updateMessage(
+                    feedbackElement,
+                    "No tienes permisos para editar este taller. Contacta a soporte si necesitas ayuda.",
+                    "error",
+                );
+                return;
+            }
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                updateMessage(
+                    feedbackElement,
+                    result?.error || "No pudimos guardar los cambios. Inténtalo nuevamente.",
+                    "error",
+                );
+                return;
+            }
+
+            const updatedWorkshop = result?.workshop || null;
+
+            if (updatedWorkshop) {
+                workshopState.data = updatedWorkshop;
+                workshopState.loaded = true;
+                populateWorkshopOverview(overviewElements, updatedWorkshop);
+                populateWorkshopForm(form, updatedWorkshop);
+                updateMessage(
+                    feedbackElement,
+                    result?.message || "Los cambios se guardaron correctamente.",
+                    "success",
+                );
+
+                if (currentProfile) {
+                    const summary = currentProfile.mechanicWorkshop || {};
+                    currentProfile.mechanicWorkshop = {
+                        ...summary,
+                        id: updatedWorkshop.id,
+                        name: updatedWorkshop.name,
+                        shortDescription: updatedWorkshop.shortDescription,
+                        reviewsCount: Number(updatedWorkshop.reviewsCount || 0),
+                        averageRating:
+                            typeof updatedWorkshop.averageRating === "number"
+                                ? Number(updatedWorkshop.averageRating)
+                                : null,
+                    };
+                    renderAverageRatingMetric(currentProfile.mechanicWorkshop);
+                }
+            } else {
+                updateMessage(
+                    feedbackElement,
+                    result?.message || "Los cambios se guardaron correctamente.",
+                    "success",
+                );
+            }
+        } catch (error) {
+            console.error(error);
+            updateMessage(
+                feedbackElement,
+                "Ocurrió un problema al guardar la información. Revisa tu conexión e inténtalo nuevamente.",
+                "error",
+            );
+        } finally {
+            submitButton.disabled = false;
+            const photoInput = form.querySelector('input[name="workshop-photo"]');
+            if (photoInput) {
+                photoInput.value = "";
+            }
+        }
+    }
+
+    function openPanel() {
+        panel.hidden = false;
+        manageButton.setAttribute("aria-expanded", "true");
+        if (closeButton) {
+            closeButton.hidden = false;
+        }
+        void loadWorkshop();
+    }
+
+    function closePanel() {
+        panel.hidden = true;
+        manageButton.setAttribute("aria-expanded", "false");
+        if (closeButton) {
+            closeButton.hidden = true;
+        }
+        if (typeof manageButton.focus === "function") {
+            manageButton.focus();
+        }
+    }
+
+    manageButton.addEventListener("click", () => {
+        if (panel.hidden) {
+            openPanel();
+        } else {
+            closePanel();
+        }
+    });
+
+    if (closeButton) {
+        closeButton.hidden = true;
+        closeButton.addEventListener("click", closePanel);
+    }
+
+    panel.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closePanel();
+        }
+    });
+
+    if (form) {
+        form.addEventListener("submit", handleSubmit);
+    }
+}
+
 async function fetchMechanicRequests() {
     const response = await fetch("/api/appointments/requests");
 
@@ -479,6 +999,7 @@ async function setupProfilePage() {
             return;
         }
 
+        currentProfile = profile;
         renderProfile(profile);
 
         const isMechanic = profile.accountType === "mecanico";
@@ -486,6 +1007,7 @@ async function setupProfilePage() {
         toggleAudienceSections(isMechanic);
         renderCompletedAppointmentsMetric(isMechanic, profile.mechanicMetrics || null);
         renderAverageRatingMetric(isMechanic ? profile.mechanicWorkshop || null : null);
+        setupWorkshopManagement(profile);
 
         if (isMechanic) {
             try {
