@@ -81,35 +81,58 @@
     }
 
     if (!carousel.dataset.carouselReady) {
+      const originalCards = Array.from(container.children);
+      let cloneBatch = 0;
+
+      function ensureMoreContent() {
+        if (!originalCards.length) {
+          return;
+        }
+
+        const remaining = wrapper.scrollWidth - wrapper.clientWidth - wrapper.scrollLeft;
+        const threshold = getScrollAmount() * 2;
+
+        if (remaining > threshold) {
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        originalCards.forEach((card) => {
+          const clone = card.cloneNode(true);
+          clone.setAttribute('data-carousel-clone', `${cloneBatch}`);
+          fragment.appendChild(clone);
+        });
+        cloneBatch += 1;
+        container.appendChild(fragment);
+        requestAnimationFrame(updateButtons);
+      }
+
       const handlePrev = () => {
-        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
-        if (maxScrollLeft <= 0) {
-          return;
-        }
-
         if (wrapper.scrollLeft <= 0) {
-          wrapper.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
-        } else {
-          wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
-        }
-      };
-      const handleNext = () => {
-        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
-        if (maxScrollLeft <= 0) {
           return;
         }
 
-        if (wrapper.scrollLeft >= maxScrollLeft - 1) {
-          wrapper.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+        wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+      };
+
+      const handleNext = () => {
+        ensureMoreContent();
+        if (container.children.length === 0) {
+          return;
         }
+
+        wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+      };
+
+      const handleScroll = () => {
+        ensureMoreContent();
+        updateButtons();
       };
 
       prevButton.addEventListener('click', handlePrev);
       nextButton.addEventListener('click', handleNext);
 
-      wrapper.addEventListener('scroll', updateButtons, { passive: true });
+      wrapper.addEventListener('scroll', handleScroll, { passive: true });
       window.addEventListener('resize', updateButtons);
 
       carousel.dataset.carouselReady = 'true';
@@ -135,10 +158,9 @@
     }
 
     function updateButtons() {
-      const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth - 1;
-      const hasScrollableContent = maxScrollLeft > 0;
-      prevButton.disabled = !hasScrollableContent;
-      nextButton.disabled = !hasScrollableContent;
+      const hasCards = container.children.length > 0;
+      prevButton.disabled = !hasCards || wrapper.scrollLeft <= 0;
+      nextButton.disabled = !hasCards;
     }
 
     const maxScroll = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
