@@ -370,6 +370,11 @@ async function setupProfilePage() {
 }
 
 async function handleLogout() {
+    const confirmed = window.confirm("¿Estás seguro de que deseas cerrar sesión?");
+    if (!confirmed) {
+        return;
+    }
+
     try {
         const response = await fetch("/api/logout", {
             method: "POST",
