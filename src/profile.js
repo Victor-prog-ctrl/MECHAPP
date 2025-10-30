@@ -225,40 +225,26 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     container.appendChild(fragment);
 }
 
-function renderMechanicRating(workshop) {
-    const section = document.querySelector("[data-mechanic-rating]");
-    if (!section) {
+function renderAverageRatingMetric(workshop) {
+    const card = document.querySelector("[data-profile-average-rating-card]");
+    if (!card) {
         return;
     }
 
-    const valueContainer = section.querySelector("[data-mechanic-rating-value]");
-    const valueElement = valueContainer ? valueContainer.querySelector("strong") : null;
-    const reviewsElement = section.querySelector("[data-mechanic-rating-reviews]");
-    const emptyMessage = section.querySelector("[data-mechanic-rating-empty]");
-    const link = section.querySelector("[data-mechanic-rating-link]");
+    const valueElement = card.querySelector("[data-profile-average-rating-value]");
+    const captionElement = card.querySelector("[data-profile-average-rating-caption]");
+    const defaultMessage =
+        "Registra tu taller para comenzar a recibir reseñas de tus clientes.";
 
     if (!workshop) {
         if (valueElement) {
             valueElement.textContent = "–";
         }
-        if (valueContainer) {
-            valueContainer.dataset.state = "empty";
-            valueContainer.setAttribute("aria-label", "Sin calificación disponible");
+        if (captionElement) {
+            captionElement.textContent = defaultMessage;
         }
-        if (reviewsElement) {
-            reviewsElement.textContent =
-                "Registra tu taller para comenzar a recibir reseñas de tus clientes.";
-        }
-        if (emptyMessage) {
-            emptyMessage.textContent =
-                "Completa el registro de tu taller para mostrar tu reputación y recibir calificaciones.";
-            emptyMessage.hidden = false;
-        }
-        if (link) {
-            link.hidden = true;
-            link.removeAttribute("href");
-            link.removeAttribute("aria-label");
-        }
+        card.dataset.state = "empty";
+        card.setAttribute("aria-label", "Sin calificaciones registradas");
         return;
     }
 
@@ -269,49 +255,23 @@ function renderMechanicRating(workshop) {
         valueElement.textContent = hasReviews ? workshop.averageRating.toFixed(1) : "–";
     }
 
-    if (valueContainer) {
-        valueContainer.dataset.state = hasReviews ? "rated" : "empty";
-        valueContainer.setAttribute(
-            "aria-label",
-            hasReviews
-                ? `Calificación promedio ${workshop.averageRating.toFixed(1)} de 5`
-                : "Aún no tienes reseñas publicadas",
-        );
+    if (captionElement) {
+        captionElement.textContent = hasReviews
+            ? `Basado en ${reviewsCount} ${pluralize(
+                  reviewsCount,
+                  "reseña",
+                  "reseñas",
+              )}`
+            : "Aún no tienes reseñas publicadas. Pide a tus clientes que compartan su experiencia.";
     }
 
-    if (reviewsElement) {
-        const baseName = workshop.name ? workshop.name : "Tu taller";
-        if (hasReviews) {
-            reviewsElement.textContent = `${baseName} tiene ${reviewsCount} ${pluralize(
-                reviewsCount,
-                "reseña publicada",
-                "reseñas publicadas",
-            )}.`;
-        } else {
-            reviewsElement.textContent = `${baseName} aún no tiene reseñas publicadas. Invita a tus clientes a compartir su experiencia.`;
-        }
-    }
-
-    if (emptyMessage) {
-        emptyMessage.hidden = hasReviews;
-        if (!hasReviews) {
-            emptyMessage.textContent =
-                "Pide a tus clientes que califiquen tus servicios después de completar cada trabajo.";
-        }
-    }
-
-    if (link) {
-        if (workshop.id) {
-            link.hidden = false;
-            link.href = `./resenas-taller.html?id=${encodeURIComponent(workshop.id)}`;
-            const labelName = workshop.name || "tu taller";
-            link.setAttribute("aria-label", `Ver reseñas de ${labelName}`);
-        } else {
-            link.hidden = true;
-            link.removeAttribute("href");
-            link.removeAttribute("aria-label");
-        }
-    }
+    card.dataset.state = hasReviews ? "rated" : "empty";
+    card.setAttribute(
+        "aria-label",
+        hasReviews
+            ? `Calificación promedio ${workshop.averageRating.toFixed(1)} de 5`
+            : "Sin calificaciones registradas",
+    );
 }
 
 async function fetchMechanicRequests() {
@@ -346,9 +306,9 @@ async function setupProfilePage() {
         const isMechanic = profile.accountType === "mecanico";
         toggleMechanicSection(isMechanic);
         toggleAudienceSections(isMechanic);
+        renderAverageRatingMetric(isMechanic ? profile.mechanicWorkshop || null : null);
 
         if (isMechanic) {
-            renderMechanicRating(profile.mechanicWorkshop || null);
             try {
                 const requests = await fetchMechanicRequests();
                 renderMechanicRequests(requests);

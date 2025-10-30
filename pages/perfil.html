@@ -58,10 +58,12 @@
                     <strong class="metric-value">28</strong>
                     <span class="metric-caption">En los últimos 12 meses</span>
                 </article>
-                <article class="metric-card">
+                <article class="metric-card" data-profile-average-rating-card>
                     <span class="metric-label">Puntuación promedio</span>
-                    <strong class="metric-value">4.9</strong>
-                    <span class="metric-caption">Basado en 18 reseñas</span>
+                    <strong class="metric-value" data-profile-average-rating-value aria-live="polite">–</strong>
+                    <span class="metric-caption" data-profile-average-rating-caption>
+                        Registra tu taller para comenzar a recibir reseñas de tus clientes.
+                    </span>
                 </article>
                 <article class="metric-card">
                     <span class="metric-label">Vehículos registrados</span>
@@ -162,35 +164,6 @@
             </div>
         </section>
 
-        <section
-            class="mechanic-rating"
-            aria-labelledby="mechanic-rating-title"
-            data-mechanic-rating
-            data-visible-for="mecanico"
-            hidden
-        >
-            <div class="section-header">
-                <div>
-                    <h2 id="mechanic-rating-title">Tu puntuación</h2>
-                    <p>Consulta la calificación promedio que tus clientes han otorgado a tu taller.</p>
-                </div>
-                <a class="button ghost" data-mechanic-rating-link hidden href="#">Ver reseñas</a>
-            </div>
-            <div class="mechanic-rating__summary">
-                <div class="mechanic-rating__value" data-mechanic-rating-value aria-live="polite">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86L2 9.27l7.1-1.01L12 2z" />
-                    </svg>
-                    <strong>–</strong>
-                </div>
-                <p class="mechanic-rating__details" data-mechanic-rating-reviews>
-                    Registra tu taller para comenzar a recibir reseñas de tus clientes.
-                </p>
-            </div>
-            <p class="mechanic-rating__empty" data-mechanic-rating-empty hidden>
-                Aún no tienes reseñas publicadas. Pide a tus clientes que compartan su experiencia después de cada servicio.
-            </p>
-        </section>
     </main>
 
     <footer class="site-footer">
