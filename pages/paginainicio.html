@@ -77,14 +77,33 @@
       <div class="section-header">
         <div>
           <h2 id="buscador">Encuentra tu taller o servicio</h2>
-          <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+          <p>Escribe el nombre de un taller para ver sus detalles y reseñas.</p>
         </div>
       </div>
       <div class="search-control">
-        <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
-        <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
+        <label class="visually-hidden" for="search-input">Buscar talleres por nombre</label>
+        <input type="search" id="search-input" placeholder="Ej. Taller Los Andes" autocomplete="off" />
       </div>
-      <div class="search-results" id="search-results" aria-live="polite"></div>
+      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
+
+      <div class="services-search" data-services-search hidden>
+        <div class="services-header">
+          <h3>Qué servicios buscas</h3>
+          <p>Explora los servicios disponibles y descubre talleres especializados.</p>
+        </div>
+        <div class="services-carousel">
+          <button class="services-nav services-nav--prev" type="button" aria-label="Ver servicios anteriores" data-service-prev>
+            <span aria-hidden="true">&#10094;</span>
+          </button>
+          <div class="services-track-wrapper" data-service-wrapper>
+            <div class="services-track" data-service-track></div>
+          </div>
+          <button class="services-nav services-nav--next" type="button" aria-label="Ver servicios siguientes" data-service-next>
+            <span aria-hidden="true">&#10095;</span>
+          </button>
+        </div>
+        <div class="service-results search-results" id="service-results" aria-live="polite" hidden></div>
+      </div>
     </section>
 
     <!-- ===== Sección de ubicación con Google Maps ===== -->
@@ -150,7 +169,7 @@
 
   <script src="../src/home-workshops.js" defer></script>
 
-  <!-- Tu lógica general (búsqueda) la dejé intacta -->
+  <!-- Lógica de búsqueda de talleres y exploración de servicios -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const searchInput = document.getElementById("search-input");
@@ -231,48 +250,318 @@
 
       applyVisibilityState();
 
-      const servicios = [
-        { nombre: "Mantenimiento General", descripcion: "Incluye revisión completa de fluidos y ajustes básicos.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Diagnóstico Eléctrico", descripcion: "Soluciones precisas para problemas eléctricos del vehículo.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Alineación y Balanceo", descripcion: "Mejora el rendimiento y la seguridad en carretera.", enlace: "#", tipo: "Servicio" }
-      ];
+      const servicesSearchContainer = document.querySelector("[data-services-search]");
+      const servicesTrack = document.querySelector("[data-service-track]");
+      const serviceWrapper = document.querySelector("[data-service-wrapper]");
+      const servicePrevButton = document.querySelector("[data-service-prev]");
+      const serviceNextButton = document.querySelector("[data-service-next]");
+      const serviceResults = document.getElementById("service-results");
 
-      const marcasVehiculos = [
-        "Abarth", "Acura", "Alfa Romeo", "Audi", "BMW", "BYD", "Chevrolet", "Citroën", "Ford", "Honda",
-        "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Peugeot", "Renault",
-        "Subaru", "Suzuki", "Toyota", "Volkswagen", "Volvo"
-      ].map((m) => ({ nombre: m, descripcion: "Marca disponible para servicios especializados.", enlace: "#", tipo: "Marca" }));
+      const SEARCH_LOADING_MESSAGE = '<p class="empty-results">Estamos cargando los talleres…</p>';
+      const SEARCH_ERROR_MESSAGE = '<p class="empty-results">No se pudieron cargar los talleres. Intenta nuevamente más tarde.</p>';
+      const SEARCH_EMPTY_MESSAGE = '<p class="empty-results">No encontramos talleres que coincidan con tu búsqueda.</p>';
 
-      const datosBusqueda = [...servicios, ...marcasVehiculos];
+      let workshops = [];
+      let serviceEntries = [];
+      let activeServiceKey = null;
+      let workshopsReady = false;
+      let workshopsLoadError = false;
 
-      const renderResultados = (items) => {
-        const el = document.getElementById("search-results");
-        if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
-        const frag = document.createDocumentFragment();
-        items.forEach((item) => {
-          const article = document.createElement("article");
-          article.className = "result-item";
-          article.innerHTML = `
-              <div class="result-type" aria-hidden="true">${item.tipo}</div>
-              <div class="result-content">
-                <h3>${item.nombre}</h3>
-                <p>${item.especialidad || item.descripcion}</p>
-              </div>
-              <a class="button ghost" href="${item.enlace}">Ver más</a>
-            `;
-          frag.appendChild(article);
+      function createWorkshopResult(workshop) {
+        const article = document.createElement("article");
+        article.className = "result-item";
+
+        const type = document.createElement("div");
+        type.className = "result-type";
+        type.textContent = "Taller";
+        type.setAttribute("aria-hidden", "true");
+        article.appendChild(type);
+
+        const content = document.createElement("div");
+        content.className = "result-content";
+
+        const title = document.createElement("h3");
+        title.textContent = workshop.name;
+        content.appendChild(title);
+
+        const description = document.createElement("p");
+        description.textContent = workshop.shortDescription || "Sin descripción disponible.";
+        content.appendChild(description);
+
+        article.appendChild(content);
+
+        const link = document.createElement("a");
+        link.className = "button ghost";
+        link.href = `./perfil-taller.html?id=${encodeURIComponent(workshop.id)}`;
+        link.textContent = "Ver más";
+        link.setAttribute("aria-label", `Ver perfil del taller ${workshop.name}`);
+        article.appendChild(link);
+
+        return article;
+      }
+
+      function renderSearchResults(items) {
+        if (!searchResults) {
+          return;
+        }
+
+        if (!items.length) {
+          searchResults.innerHTML = SEARCH_EMPTY_MESSAGE;
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        items.forEach((workshop) => {
+          fragment.appendChild(createWorkshopResult(workshop));
         });
-        el.innerHTML = ""; el.appendChild(frag);
-      };
-      renderResultados(datosBusqueda.slice(0, 3));
-      searchInput?.addEventListener("input", (e) => {
-        const termino = normalizeText(e.target.value);
-        if (!termino) { renderResultados(datosBusqueda.slice(0, 3)); return; }
-        const filtrados = datosBusqueda.filter((it) =>
-          normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
-        );
-        renderResultados(filtrados);
+        searchResults.innerHTML = "";
+        searchResults.appendChild(fragment);
+      }
+
+      function updateActiveServiceButton(serviceKey) {
+        if (!servicesTrack) {
+          return;
+        }
+        servicesTrack.querySelectorAll(".service-pill").forEach((button) => {
+          const isActive = button.dataset.serviceKey === serviceKey;
+          button.classList.toggle("service-pill--active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function renderServiceResults(entry) {
+        if (!serviceResults) {
+          return;
+        }
+
+        if (!entry) {
+          serviceResults.innerHTML = "";
+          serviceResults.setAttribute("hidden", "");
+          updateActiveServiceButton(null);
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const heading = document.createElement("h4");
+        heading.className = "service-results__title";
+        heading.textContent = `Talleres que ofrecen ${entry.name}`;
+        fragment.appendChild(heading);
+
+        if (!entry.workshops.length) {
+          const empty = document.createElement("p");
+          empty.className = "empty-results";
+          empty.textContent = "No encontramos talleres con este servicio.";
+          fragment.appendChild(empty);
+        } else {
+          entry.workshops.forEach((workshop) => {
+            fragment.appendChild(createWorkshopResult(workshop));
+          });
+        }
+
+        serviceResults.innerHTML = "";
+        serviceResults.appendChild(fragment);
+        serviceResults.removeAttribute("hidden");
+        updateActiveServiceButton(entry.key);
+      }
+
+      function getServiceScrollAmount() {
+        if (!serviceWrapper || !servicesTrack) {
+          return 0;
+        }
+
+        const firstPill = servicesTrack.querySelector(".service-pill");
+        if (!firstPill) {
+          return serviceWrapper.clientWidth;
+        }
+
+        const pillWidth = firstPill.getBoundingClientRect().width;
+        const styles = window.getComputedStyle(servicesTrack);
+        const gap = [styles.columnGap, styles.gap, styles.rowGap]
+          .map((value) => {
+            const parsed = Number.parseFloat(value);
+            return Number.isNaN(parsed) ? 0 : parsed;
+          })
+          .find((value) => value > 0) || 0;
+
+        return pillWidth + gap;
+      }
+
+      function updateServiceNavButtons() {
+        if (!serviceWrapper || !servicePrevButton || !serviceNextButton || !servicesTrack) {
+          return;
+        }
+
+        const hasContent = servicesTrack.children.length > 0 && !servicesTrack.classList.contains("services-track--empty");
+        const maxScroll = Math.max(0, serviceWrapper.scrollWidth - serviceWrapper.clientWidth);
+        const currentScroll = serviceWrapper.scrollLeft;
+
+        servicePrevButton.disabled = !hasContent || currentScroll <= 0;
+        serviceNextButton.disabled = !hasContent || currentScroll >= maxScroll - 1;
+      }
+
+      function scrollServices(direction) {
+        if (!serviceWrapper) {
+          return;
+        }
+        const amount = getServiceScrollAmount();
+        if (!amount) {
+          return;
+        }
+        serviceWrapper.scrollBy({ left: direction * amount, behavior: "smooth" });
+      }
+
+      function handleServiceSelection(serviceKey) {
+        if (!serviceKey) {
+          return;
+        }
+
+        if (activeServiceKey === serviceKey) {
+          activeServiceKey = null;
+          renderServiceResults(null);
+          return;
+        }
+
+        activeServiceKey = serviceKey;
+        const entry = serviceEntries.find((item) => item.key === serviceKey) || null;
+        renderServiceResults(entry);
+      }
+
+      if (servicePrevButton && serviceNextButton && serviceWrapper) {
+        servicePrevButton.addEventListener("click", () => scrollServices(-1));
+        serviceNextButton.addEventListener("click", () => scrollServices(1));
+        serviceWrapper.addEventListener("scroll", updateServiceNavButtons, { passive: true });
+        window.addEventListener("resize", updateServiceNavButtons);
+      }
+
+      function buildServiceEntries(list) {
+        if (!servicesTrack || !servicesSearchContainer) {
+          return;
+        }
+
+        const map = new Map();
+        list.forEach((workshop) => {
+          const serviceList = Array.isArray(workshop.services) ? workshop.services : [];
+          serviceList.forEach((serviceName) => {
+            if (!serviceName || typeof serviceName !== "string") {
+              return;
+            }
+            const trimmed = serviceName.trim();
+            if (!trimmed) {
+              return;
+            }
+            const key = normalizeText(trimmed);
+            if (!key) {
+              return;
+            }
+            if (!map.has(key)) {
+              map.set(key, { key, name: trimmed, workshops: [] });
+            }
+            map.get(key).workshops.push(workshop);
+          });
+        });
+
+        serviceEntries = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+
+        servicesTrack.classList.remove("services-track--empty");
+        servicesTrack.innerHTML = "";
+        activeServiceKey = null;
+        updateActiveServiceButton(null);
+        renderServiceResults(null);
+
+        if (!serviceEntries.length) {
+          servicesSearchContainer.hidden = false;
+          servicesTrack.classList.add("services-track--empty");
+          servicesTrack.innerHTML = '<p class="services-empty-message empty-results">Aún no hay servicios registrados.</p>';
+          if (servicePrevButton) { servicePrevButton.disabled = true; }
+          if (serviceNextButton) { serviceNextButton.disabled = true; }
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        serviceEntries.forEach((entry) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "service-pill";
+          button.textContent = entry.name;
+          button.dataset.serviceKey = entry.key;
+          button.setAttribute("aria-pressed", "false");
+          button.addEventListener("click", () => handleServiceSelection(entry.key));
+          fragment.appendChild(button);
+        });
+
+        servicesTrack.appendChild(fragment);
+        servicesSearchContainer.hidden = false;
+        updateServiceNavButtons();
+      }
+
+      async function loadWorkshops() {
+        workshopsReady = false;
+        workshopsLoadError = false;
+        try {
+          const response = await fetch("/api/workshops");
+          if (!response.ok) {
+            throw new Error("No se pudieron cargar los talleres");
+          }
+          const data = await response.json();
+          workshops = Array.isArray(data?.workshops) ? data.workshops : [];
+          workshopsReady = true;
+          buildServiceEntries(workshops);
+          if (searchInput && searchInput.value.trim()) {
+            searchInput.dispatchEvent(new Event("input"));
+          }
+        } catch (error) {
+          console.error(error);
+          workshops = [];
+          workshopsReady = false;
+          workshopsLoadError = true;
+          if (servicesSearchContainer) {
+            servicesSearchContainer.hidden = false;
+          }
+          if (serviceResults) {
+            serviceResults.innerHTML = '<p class="empty-results">No se pudieron cargar los servicios en este momento.</p>';
+            serviceResults.removeAttribute("hidden");
+          }
+          if (servicesTrack) {
+            servicesTrack.classList.add("services-track--empty");
+            servicesTrack.innerHTML = '<p class="services-empty-message empty-results">Intenta nuevamente más tarde.</p>';
+            activeServiceKey = null;
+            updateActiveServiceButton(null);
+          }
+          if (servicePrevButton) { servicePrevButton.disabled = true; }
+          if (serviceNextButton) { serviceNextButton.disabled = true; }
+          updateServiceNavButtons();
+        }
+      }
+
+      searchInput?.addEventListener("input", (event) => {
+        const term = normalizeText(event.target.value);
+        if (!searchResults) {
+          return;
+        }
+
+        if (!term) {
+          searchResults.innerHTML = "";
+          searchResults.setAttribute("hidden", "");
+          return;
+        }
+
+        searchResults.removeAttribute("hidden");
+
+        if (workshopsLoadError) {
+          searchResults.innerHTML = SEARCH_ERROR_MESSAGE;
+          return;
+        }
+
+        if (!workshopsReady) {
+          searchResults.innerHTML = SEARCH_LOADING_MESSAGE;
+          return;
+        }
+
+        const filtered = workshops.filter((workshop) => normalizeText(workshop.name).includes(term));
+        renderSearchResults(filtered);
       });
+
+      loadWorkshops();
     });
   </script>
 
