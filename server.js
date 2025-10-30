@@ -441,6 +441,86 @@ function mapReviewRow(row) {
   };
 }
 
+const CLIENT_HISTORY_QUERY = `
+  WITH latest_workshops AS (
+    SELECT
+      owner_id,
+      id AS workshop_id,
+      name AS workshop_name,
+      address AS workshop_address,
+      photo AS workshop_photo
+    FROM (
+      SELECT *,
+             ROW_NUMBER() OVER (PARTITION BY owner_id ORDER BY rowid DESC) AS row_number
+      FROM workshops
+    )
+    WHERE row_number = 1
+  )
+  SELECT
+    a.id,
+    a.service,
+    a.visit_type,
+    a.scheduled_for,
+    COALESCE(a.status, 'pendiente') AS status,
+    a.address,
+    a.created_at,
+    a.mechanic_id,
+    lw.workshop_id,
+    lw.workshop_name,
+    lw.workshop_address,
+    lw.workshop_photo,
+    m.name AS mechanic_name,
+    m.email AS mechanic_email
+  FROM appointments a
+  LEFT JOIN latest_workshops lw ON lw.owner_id = a.mechanic_id
+  LEFT JOIN users m ON m.id = a.mechanic_id
+  WHERE a.client_id = ?
+  ORDER BY datetime(a.scheduled_for) DESC, a.id DESC
+`;
+
+function mapAppointmentHistoryRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  const mechanicId = Number(row.mechanic_id);
+  const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
+
+  return {
+    id: Number(row.id),
+    service: row.service,
+    visitType: row.visit_type,
+    scheduledFor: row.scheduled_for,
+    status: row.status || 'pendiente',
+    address: row.address || null,
+    createdAt: row.created_at,
+    mechanic: hasMechanic
+      ? {
+          id: mechanicId,
+          name: row.mechanic_name || null,
+          email: row.mechanic_email || null,
+        }
+      : null,
+    workshop: row.workshop_id
+      ? {
+          id: row.workshop_id,
+          name: row.workshop_name || null,
+          address: row.workshop_address || null,
+          photo: row.workshop_photo || null,
+        }
+      : null,
+  };
+}
+
+function getClientAppointmentHistory(clientId) {
+  if (!clientId) {
+    return [];
+  }
+
+  const rows = db.prepare(CLIENT_HISTORY_QUERY).all(clientId);
+  return rows.map(mapAppointmentHistoryRow).filter(Boolean);
+}
+
 function normalizeTextList(value) {
   if (Array.isArray(value)) {
     return value
@@ -1240,6 +1320,27 @@ app.get('/api/profile', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Error obteniendo perfil', error);
     res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+  }
+});
+
+app.get('/api/profile/history', requireAuth, (req, res) => {
+  try {
+    const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    if (user.account_type !== 'cliente') {
+      return res.status(403).json({ error: 'El historial está disponible solo para clientes.' });
+    }
+
+    const history = getClientAppointmentHistory(req.session.userId);
+
+    res.json({ history });
+  } catch (error) {
+    console.error('Error obteniendo historial de visitas', error);
+    res.status(500).json({ error: 'No se pudo obtener el historial de visitas.' });
   }
 });
 
