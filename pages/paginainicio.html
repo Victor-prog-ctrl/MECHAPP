@@ -441,26 +441,38 @@
         const map = new Map();
         list.forEach((workshop) => {
           const serviceList = Array.isArray(workshop.services) ? workshop.services : [];
+          const seenServiceKeys = new Set();
           serviceList.forEach((serviceName) => {
             if (!serviceName || typeof serviceName !== "string") {
               return;
             }
-            const trimmed = serviceName.trim();
+            const trimmed = serviceName.trim().replace(/\s+/g, " ");
             if (!trimmed) {
               return;
             }
-            const key = normalizeText(trimmed);
+            const key = normalizeText(trimmed).replace(/\s+/g, " ");
             if (!key) {
               return;
             }
-            if (!map.has(key)) {
-              map.set(key, { key, name: trimmed, workshops: [] });
+            if (seenServiceKeys.has(key)) {
+              return;
             }
-            map.get(key).workshops.push(workshop);
+            seenServiceKeys.add(key);
+
+            if (!map.has(key)) {
+              map.set(key, { key, name: trimmed, workshops: [], workshopIds: new Set() });
+            }
+            const entry = map.get(key);
+            if (!entry.workshopIds.has(workshop.id)) {
+              entry.workshopIds.add(workshop.id);
+              entry.workshops.push(workshop);
+            }
           });
         });
 
-        serviceEntries = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+        serviceEntries = Array.from(map.values())
+          .map(({ key, name, workshops }) => ({ key, name, workshops }))
+          .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
 
         servicesTrack.classList.remove("services-track--empty");
         servicesTrack.innerHTML = "";
