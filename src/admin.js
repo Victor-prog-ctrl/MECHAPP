@@ -346,6 +346,11 @@ function setupFilters() {
 }
 
 async function handleLogout() {
+  const confirmed = window.confirm('¿Estás seguro de que deseas cerrar sesión?');
+  if (!confirmed) {
+    return;
+  }
+
   try {
     await fetchWithHandling('/api/logout', { method: 'POST' });
   } catch (error) {
