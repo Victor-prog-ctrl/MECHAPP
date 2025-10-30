@@ -82,10 +82,28 @@
 
     if (!carousel.dataset.carouselReady) {
       const handlePrev = () => {
-        wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+        if (maxScrollLeft <= 0) {
+          return;
+        }
+
+        if (wrapper.scrollLeft <= 0) {
+          wrapper.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
+        } else {
+          wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+        }
       };
       const handleNext = () => {
-        wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+        if (maxScrollLeft <= 0) {
+          return;
+        }
+
+        if (wrapper.scrollLeft >= maxScrollLeft - 1) {
+          wrapper.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+        }
       };
 
       prevButton.addEventListener('click', handlePrev);
@@ -118,8 +136,9 @@
 
     function updateButtons() {
       const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth - 1;
-      prevButton.disabled = wrapper.scrollLeft <= 0;
-      nextButton.disabled = wrapper.scrollLeft >= maxScrollLeft;
+      const hasScrollableContent = maxScrollLeft > 0;
+      prevButton.disabled = !hasScrollableContent;
+      nextButton.disabled = !hasScrollableContent;
     }
 
     const maxScroll = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
