@@ -66,6 +66,67 @@
     return response.json();
   }
 
+  function setupCarousel(container) {
+    const carousel = container.closest('.workshops-carousel');
+    if (!carousel) {
+      return;
+    }
+
+    const wrapper = carousel.querySelector('.workshops-track-wrapper');
+    const prevButton = carousel.querySelector('[data-carousel-prev]');
+    const nextButton = carousel.querySelector('[data-carousel-next]');
+
+    if (!wrapper || !prevButton || !nextButton) {
+      return;
+    }
+
+    if (!carousel.dataset.carouselReady) {
+      const handlePrev = () => {
+        wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+      };
+      const handleNext = () => {
+        wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+      };
+
+      prevButton.addEventListener('click', handlePrev);
+      nextButton.addEventListener('click', handleNext);
+
+      wrapper.addEventListener('scroll', updateButtons, { passive: true });
+      window.addEventListener('resize', updateButtons);
+
+      carousel.dataset.carouselReady = 'true';
+    }
+
+    function getScrollAmount() {
+      const firstCard = container.querySelector('.workshop-card');
+      if (!firstCard) {
+        return wrapper.clientWidth;
+      }
+
+      const cardWidth = firstCard.getBoundingClientRect().width;
+      const styles = window.getComputedStyle(container);
+      const gapValues = [styles.columnGap, styles.gap, styles.rowGap];
+      const gap = gapValues
+        .map((value) => {
+          const parsed = Number.parseFloat(value);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })
+        .find((value) => value > 0) || 0;
+
+      return cardWidth + gap;
+    }
+
+    function updateButtons() {
+      const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth - 1;
+      prevButton.disabled = wrapper.scrollLeft <= 0;
+      nextButton.disabled = wrapper.scrollLeft >= maxScrollLeft;
+    }
+
+    const maxScroll = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+    wrapper.scrollLeft = Math.min(wrapper.scrollLeft, maxScroll);
+    requestAnimationFrame(updateButtons);
+  }
+
   async function renderHomeWorkshops() {
     const container = document.querySelector('[data-home-workshops]');
     if (!container) {
@@ -89,6 +150,7 @@
       });
       container.innerHTML = '';
       container.appendChild(fragment);
+      setupCarousel(container);
     } catch (error) {
       console.error(error);
       container.innerHTML = '<p class="workshop-card__empty">No pudimos mostrar los talleres en este momento.</p>';
