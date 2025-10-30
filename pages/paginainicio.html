@@ -53,6 +53,26 @@
       </div>
     </section>
 
+    <section class="featured-services" aria-labelledby="featured-services-title">
+      <div class="section-header">
+        <div>
+          <h2 id="featured-services-title">Servicios destacados en Mechapp</h2>
+          <p>Descubre las especialidades más solicitadas por los talleres registrados y navega por ellas.</p>
+        </div>
+      </div>
+      <div class="featured-services-carousel" data-featured-services aria-live="polite">
+        <button class="featured-services-nav featured-services-nav--prev" type="button" aria-label="Ver servicios anteriores" data-featured-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="featured-services-track-wrapper">
+          <div class="featured-services-track" data-featured-track></div>
+        </div>
+        <button class="featured-services-nav featured-services-nav--next" type="button" aria-label="Ver servicios siguientes" data-featured-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+      </div>
+    </section>
+
     <section class="workshops" aria-labelledby="workshops-title">
       <div class="section-header">
         <div>
@@ -168,6 +188,7 @@
   </footer>
 
   <script src="../src/home-workshops.js" defer></script>
+  <script src="../src/home-services.js" defer></script>
 
   <!-- Lógica de búsqueda de talleres y exploración de servicios -->
   <script>
