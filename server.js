@@ -1044,6 +1044,150 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
   }
 });
 
+app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+
+  if (!workshopId) {
+    return res.status(400).json({ error: 'Identificador de taller no válido.' });
+  }
+
+  try {
+    const existing = db
+      .prepare(
+        `SELECT id, owner_id, name, short_description, description, experience_years, address, schedule, phone, email, specialties, services, certifications, photo
+         FROM workshops
+         WHERE id = ?
+         LIMIT 1`,
+      )
+      .get(workshopId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Taller no encontrado.' });
+    }
+
+    if (Number(existing.owner_id) !== Number(req.session.userId)) {
+      return res.status(403).json({ error: 'No tienes permisos para editar este taller.' });
+    }
+
+    const {
+      name,
+      shortDescription,
+      description,
+      services,
+      specialties,
+      certifications,
+      experienceYears,
+      address,
+      schedule,
+      phone,
+      email,
+      photoDataUrl,
+    } = req.body || {};
+
+    const normalizedName = typeof name === 'string' && name.trim() ? name.trim() : existing.name;
+    const normalizedDescription = typeof description === 'string' && description.trim()
+      ? description.trim()
+      : existing.description;
+    const computedShortDescription = typeof shortDescription === 'string' && shortDescription.trim()
+      ? shortDescription.trim()
+      : createShortDescription(normalizedDescription);
+    const normalizedAddress = typeof address === 'string' && address.trim() ? address.trim() : existing.address;
+    const normalizedSchedule = typeof schedule === 'string' && schedule.trim()
+      ? schedule.trim()
+      : existing.schedule || 'Horario no especificado';
+    const normalizedPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
+    const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+
+    if (!normalizedName) {
+      return res.status(400).json({ error: 'Ingresa el nombre del taller.' });
+    }
+
+    if (!normalizedDescription) {
+      return res.status(400).json({ error: 'Describe tu taller para continuar.' });
+    }
+
+    if (!normalizedAddress) {
+      return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
+    }
+
+    const parsedServices = normalizeTextList(services);
+    const existingServices = parseJsonArray(existing.services);
+    const servicesToStore = parsedServices.length ? parsedServices : existingServices;
+
+    if (!servicesToStore.length) {
+      return res.status(400).json({ error: 'Selecciona al menos un servicio destacado.' });
+    }
+
+    const parsedSpecialties = normalizeTextList(specialties);
+    let specialtiesToStore = parsedSpecialties.length ? parsedSpecialties : parseJsonArray(existing.specialties);
+
+    if (!specialtiesToStore.length) {
+      specialtiesToStore = servicesToStore.slice(0, 5);
+    }
+
+    const parsedCertifications = normalizeTextList(certifications);
+    const certificationsToStore = parsedCertifications.length
+      ? parsedCertifications
+      : parseJsonArray(existing.certifications);
+
+    const parsedExperience = Number.parseInt(experienceYears, 10);
+    const normalizedExperienceYears = Number.isInteger(parsedExperience) && parsedExperience >= 0
+      ? parsedExperience
+      : Number(existing.experience_years || 0);
+
+    let photoPath = existing.photo;
+    if (photoDataUrl) {
+      try {
+        photoPath = await storeWorkshopPhotoFile(photoDataUrl, existing.id);
+      } catch (error) {
+        console.error('No se pudo almacenar la nueva fotografía del taller', error);
+        return res.status(400).json({ error: error.message || 'No se pudo guardar la fotografía del taller.' });
+      }
+    }
+
+    db.prepare(
+      `UPDATE workshops
+       SET name = ?,
+           short_description = ?,
+           description = ?,
+           experience_years = ?,
+           address = ?,
+           schedule = ?,
+           phone = ?,
+           email = ?,
+           specialties = ?,
+           services = ?,
+           certifications = ?,
+           photo = ?
+       WHERE id = ?`,
+    ).run(
+      normalizedName,
+      computedShortDescription,
+      normalizedDescription,
+      normalizedExperienceYears,
+      normalizedAddress,
+      normalizedSchedule,
+      normalizedPhone || null,
+      normalizedEmail || null,
+      JSON.stringify(specialtiesToStore),
+      JSON.stringify(servicesToStore),
+      JSON.stringify(certificationsToStore),
+      photoPath,
+      workshopId,
+    );
+
+    const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(workshopId);
+
+    res.json({
+      message: 'Los cambios se guardaron correctamente.',
+      workshop: row ? mapWorkshopDetail(row) : null,
+    });
+  } catch (error) {
+    console.error('Error actualizando taller', error);
+    res.status(500).json({ error: 'No se pudo actualizar el taller en este momento.' });
+  }
+});
+
 app.get('/api/workshops/:id/reviews', (req, res) => {
   const workshopId = String(req.params.id || '').trim();
 
