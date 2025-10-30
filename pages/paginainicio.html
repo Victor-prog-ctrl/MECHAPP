@@ -60,7 +60,17 @@
           <p>Conoce a los especialistas inscritos y accede a su perfil para solicitar servicios o dejar una reseña.</p>
         </div>
       </div>
-      <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+      <div class="workshops-carousel">
+        <button class="workshops-nav workshops-nav--prev" type="button" aria-label="Ver talleres anteriores" data-carousel-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="workshops-track-wrapper">
+          <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+        </div>
+        <button class="workshops-nav workshops-nav--next" type="button" aria-label="Ver talleres siguientes" data-carousel-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+      </div>
     </section>
 
     <section class="search-section" aria-labelledby="buscador">
