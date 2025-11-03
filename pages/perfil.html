@@ -48,7 +48,13 @@
                         <a class="button" href="./editar-nombre.html">Cambiar nombre</a>
                         <a class="button" href="./editar-correo.html">Cambiar correo</a>
                         <a class="button" href="./cambiar-contrasena.html">Cambiar contraseña</a>
-                        <button type="button" class="button" data-workshop-manage-button hidden>
+                        <button
+                            type="button"
+                            class="button"
+                            data-workshop-manage-button
+                            data-visible-for="mecanico"
+                            hidden
+                        >
                             Gestionar mi taller
                         </button>
                     </div>
@@ -107,7 +113,13 @@
 
         </section>
 
-        <section class="workshop-management" id="workshop-management" data-workshop-panel hidden>
+        <section
+            class="workshop-management"
+            id="workshop-management"
+            data-workshop-panel
+            data-visible-for="mecanico"
+            hidden
+        >
             <div class="section-header">
                 <div>
                     <h2 id="workshop-management-title">Mi taller</h2>
