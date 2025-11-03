@@ -244,24 +244,22 @@ main {
 }
 
 .featured-services-carousel {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    position: relative;
     width: 100%;
 }
 
 .featured-services-track-wrapper {
-    flex: 1;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 4px;
+    scroll-padding-inline: 56px;
     --featured-services-visible: 3;
     --featured-services-gap: 16px;
     --featured-services-gap-total: 32px;
     min-width: 0;
+    padding: 0 56px;
 }
 
 .featured-services-track-wrapper::-webkit-scrollbar {
@@ -273,7 +271,7 @@ main {
     gap: var(--featured-services-gap);
     align-items: stretch;
     min-width: 100%;
-    padding: 8px 4px;
+    padding: 8px 0;
 }
 
 .featured-services-track--empty {
@@ -318,6 +316,9 @@ main {
 }
 
 .featured-services-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -328,12 +329,23 @@ main {
     box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.featured-services-nav--prev {
+    left: 16px;
+}
+
+.featured-services-nav--next {
+    right: 16px;
 }
 
 .featured-services-nav:hover,
 .featured-services-nav:focus-visible {
-    transform: translateY(-1px);
+    transform: translateY(calc(-50% - 1px));
     box-shadow: 0 18px 30px rgba(249, 115, 22, 0.24);
     outline: none;
 }
@@ -341,7 +353,7 @@ main {
 .featured-services-nav[disabled] {
     opacity: 0.4;
     cursor: default;
-    transform: none;
+    transform: translateY(-50%);
     box-shadow: none;
 }
 
@@ -354,13 +366,25 @@ main {
     .featured-services-track-wrapper {
         --featured-services-visible: 2;
         --featured-services-gap-total: 16px;
+        scroll-padding-inline: 48px;
+        padding: 0 48px;
     }
 }
 
 @media (max-width: 640px) {
+    .featured-services-nav--prev {
+        left: 12px;
+    }
+
+    .featured-services-nav--next {
+        right: 12px;
+    }
+
     .featured-services-track-wrapper {
         --featured-services-visible: 1;
         --featured-services-gap-total: 0px;
+        scroll-padding-inline: 32px;
+        padding: 0 32px;
     }
 }
 
