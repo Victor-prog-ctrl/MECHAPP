@@ -591,8 +591,8 @@ function setupWorkshopManagement(profile) {
 
     const isMechanic = profile.accountType === "mecanico";
     if (!isMechanic) {
-        manageButton.hidden = true;
-        panel.hidden = true;
+        manageButton.remove();
+        panel.remove();
         return;
     }
 
