@@ -247,6 +247,7 @@ main {
     display: flex;
     align-items: center;
     gap: 16px;
+    width: 100%;
 }
 
 .featured-services-track-wrapper {
@@ -260,6 +261,7 @@ main {
     --featured-services-visible: 3;
     --featured-services-gap: 16px;
     --featured-services-gap-total: 32px;
+    min-width: 0;
 }
 
 .featured-services-track-wrapper::-webkit-scrollbar {
