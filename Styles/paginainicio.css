@@ -232,6 +232,7 @@ main {
     padding: 36px 40px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
     position: relative;
+    overflow: hidden;
 }
 
 .featured-services::after {
@@ -246,20 +247,26 @@ main {
 .featured-services-carousel {
     position: relative;
     width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "featured-prev featured-track featured-next";
+    align-items: center;
+    gap: 16px;
 }
 
 .featured-services-track-wrapper {
+    grid-area: featured-track;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 56px;
+    scroll-padding-inline: clamp(24px, 6vw, 56px);
     --featured-services-visible: 3;
     --featured-services-gap: 16px;
     --featured-services-gap-total: 32px;
     min-width: 0;
-    padding: 0 56px;
+    padding: 0 clamp(24px, 6vw, 56px);
 }
 
 .featured-services-track-wrapper::-webkit-scrollbar {
@@ -316,9 +323,8 @@ main {
 }
 
 .featured-services-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    position: static;
+    transform: none;
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -332,20 +338,21 @@ main {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    justify-self: center;
+    z-index: 1;
 }
 
 .featured-services-nav--prev {
-    left: 16px;
+    grid-area: featured-prev;
 }
 
 .featured-services-nav--next {
-    right: 16px;
+    grid-area: featured-next;
 }
 
 .featured-services-nav:hover,
 .featured-services-nav:focus-visible {
-    transform: translateY(calc(-50% - 1px));
+    transform: translateY(-1px);
     box-shadow: 0 18px 30px rgba(249, 115, 22, 0.24);
     outline: none;
 }
@@ -353,7 +360,7 @@ main {
 .featured-services-nav[disabled] {
     opacity: 0.4;
     cursor: default;
-    transform: translateY(-50%);
+    transform: none;
     box-shadow: none;
 }
 
@@ -366,25 +373,29 @@ main {
     .featured-services-track-wrapper {
         --featured-services-visible: 2;
         --featured-services-gap-total: 16px;
-        scroll-padding-inline: 48px;
-        padding: 0 48px;
+        scroll-padding-inline: clamp(20px, 5vw, 40px);
+        padding: 0 clamp(20px, 5vw, 40px);
     }
 }
 
 @media (max-width: 640px) {
-    .featured-services-nav--prev {
-        left: 12px;
+    .featured-services-carousel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "featured-track featured-track"
+            "featured-prev featured-next";
+        gap: 16px;
     }
 
-    .featured-services-nav--next {
-        right: 12px;
+    .featured-services-nav {
+        justify-self: center;
     }
 
     .featured-services-track-wrapper {
         --featured-services-visible: 1;
         --featured-services-gap-total: 0px;
-        scroll-padding-inline: 32px;
-        padding: 0 32px;
+        scroll-padding-inline: clamp(16px, 8vw, 28px);
+        padding: 0 clamp(16px, 8vw, 28px);
     }
 }
 
