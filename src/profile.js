@@ -596,14 +596,15 @@ function setupWorkshopManagement(profile) {
         return;
     }
 
+    manageButton.hidden = false;
+    panel.hidden = true;
+    manageButton.setAttribute("aria-expanded", "false");
+    manageButton.setAttribute("aria-controls", "workshop-management");
+
     workshopState.id = profile?.mechanicWorkshop?.id || null;
     workshopState.data = null;
     workshopState.loaded = false;
     workshopState.loading = false;
-
-    manageButton.hidden = false;
-    manageButton.setAttribute("aria-controls", "workshop-management");
-    manageButton.setAttribute("aria-expanded", "false");
 
     const closeButton = panel.querySelector("[data-workshop-close]");
     const statusElement = panel.querySelector("[data-workshop-status]");
