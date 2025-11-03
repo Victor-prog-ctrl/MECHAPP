@@ -29,11 +29,8 @@
       <a href="#inicio" class="nav-link active">Inicio</a>
       <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
       <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
-      <a href="./agendar-cita.html" class="nav-link">Agendar cita</a>
+      <a href="./agendar-cita.html" class="nav-link" data-visible-for="usuario" hidden>Agendar cita</a>
       <a href="#ubicacion" class="nav-link">Ubicación</a>
-      <a href="./perfil.html" class="nav-link" data-auth-visibility="authenticated" hidden>
-        Perfil
-      </a>
       <a href="./registro-taller.html" class="nav-link" data-auth-visibility="authenticated" data-visible-for="mecanico"
         hidden>
         Registrar Taller
@@ -42,10 +39,6 @@
     <div class="header-actions">
       <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
       <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
-      <a href="./registro-taller.html" class="button ghost" data-auth-visibility="authenticated"
-        data-visible-for="mecanico" hidden>
-        Registrar Taller
-      </a>
     </div>
   </header>
 
@@ -60,6 +53,26 @@
       </div>
     </section>
 
+    <section class="featured-services" aria-labelledby="featured-services-title">
+      <div class="section-header">
+        <div>
+          <h2 id="featured-services-title">Servicios destacados en Mechapp</h2>
+          <p>Descubre las especialidades más solicitadas por los talleres registrados y navega por ellas.</p>
+        </div>
+      </div>
+      <div class="featured-services-carousel" data-featured-services aria-live="polite">
+        <button class="featured-services-nav featured-services-nav--prev" type="button" aria-label="Ver servicios anteriores" data-featured-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="featured-services-track-wrapper">
+          <div class="featured-services-track" data-featured-track></div>
+        </div>
+        <button class="featured-services-nav featured-services-nav--next" type="button" aria-label="Ver servicios siguientes" data-featured-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+      </div>
+    </section>
+
     <section class="workshops" aria-labelledby="workshops-title">
       <div class="section-header">
         <div>
@@ -67,21 +80,32 @@
           <p>Conoce a los especialistas inscritos y accede a su perfil para solicitar servicios o dejar una reseña.</p>
         </div>
       </div>
-      <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+      <div class="workshops-carousel">
+        <button class="workshops-nav workshops-nav--prev" type="button" aria-label="Ver talleres anteriores" data-carousel-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="workshops-track-wrapper">
+          <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+        </div>
+        <button class="workshops-nav workshops-nav--next" type="button" aria-label="Ver talleres siguientes" data-carousel-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+      </div>
     </section>
 
     <section class="search-section" aria-labelledby="buscador">
       <div class="section-header">
         <div>
           <h2 id="buscador">Encuentra tu taller o servicio</h2>
-          <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+          <p>Escribe el nombre de un taller para ver sus detalles y reseñas.</p>
         </div>
       </div>
       <div class="search-control">
-        <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
-        <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
+        <label class="visually-hidden" for="search-input">Buscar talleres por nombre</label>
+        <input type="search" id="search-input" placeholder="Ej. Taller Los Andes" autocomplete="off" />
       </div>
-      <div class="search-results" id="search-results" aria-live="polite"></div>
+      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
+
     </section>
 
     <!-- ===== Sección de ubicación con Google Maps ===== -->
@@ -146,8 +170,9 @@
   </footer>
 
   <script src="../src/home-workshops.js" defer></script>
+  <script src="../src/home-services.js" defer></script>
 
-  <!-- Tu lógica general (búsqueda) la dejé intacta -->
+  <!-- Lógica de búsqueda de talleres y exploración de servicios -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const searchInput = document.getElementById("search-input");
@@ -228,48 +253,116 @@
 
       applyVisibilityState();
 
-      const servicios = [
-        { nombre: "Mantenimiento General", descripcion: "Incluye revisión completa de fluidos y ajustes básicos.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Diagnóstico Eléctrico", descripcion: "Soluciones precisas para problemas eléctricos del vehículo.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Alineación y Balanceo", descripcion: "Mejora el rendimiento y la seguridad en carretera.", enlace: "#", tipo: "Servicio" }
-      ];
+      const SEARCH_LOADING_MESSAGE = '<p class="empty-results">Estamos cargando los talleres…</p>';
+      const SEARCH_ERROR_MESSAGE = '<p class="empty-results">No se pudieron cargar los talleres. Intenta nuevamente más tarde.</p>';
+      const SEARCH_EMPTY_MESSAGE = '<p class="empty-results">No encontramos talleres que coincidan con tu búsqueda.</p>';
 
-      const marcasVehiculos = [
-        "Abarth", "Acura", "Alfa Romeo", "Audi", "BMW", "BYD", "Chevrolet", "Citroën", "Ford", "Honda",
-        "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Peugeot", "Renault",
-        "Subaru", "Suzuki", "Toyota", "Volkswagen", "Volvo"
-      ].map((m) => ({ nombre: m, descripcion: "Marca disponible para servicios especializados.", enlace: "#", tipo: "Marca" }));
+      let workshops = [];
+      let workshopsReady = false;
+      let workshopsLoadError = false;
 
-      const datosBusqueda = [...servicios, ...marcasVehiculos];
+      function createWorkshopResult(workshop) {
+        const article = document.createElement("article");
+        article.className = "result-item";
 
-      const renderResultados = (items) => {
-        const el = document.getElementById("search-results");
-        if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
-        const frag = document.createDocumentFragment();
-        items.forEach((item) => {
-          const article = document.createElement("article");
-          article.className = "result-item";
-          article.innerHTML = `
-              <div class="result-type" aria-hidden="true">${item.tipo}</div>
-              <div class="result-content">
-                <h3>${item.nombre}</h3>
-                <p>${item.especialidad || item.descripcion}</p>
-              </div>
-              <a class="button ghost" href="${item.enlace}">Ver más</a>
-            `;
-          frag.appendChild(article);
+        const type = document.createElement("div");
+        type.className = "result-type";
+        type.textContent = "Taller";
+        type.setAttribute("aria-hidden", "true");
+        article.appendChild(type);
+
+        const content = document.createElement("div");
+        content.className = "result-content";
+
+        const title = document.createElement("h3");
+        title.textContent = workshop.name;
+        content.appendChild(title);
+
+        const description = document.createElement("p");
+        description.textContent = workshop.shortDescription || "Sin descripción disponible.";
+        content.appendChild(description);
+
+        article.appendChild(content);
+
+        const link = document.createElement("a");
+        link.className = "button ghost";
+        link.href = `./perfil-taller.html?id=${encodeURIComponent(workshop.id)}`;
+        link.textContent = "Ver más";
+        link.setAttribute("aria-label", `Ver perfil del taller ${workshop.name}`);
+        article.appendChild(link);
+
+        return article;
+      }
+
+      function renderSearchResults(items) {
+        if (!searchResults) {
+          return;
+        }
+
+        if (!items.length) {
+          searchResults.innerHTML = SEARCH_EMPTY_MESSAGE;
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        items.forEach((workshop) => {
+          fragment.appendChild(createWorkshopResult(workshop));
         });
-        el.innerHTML = ""; el.appendChild(frag);
-      };
-      renderResultados(datosBusqueda.slice(0, 3));
-      searchInput?.addEventListener("input", (e) => {
-        const termino = normalizeText(e.target.value);
-        if (!termino) { renderResultados(datosBusqueda.slice(0, 3)); return; }
-        const filtrados = datosBusqueda.filter((it) =>
-          normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
-        );
-        renderResultados(filtrados);
+        searchResults.innerHTML = "";
+        searchResults.appendChild(fragment);
+      }
+
+      async function loadWorkshops() {
+        workshopsReady = false;
+        workshopsLoadError = false;
+        try {
+          const response = await fetch("/api/workshops");
+          if (!response.ok) {
+            throw new Error("No se pudieron cargar los talleres");
+          }
+          const data = await response.json();
+          workshops = Array.isArray(data?.workshops) ? data.workshops : [];
+          workshopsReady = true;
+          if (searchInput && searchInput.value.trim()) {
+            searchInput.dispatchEvent(new Event("input"));
+          }
+        } catch (error) {
+          console.error(error);
+          workshops = [];
+          workshopsReady = false;
+          workshopsLoadError = true;
+        }
+      }
+
+      searchInput?.addEventListener("input", (event) => {
+        const term = normalizeText(event.target.value);
+        if (!searchResults) {
+          return;
+        }
+
+        if (!term) {
+          searchResults.innerHTML = "";
+          searchResults.setAttribute("hidden", "");
+          return;
+        }
+
+        searchResults.removeAttribute("hidden");
+
+        if (workshopsLoadError) {
+          searchResults.innerHTML = SEARCH_ERROR_MESSAGE;
+          return;
+        }
+
+        if (!workshopsReady) {
+          searchResults.innerHTML = SEARCH_LOADING_MESSAGE;
+          return;
+        }
+
+        const filtered = workshops.filter((workshop) => normalizeText(workshop.name).includes(term));
+        renderSearchResults(filtered);
       });
+
+      loadWorkshops();
     });
   </script>
 

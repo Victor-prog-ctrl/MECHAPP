@@ -520,3 +520,76 @@ main {
         align-items: stretch;
     }
 }
+
+/* ——— Pago / PayPal ——— */
+.pay-box{
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+.pay-box h4{
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.pay-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 10px; margin: 10px 0 14px;
+}
+.pay-amount{
+  font-size: 18px; font-weight: 800;
+}
+.badge-soft{
+  display:inline-block; padding:4px 10px; border-radius:999px;
+  font-size:12px; background: #f2f7ff; color:#1b5cff; border:1px solid #dfe9ff;
+}
+.pay-hint{ font-size: 12px; color:#666; margin-top: 6px; }
+.pay-error{ color:#b00020; font-size: 13px; margin-top: 6px; display:none; }
+#paypal-button-container{
+  margin-top: 10px;
+}
+
+/* —— Paleta base (ajústala a tu tema) —— */
+:root{
+  --card-bg: #101827;         /* fondo tarjeta oscuro */
+  --card-border: #23324a;     /* borde sutil */
+  --text-main: #e6edf7;       /* texto claro */
+  --text-muted: #93a4c1;      /* texto secundario */
+  --accent: #1b5cff;          /* azul MechApp */
+  --accent-ghost: rgba(27,92,255,.18);
+  --accent-border: rgba(27,92,255,.35);
+  --danger: #ff6b6b;
+}
+
+/* —— Caja de pago —— */
+.pay-box{
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  color: var(--text-main);
+}
+.pay-box h4{
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.pay-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin:10px 0 14px;
+}
+.pay-amount{ font-size:18px; font-weight:800; color: var(--text-main); }
+.badge-soft{
+  display:inline-block; padding:4px 10px; border-radius:999px;
+  font-size:12px; background: var(--accent-ghost); color:#cfe0ff;
+  border:1px solid var(--accent-border);
+}
+.pay-hint{ font-size:12px; color: var(--text-muted); margin-top:6px; }
+.pay-error{ color: var(--danger); font-size:13px; margin-top:6px; display:none; }
+#paypal-button-container{ margin-top: 10px; }

@@ -23,14 +23,26 @@
     description.textContent = workshop.shortDescription;
     body.appendChild(description);
 
-    const specialties = document.createElement('ul');
-    specialties.className = 'workshop-card__specialties';
-    (workshop.specialties || []).slice(0, 3).forEach((specialty) => {
+    const highlights = document.createElement('ul');
+    highlights.className = 'workshop-card__specialties';
+
+    const services = Array.isArray(workshop.services) ? workshop.services : [];
+    const specialties = Array.isArray(workshop.specialties) ? workshop.specialties : [];
+    const highlightItems = services.length ? services : specialties;
+
+    highlightItems.slice(0, 3).forEach((highlight) => {
       const item = document.createElement('li');
-      item.textContent = specialty;
-      specialties.appendChild(item);
+      item.textContent = highlight;
+      highlights.appendChild(item);
     });
-    body.appendChild(specialties);
+
+    if (!highlightItems.length) {
+      const item = document.createElement('li');
+      item.textContent = 'Servicios próximamente disponibles';
+      highlights.appendChild(item);
+    }
+
+    body.appendChild(highlights);
 
     const rating = document.createElement('p');
     rating.className = 'workshop-card__rating';
@@ -66,6 +78,108 @@
     return response.json();
   }
 
+  function setupCarousel(container) {
+    const carousel = container.closest('.workshops-carousel');
+    if (!carousel) {
+      return;
+    }
+
+    const wrapper = carousel.querySelector('.workshops-track-wrapper');
+    const prevButton = carousel.querySelector('[data-carousel-prev]');
+    const nextButton = carousel.querySelector('[data-carousel-next]');
+
+    if (!wrapper || !prevButton || !nextButton) {
+      return;
+    }
+
+    if (!carousel.dataset.carouselReady) {
+      const originalCards = Array.from(container.children);
+      let cloneBatch = 0;
+
+      function ensureMoreContent() {
+        if (!originalCards.length) {
+          return;
+        }
+
+        const remaining = wrapper.scrollWidth - wrapper.clientWidth - wrapper.scrollLeft;
+        const threshold = getScrollAmount() * 2;
+
+        if (remaining > threshold) {
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        originalCards.forEach((card) => {
+          const clone = card.cloneNode(true);
+          clone.setAttribute('data-carousel-clone', `${cloneBatch}`);
+          fragment.appendChild(clone);
+        });
+        cloneBatch += 1;
+        container.appendChild(fragment);
+        requestAnimationFrame(updateButtons);
+      }
+
+      const handlePrev = () => {
+        if (wrapper.scrollLeft <= 0) {
+          return;
+        }
+
+        wrapper.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+      };
+
+      const handleNext = () => {
+        ensureMoreContent();
+        if (container.children.length === 0) {
+          return;
+        }
+
+        wrapper.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+      };
+
+      const handleScroll = () => {
+        ensureMoreContent();
+        updateButtons();
+      };
+
+      prevButton.addEventListener('click', handlePrev);
+      nextButton.addEventListener('click', handleNext);
+
+      wrapper.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', updateButtons);
+
+      carousel.dataset.carouselReady = 'true';
+    }
+
+    function getScrollAmount() {
+      const firstCard = container.querySelector('.workshop-card');
+      if (!firstCard) {
+        return wrapper.clientWidth;
+      }
+
+      const cardWidth = firstCard.getBoundingClientRect().width;
+      const styles = window.getComputedStyle(container);
+      const gapValues = [styles.columnGap, styles.gap, styles.rowGap];
+      const gap = gapValues
+        .map((value) => {
+          const parsed = Number.parseFloat(value);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })
+        .find((value) => value > 0) || 0;
+
+      return cardWidth + gap;
+    }
+
+    function updateButtons() {
+      const hasCards = container.children.length > 0;
+      prevButton.disabled = !hasCards || wrapper.scrollLeft <= 0;
+      nextButton.disabled = !hasCards;
+    }
+
+    const maxScroll = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+    wrapper.scrollLeft = Math.min(wrapper.scrollLeft, maxScroll);
+    requestAnimationFrame(updateButtons);
+  }
+
   async function renderHomeWorkshops() {
     const container = document.querySelector('[data-home-workshops]');
     if (!container) {
@@ -89,6 +203,7 @@
       });
       container.innerHTML = '';
       container.appendChild(fragment);
+      setupCarousel(container);
     } catch (error) {
       console.error(error);
       container.innerHTML = '<p class="workshop-card__empty">No pudimos mostrar los talleres en este momento.</p>';

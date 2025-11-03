@@ -48,7 +48,8 @@ db.prepare(`
         specialties TEXT NOT NULL,
         services TEXT NOT NULL,
         certifications TEXT NOT NULL,
-        photo TEXT NOT NULL
+        photo TEXT NOT NULL,
+        owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL
     )
 `).run();
 
@@ -177,9 +178,10 @@ function seedWorkshops() {
       specialties,
       services,
       certifications,
-      photo
+      photo,
+      owner_id
     )
-    VALUES (@id, @name, @shortDescription, @description, @experienceYears, @address, @schedule, @phone, @email, @specialties, @services, @certifications, @photo)
+    VALUES (@id, @name, @shortDescription, @description, @experienceYears, @address, @schedule, @phone, @email, @specialties, @services, @certifications, @photo, @ownerId)
   `);
 
   const insertMany = db.transaction((records) => {
@@ -198,6 +200,7 @@ function seedWorkshops() {
         services: JSON.stringify(record.services),
         certifications: JSON.stringify(record.certifications),
         photo: record.photo,
+        ownerId: null,
       });
     }
   });
@@ -238,6 +241,68 @@ function normalizeAverage(value, count) {
   return Number(numeric.toFixed(1));
 }
 
+function getMechanicWorkshopSummary(mechanicId) {
+  if (!mechanicId) {
+    return null;
+  }
+
+  const row = db
+    .prepare(
+      `SELECT
+         w.id,
+         w.name,
+         COUNT(r.id) AS reviews_count,
+         AVG(r.rating) AS average_rating
+       FROM workshops w
+       LEFT JOIN workshop_reviews r ON r.workshop_id = w.id
+       WHERE w.owner_id = ?
+       GROUP BY w.id
+       ORDER BY reviews_count DESC, w.rowid DESC
+       LIMIT 1`
+    )
+    .get(mechanicId);
+
+  if (!row) {
+    return null;
+  }
+
+  const reviewsCount = Number(row.reviews_count || 0);
+
+  return {
+    id: row.id,
+    name: row.name,
+    reviewsCount,
+    averageRating: normalizeAverage(row.average_rating, reviewsCount),
+  };
+}
+
+function getMechanicAppointmentsSummary(mechanicId) {
+  if (!mechanicId) {
+    return {
+      completedAppointmentsLast12Months: 0,
+      completedAppointmentsTotal: 0,
+    };
+  }
+
+  const row = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN status = 'completado' AND datetime(scheduled_for) >= datetime('now', '-12 months') THEN 1 ELSE 0 END) AS completed_last_12_months,
+         SUM(CASE WHEN status = 'completado' THEN 1 ELSE 0 END) AS completed_total
+       FROM appointments
+       WHERE mechanic_id = ?`
+    )
+    .get(mechanicId);
+
+  const completedLast12Months = Number(row?.completed_last_12_months) || 0;
+  const completedTotal = Number(row?.completed_total) || 0;
+
+  return {
+    completedAppointmentsLast12Months: completedLast12Months,
+    completedAppointmentsTotal: completedTotal,
+  };
+}
+
 function mapWorkshopSummary(row) {
   const reviewsCount = Number(row.reviews_count || 0);
   const averageRating = normalizeAverage(row.average_rating, reviewsCount);
@@ -247,6 +312,7 @@ function mapWorkshopSummary(row) {
     name: row.name,
     shortDescription: row.short_description,
     specialties: parseJsonArray(row.specialties),
+    services: parseJsonArray(row.services),
     photo: row.photo,
     experienceYears: Number(row.experience_years || 0),
     averageRating,
@@ -254,15 +320,15 @@ function mapWorkshopSummary(row) {
     latestReview:
       row.latest_comment && row.latest_rating
         ? {
-            rating: Number(row.latest_rating),
-            comment: row.latest_comment,
-            headline: row.latest_headline || null,
-            service: row.latest_service || null,
-            visitDate: row.latest_visit_date || null,
-            visitType: row.latest_visit_type || null,
-            createdAt: row.latest_created_at,
-            clientName: row.latest_client_name || 'Cliente verificado',
-          }
+          rating: Number(row.latest_rating),
+          comment: row.latest_comment,
+          headline: row.latest_headline || null,
+          service: row.latest_service || null,
+          visitDate: row.latest_visit_date || null,
+          visitType: row.latest_visit_type || null,
+          createdAt: row.latest_created_at,
+          clientName: row.latest_client_name || 'Cliente verificado',
+        }
         : null,
   };
 }
@@ -376,6 +442,86 @@ function mapReviewRow(row) {
   };
 }
 
+const CLIENT_HISTORY_QUERY = `
+  WITH latest_workshops AS (
+    SELECT
+      owner_id,
+      id AS workshop_id,
+      name AS workshop_name,
+      address AS workshop_address,
+      photo AS workshop_photo
+    FROM (
+      SELECT *,
+             ROW_NUMBER() OVER (PARTITION BY owner_id ORDER BY rowid DESC) AS row_number
+      FROM workshops
+    )
+    WHERE row_number = 1
+  )
+  SELECT
+    a.id,
+    a.service,
+    a.visit_type,
+    a.scheduled_for,
+    COALESCE(a.status, 'pendiente') AS status,
+    a.address,
+    a.created_at,
+    a.mechanic_id,
+    lw.workshop_id,
+    lw.workshop_name,
+    lw.workshop_address,
+    lw.workshop_photo,
+    m.name AS mechanic_name,
+    m.email AS mechanic_email
+  FROM appointments a
+  LEFT JOIN latest_workshops lw ON lw.owner_id = a.mechanic_id
+  LEFT JOIN users m ON m.id = a.mechanic_id
+  WHERE a.client_id = ?
+  ORDER BY datetime(a.scheduled_for) DESC, a.id DESC
+`;
+
+function mapAppointmentHistoryRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  const mechanicId = Number(row.mechanic_id);
+  const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
+
+  return {
+    id: Number(row.id),
+    service: row.service,
+    visitType: row.visit_type,
+    scheduledFor: row.scheduled_for,
+    status: row.status || 'pendiente',
+    address: row.address || null,
+    createdAt: row.created_at,
+    mechanic: hasMechanic
+      ? {
+        id: mechanicId,
+        name: row.mechanic_name || null,
+        email: row.mechanic_email || null,
+      }
+      : null,
+    workshop: row.workshop_id
+      ? {
+        id: row.workshop_id,
+        name: row.workshop_name || null,
+        address: row.workshop_address || null,
+        photo: row.workshop_photo || null,
+      }
+      : null,
+  };
+}
+
+function getClientAppointmentHistory(clientId) {
+  if (!clientId) {
+    return [];
+  }
+
+  const rows = db.prepare(CLIENT_HISTORY_QUERY).all(clientId);
+  return rows.map(mapAppointmentHistoryRow).filter(Boolean);
+}
+
 function normalizeTextList(value) {
   if (Array.isArray(value)) {
     return value
@@ -450,6 +596,19 @@ function ensureCertificatePathColumn() {
 
 ensureCertificateStatusColumn();
 ensureCertificatePathColumn();
+
+function ensureWorkshopOwnerColumn() {
+  const columns = db.prepare(`PRAGMA table_info(workshops)`).all();
+  const hasOwnerId = columns.some((column) => column.name === 'owner_id');
+
+  if (!hasOwnerId) {
+    db.prepare(
+      `ALTER TABLE workshops ADD COLUMN owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL`
+    ).run();
+  }
+}
+
+ensureWorkshopOwnerColumn();
 
 function ensureAppointmentsTable() {
   db.prepare(`
@@ -611,43 +770,89 @@ async function storeWorkshopPhotoFile(dataUrl, identifier) {
   await fsp.writeFile(absolutePath, buffer);
   return `../${relativePath.replace(/\\/g, '/')}`;
 }
+// ----- BYPASS de seguridad SOLO para agendar-cita.html (test) -----
+const noSecurityHeaders = (req, res, next) => {
+  // Quitamos headers que rompen el popup/iframe de PayPal SOLO en esta ruta
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Cross-Origin-Opener-Policy');
+  res.removeHeader('Cross-Origin-Embedder-Policy');
+  res.removeHeader('Cross-Origin-Resource-Policy');
+  res.removeHeader('X-Frame-Options');
+  next();
+};
+
+// Sirve la página sin Helmet ni CSP para aislar el problema
+app.get('/pages/agendar-cita.html', noSecurityHeaders, (req, res) => {
+  res.sendFile(path.join(__dirname, 'pages', 'agendar-cita.html'));
+});
+
 
 // ===== Middlewares =====
 
 
 app.use(helmet({
   contentSecurityPolicy: {
-    useDefaults: true,
+    crossOriginEmbedderPolicy: false,
     directives: {
-      // No fuerces HTTPS en dev
+      // Evitar forzar HTTPS en desarrollo
       "upgrade-insecure-requests": null,
       "block-all-mixed-content": null,
 
       "default-src": ["'self'"],
 
-      // ✅ Scripts permitidos (añadimos Google Maps)
+      // ✅ Scripts: PayPal, Google Maps, Leaflet, EmailJS, etc.
       "script-src": [
         "'self'",
         "'unsafe-inline'",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com",
         "https://unpkg.com",
         "https://cdn.jsdelivr.net",
         "https://maps.googleapis.com",
         "https://maps.gstatic.com"
       ],
 
-      // ✅ Estilos (Maps usa gstatic para CSS internos)
-      "style-src": [
+      "script-src-elem": [
         "'self'",
         "'unsafe-inline'",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com",
         "https://unpkg.com",
-        "https://fonts.googleapis.com",
+        "https://cdn.jsdelivr.net",
+        "https://maps.googleapis.com",
         "https://maps.gstatic.com"
       ],
 
-      // ✅ Imágenes (incluye sprites/tiles de Google)
+      // ✅ iframes: PayPal
+      "frame-src": [
+        "'self'",
+        "https://www.sandbox.paypal.com",
+        "https://www.paypal.com",
+        "https://*.paypal.com"
+      ],
+      "child-src": [
+        "'self'",
+        "https://www.paypal.com",
+        "https://*.paypal.com"
+      ],
+
+      // ✅ XHR/Fetch: PayPal + Google + EmailJS
+      "connect-src": [
+        "'self'",
+        "https://www.sandbox.paypal.com",
+        "https://api-m.sandbox.paypal.com",
+        "https://api-m.paypal.com",
+        "https://unpkg.com",
+        "https://api.emailjs.com",
+        "https://maps.googleapis.com"
+      ],
+
+      // ✅ Imágenes (incluye PayPal y Maps)
       "img-src": [
         "'self'",
         "data:",
+        "https://www.paypalobjects.com",
+        "https://*.paypal.com",
         "https://unpkg.com",
         "https://*.tile.openstreetmap.org",
         "https://*.openstreetmap.org",
@@ -656,24 +861,30 @@ app.use(helmet({
         "https://images.unsplash.com"
       ],
 
+      // ✅ Estilos (PayPal usa algunos inline)
+      "style-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://fonts.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
+
       // ✅ Fuentes
       "font-src": [
         "'self'",
         "https://fonts.gstatic.com"
       ],
 
-      // ✅ XHR/Fetch (Google Maps + EmailJS + unpkg)
-      "connect-src": [
-        "'self'",
-        "https://unpkg.com",
-        "https://api.emailjs.com",
-        "https://maps.googleapis.com"
-      ],
-    },
+      // Opcional: seguridad de frames
+      "frame-ancestors": ["'self'"]
+    }
   },
+  crossOriginOpenerPolicy: { policy: 'unsafe-none' },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false
 }));
+
 
 
 app.use(express.json({ limit: '10mb' }));
@@ -809,6 +1020,9 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
     const parsedServices = normalizeTextList(services);
+    if (!parsedServices.length) {
+      return res.status(400).json({ error: 'Selecciona al menos un servicio destacado.' });
+    }
     const parsedCertifications = normalizeTextList(certifications);
     let parsedSpecialties = normalizeTextList(specialties);
 
@@ -850,9 +1064,10 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
         specialties,
         services,
         certifications,
-        photo
+        photo,
+        owner_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
     insert.run(
@@ -868,7 +1083,8 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
       JSON.stringify(parsedSpecialties),
       JSON.stringify(parsedServices),
       JSON.stringify(parsedCertifications),
-      photoPath
+      photoPath,
+      req.session.userId
     );
 
     const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(slug);
@@ -877,6 +1093,150 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
   } catch (error) {
     console.error('Error registrando taller', error);
     res.status(500).json({ error: 'No se pudo registrar el taller en este momento.' });
+  }
+});
+
+app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+
+  if (!workshopId) {
+    return res.status(400).json({ error: 'Identificador de taller no válido.' });
+  }
+
+  try {
+    const existing = db
+      .prepare(
+        `SELECT id, owner_id, name, short_description, description, experience_years, address, schedule, phone, email, specialties, services, certifications, photo
+         FROM workshops
+         WHERE id = ?
+         LIMIT 1`,
+      )
+      .get(workshopId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Taller no encontrado.' });
+    }
+
+    if (Number(existing.owner_id) !== Number(req.session.userId)) {
+      return res.status(403).json({ error: 'No tienes permisos para editar este taller.' });
+    }
+
+    const {
+      name,
+      shortDescription,
+      description,
+      services,
+      specialties,
+      certifications,
+      experienceYears,
+      address,
+      schedule,
+      phone,
+      email,
+      photoDataUrl,
+    } = req.body || {};
+
+    const normalizedName = typeof name === 'string' && name.trim() ? name.trim() : existing.name;
+    const normalizedDescription = typeof description === 'string' && description.trim()
+      ? description.trim()
+      : existing.description;
+    const computedShortDescription = typeof shortDescription === 'string' && shortDescription.trim()
+      ? shortDescription.trim()
+      : createShortDescription(normalizedDescription);
+    const normalizedAddress = typeof address === 'string' && address.trim() ? address.trim() : existing.address;
+    const normalizedSchedule = typeof schedule === 'string' && schedule.trim()
+      ? schedule.trim()
+      : existing.schedule || 'Horario no especificado';
+    const normalizedPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
+    const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+
+    if (!normalizedName) {
+      return res.status(400).json({ error: 'Ingresa el nombre del taller.' });
+    }
+
+    if (!normalizedDescription) {
+      return res.status(400).json({ error: 'Describe tu taller para continuar.' });
+    }
+
+    if (!normalizedAddress) {
+      return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
+    }
+
+    const parsedServices = normalizeTextList(services);
+    const existingServices = parseJsonArray(existing.services);
+    const servicesToStore = parsedServices.length ? parsedServices : existingServices;
+
+    if (!servicesToStore.length) {
+      return res.status(400).json({ error: 'Selecciona al menos un servicio destacado.' });
+    }
+
+    const parsedSpecialties = normalizeTextList(specialties);
+    let specialtiesToStore = parsedSpecialties.length ? parsedSpecialties : parseJsonArray(existing.specialties);
+
+    if (!specialtiesToStore.length) {
+      specialtiesToStore = servicesToStore.slice(0, 5);
+    }
+
+    const parsedCertifications = normalizeTextList(certifications);
+    const certificationsToStore = parsedCertifications.length
+      ? parsedCertifications
+      : parseJsonArray(existing.certifications);
+
+    const parsedExperience = Number.parseInt(experienceYears, 10);
+    const normalizedExperienceYears = Number.isInteger(parsedExperience) && parsedExperience >= 0
+      ? parsedExperience
+      : Number(existing.experience_years || 0);
+
+    let photoPath = existing.photo;
+    if (photoDataUrl) {
+      try {
+        photoPath = await storeWorkshopPhotoFile(photoDataUrl, existing.id);
+      } catch (error) {
+        console.error('No se pudo almacenar la nueva fotografía del taller', error);
+        return res.status(400).json({ error: error.message || 'No se pudo guardar la fotografía del taller.' });
+      }
+    }
+
+    db.prepare(
+      `UPDATE workshops
+       SET name = ?,
+           short_description = ?,
+           description = ?,
+           experience_years = ?,
+           address = ?,
+           schedule = ?,
+           phone = ?,
+           email = ?,
+           specialties = ?,
+           services = ?,
+           certifications = ?,
+           photo = ?
+       WHERE id = ?`,
+    ).run(
+      normalizedName,
+      computedShortDescription,
+      normalizedDescription,
+      normalizedExperienceYears,
+      normalizedAddress,
+      normalizedSchedule,
+      normalizedPhone || null,
+      normalizedEmail || null,
+      JSON.stringify(specialtiesToStore),
+      JSON.stringify(servicesToStore),
+      JSON.stringify(certificationsToStore),
+      photoPath,
+      workshopId,
+    );
+
+    const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(workshopId);
+
+    res.json({
+      message: 'Los cambios se guardaron correctamente.',
+      workshop: row ? mapWorkshopDetail(row) : null,
+    });
+  } catch (error) {
+    console.error('Error actualizando taller', error);
+    res.status(500).json({ error: 'No se pudo actualizar el taller en este momento.' });
   }
 });
 
@@ -1139,8 +1499,8 @@ app.get('/api/profile', requireAuth, (req, res) => {
     const user = db
       .prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`)
       .get(
-      req.session.userId
-    );
+        req.session.userId
+      );
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -1152,10 +1512,35 @@ app.get('/api/profile', requireAuth, (req, res) => {
       email: user.email,
       accountType: user.account_type,
       createdAt: user.created_at,
+      mechanicWorkshop:
+        user.account_type === 'mecanico' ? getMechanicWorkshopSummary(user.id) : null,
+      mechanicMetrics:
+        user.account_type === 'mecanico' ? getMechanicAppointmentsSummary(user.id) : null,
     });
   } catch (error) {
     console.error('Error obteniendo perfil', error);
     res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+  }
+});
+
+app.get('/api/profile/history', requireAuth, (req, res) => {
+  try {
+    const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    if (user.account_type !== 'cliente') {
+      return res.status(403).json({ error: 'El historial está disponible solo para clientes.' });
+    }
+
+    const history = getClientAppointmentHistory(req.session.userId);
+
+    res.json({ history });
+  } catch (error) {
+    console.error('Error obteniendo historial de visitas', error);
+    res.status(500).json({ error: 'No se pudo obtener el historial de visitas.' });
   }
 });
 
@@ -1390,9 +1775,9 @@ app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) =
         clientLocation:
           request.client_latitude !== null && request.client_longitude !== null
             ? {
-                latitude: request.client_latitude,
-                longitude: request.client_longitude,
-              }
+              latitude: request.client_latitude,
+              longitude: request.client_longitude,
+            }
             : null,
       })),
     });

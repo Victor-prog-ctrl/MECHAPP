@@ -1,205 +1,358 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Mechapp · Agendar cita</title>
-    <meta
-      name="description"
-      content="Programa una visita presencial o a domicilio con un mecánico verificado de Mechapp."
-    />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../Styles/agendar-cita.css" />
-    <link rel="stylesheet" href="../Styles/chatbot.css" />
-  </head>
-  <body>
-    <header class="site-header">
-      <a class="brand" href="./paginainicio.html">
-        <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
-        <span class="brand-name">Mechapp</span>
-      </a>
-      <nav class="main-nav" aria-label="Principal">
-        <a href="./paginainicio.html" class="nav-link">Inicio</a>
-        <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
-        <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
-        <a href="./agendar-cita.html" class="nav-link active" aria-current="page">Agendar cita</a>
-      </nav>
-      <div class="header-actions">
-        <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated"
-          >Iniciar sesión</a
-        >
-        <a href="./registro.html" class="button button-primary" data-auth-visibility="unauthenticated"
-          >Crear cuenta</a
-        >
-        <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi perfil</a>
-      </div>
-    </header>
 
-    <main>
-      <section class="hero" aria-labelledby="agendar-titulo">
-        <span class="hero-tag">Reserva tu servicio</span>
-        <h1 id="agendar-titulo">Agenda una visita con tu mecánico de confianza</h1>
-        <p>
-          Coordina una cita presencial en un taller cercano o recibe atención a domicilio. Todos los mecánicos de Mechapp
-          cuentan con certificaciones verificadas.
-        </p>
-        <a class="button button-primary" href="#formulario">Ir al formulario</a>
-      </section>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Mechapp · Agendar cita</title>
+  <meta name="description"
+    content="Programa una visita presencial o a domicilio con un mecánico verificado de Mechapp." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-      <div class="layout" id="formulario">
-        <section class="form-card" aria-labelledby="formulario-cita">
-          <div>
-            <h2 id="formulario-cita">Detalles de la cita</h2>
-            <p>Completa la información para coordinar tu visita. Recibirás la confirmación en tu correo.</p>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../Styles/agendar-cita.css" />
+  <link rel="stylesheet" href="../Styles/chatbot.css" />
+
+  <!-- ✅ SDK PayPal (USD). Deja UNA sola etiqueta -->
+  <script src="https://www.paypal.com/sdk/js?client-id=ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg&currency=USD&intent=capture&components=buttons"></script>
+</head>
+
+<body>
+  <header class="site-header">
+    <a class="brand" href="./paginainicio.html">
+      <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+      <span class="brand-name">Mechapp</span>
+    </a>
+    <nav class="main-nav" aria-label="Principal">
+      <a href="./paginainicio.html" class="nav-link">Inicio</a>
+      <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
+      <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
+      <a href="./agendar-cita.html" class="nav-link active" aria-current="page">Agendar cita</a>
+    </nav>
+    <div class="header-actions">
+      <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
+      <a href="./registro.html" class="button button-primary" data-auth-visibility="unauthenticated">Crear cuenta</a>
+      <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi perfil</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="agendar-titulo">
+      <span class="hero-tag">Reserva tu servicio</span>
+      <h1 id="agendar-titulo">Agenda una visita con tu mecánico de confianza</h1>
+      <p>
+        Coordina una cita presencial en un taller cercano o recibe atención a domicilio. Todos los mecánicos de Mechapp
+        cuentan con certificaciones verificadas.
+      </p>
+      <a class="button button-primary" href="#formulario">Ir al formulario</a>
+    </section>
+
+    <div class="layout" id="formulario">
+      <section class="form-card" aria-labelledby="formulario-cita">
+        <div>
+          <h2 id="formulario-cita">Detalles de la cita</h2>
+          <p>Completa la información para coordinar tu visita. Recibirás la confirmación en tu correo.</p>
+        </div>
+
+        <form id="appointment-form" class="form-section" novalidate>
+          <div class="field">
+            <label for="service">Servicio requerido</label>
+            <input type="text" id="service" name="service" list="service-suggestions"
+              placeholder="Ej. Diagnóstico eléctrico" autocomplete="off" required />
+            <datalist id="service-suggestions">
+              <option value="Mantenimiento preventivo"></option>
+              <option value="Revisión general"></option>
+              <option value="Diagnóstico eléctrico"></option>
+              <option value="Frenos y suspensión"></option>
+              <option value="Alineación y balanceo"></option>
+              <option value="Cambio de aceite"></option>
+            </datalist>
           </div>
 
-          <form id="appointment-form" class="form-section" novalidate>
-            <div class="field">
-              <label for="service">Servicio requerido</label>
-              <input
-                type="text"
-                id="service"
-                name="service"
-                list="service-suggestions"
-                placeholder="Ej. Diagnóstico eléctrico"
-                autocomplete="off"
-                required
-              />
-              <datalist id="service-suggestions">
-                <option value="Mantenimiento preventivo"></option>
-                <option value="Revisión general"></option>
-                <option value="Diagnóstico eléctrico"></option>
-                <option value="Frenos y suspensión"></option>
-                <option value="Alineación y balanceo"></option>
-                <option value="Cambio de aceite"></option>
-              </datalist>
+          <div class="field">
+            <label for="visit-date">Día de la visita</label>
+            <div class="calendar" id="visit-calendar" aria-live="polite"></div>
+            <input type="hidden" id="visit-date" name="visit-date" />
+            <p class="field-helper" id="calendar-helper">Selecciona un mecánico para ver la disponibilidad.</p>
+          </div>
+
+          <div class="field">
+            <label for="visit-time">Hora preferida</label>
+            <input type="time" id="visit-time" name="visit-time" required />
+          </div>
+
+          <input type="hidden" id="scheduled-for" name="scheduled-for" />
+
+          <div class="field">
+            <span>Tipo de visita</span>
+            <div class="radio-group" role="radiogroup" aria-label="Tipo de visita">
+              <label class="radio-chip">
+                <input type="radio" name="visit-type" value="presencial" checked />
+                Presencial en taller
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="visit-type" value="domicilio" />
+                Visita a domicilio
+              </label>
             </div>
+          </div>
 
-            <div class="field">
-              <label for="visit-date">Día de la visita</label>
-              <div class="calendar" id="visit-calendar" aria-live="polite"></div>
-              <input type="hidden" id="visit-date" name="visit-date" />
-              <p class="field-helper" id="calendar-helper">Selecciona un mecánico para ver la disponibilidad.</p>
-            </div>
+          <div class="field">
+            <label for="mechanic-select">Mecánico</label>
+            <select id="mechanic-select" name="mechanic" required>
+              <option value="">Selecciona un mecánico disponible</option>
+            </select>
+            <small id="mechanic-helper">Solo se muestran mecánicos validados.</small>
+          </div>
 
-            <div class="field">
-              <label for="visit-time">Hora preferida</label>
-              <input type="time" id="visit-time" name="visit-time" required />
-            </div>
-
-            <input type="hidden" id="scheduled-for" name="scheduled-for" />
-
-            <div class="field">
-              <span>Tipo de visita</span>
-              <div class="radio-group" role="radiogroup" aria-label="Tipo de visita">
-                <label class="radio-chip">
-                  <input type="radio" name="visit-type" value="presencial" checked />
-                  Presencial en taller
-                </label>
-                <label class="radio-chip">
-                  <input type="radio" name="visit-type" value="domicilio" />
-                  Visita a domicilio
-                </label>
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="mechanic-select">Mecánico</label>
-              <select id="mechanic-select" name="mechanic" required>
-                <option value="">Selecciona un mecánico disponible</option>
-              </select>
-              <small id="mechanic-helper">Solo se muestran mecánicos validados.</small>
-            </div>
-
-            <div class="field">
-              <label>Tu ubicación</label>
-              <div class="form-actions">
-                <button type="button" class="button button-secondary" id="detect-location">Usar mi ubicación</button>
-                <button type="button" class="button" id="clear-location">Limpiar</button>
-              </div>
-              <p class="location-status" id="location-status" aria-live="polite">
-                Activa la ubicación para sugerirte talleres cercanos o completar una visita a domicilio.
-              </p>
-            </div>
-
-            <div class="field" data-presencial-panel>
-              <label for="workshop-select">Taller sugerido</label>
-              <select id="workshop-select" name="workshop">
-                <option value="">Selecciona un taller cercano</option>
-              </select>
-              <div class="workshop-suggestions" id="workshop-suggestions"></div>
-              <div class="field">
-                <label for="workshop-manual">¿Prefieres otro lugar?</label>
-                <input
-                  type="text"
-                  id="workshop-manual"
-                  name="workshop-manual"
-                  placeholder="Ingresa la dirección del taller"
-                />
-              </div>
-            </div>
-
-            <div class="field" data-domicilio-panel hidden>
-              <label for="domicile-address">Dirección para la visita</label>
-              <textarea
-                id="domicile-address"
-                name="domicile-address"
-                placeholder="Calle, número, comuna"
-              ></textarea>
-            </div>
-
-            <div class="field">
-              <label for="notes">Comentarios adicionales</label>
-              <textarea
-                id="notes"
-                name="notes"
-                placeholder="Comparte detalles del vehículo, síntomas o referencias importantes"
-              ></textarea>
-            </div>
-
-            <input type="hidden" id="client-latitude" name="client-latitude" />
-            <input type="hidden" id="client-longitude" name="client-longitude" />
-
+          <div class="field">
+            <label>Tu ubicación</label>
             <div class="form-actions">
-              <button type="submit" class="button button-primary">Enviar solicitud</button>
-              <p class="feedback" id="form-feedback" aria-live="polite"></p>
+              <button type="button" class="button button-secondary" id="detect-location">Usar mi ubicación</button>
+              <button type="button" class="button" id="clear-location">Limpiar</button>
             </div>
-          </form>
-        </section>
-
-        <aside class="info-card" aria-labelledby="consejos">
-          <div>
-            <h3 id="consejos">¿Cómo funciona?</h3>
-            <p>
-              Tu solicitud se envía directamente al mecánico seleccionado. Podrás coordinar la visita y confirmar el
-              servicio desde tu correo o perfil.
+            <p class="location-status" id="location-status" aria-live="polite">
+              Activa la ubicación para sugerirte talleres cercanos o completar una visita a domicilio.
             </p>
           </div>
-          <div class="info-list">
-            <article class="info-item">
-              <strong>1. Detecta tu ubicación</strong>
-              <span>Nos ayudará a proponerte talleres cercanos o calcular el desplazamiento a tu domicilio.</span>
-            </article>
-            <article class="info-item">
-              <strong>2. Selecciona un mecánico</strong>
-              <span>Todos los mecánicos cuentan con certificaciones verificadas por nuestro equipo.</span>
-            </article>
-            <article class="info-item">
-              <strong>3. Recibe la confirmación</strong>
-              <span>Te notificaremos cuando el mecánico acepte la solicitud y podrás seguirla desde tu perfil.</span>
-            </article>
-          </div>
-        </aside>
-      </div>
-    </main>
 
-    <script src="../src/chatbot.js" defer></script>
-    <script src="../src/appointments.js" defer></script>
-  </body>
+          <div class="field" data-presencial-panel>
+            <label for="workshop-select">Taller sugerido</label>
+            <select id="workshop-select" name="workshop">
+              <option value="">Selecciona un taller cercano</option>
+            </select>
+            <div class="workshop-suggestions" id="workshop-suggestions"></div>
+            <div class="field">
+              <label for="workshop-manual">¿Prefieres otro lugar?</label>
+              <input type="text" id="workshop-manual" name="workshop-manual"
+                placeholder="Ingresa la dirección del taller" />
+            </div>
+          </div>
+
+          <div class="field" data-domicilio-panel hidden>
+            <label for="domicile-address">Dirección para la visita</label>
+            <textarea id="domicile-address" name="domicile-address" placeholder="Calle, número, comuna"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="notes">Comentarios adicionales</label>
+            <textarea id="notes" name="notes"
+              placeholder="Comparte detalles del vehículo, síntomas o referencias importantes"></textarea>
+          </div>
+
+          <input type="hidden" id="client-latitude" name="client-latitude" />
+          <input type="hidden" id="client-longitude" name="client-longitude" />
+
+          <div class="form-actions">
+            <button type="submit" class="button button-primary">Enviar solicitud</button>
+            <p class="feedback" id="form-feedback" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
+      <aside class="info-card" aria-labelledby="consejos">
+        <div>
+          <h3 id="consejos">¿Cómo funciona?</h3>
+          <p>
+            Tu solicitud se envía directamente al mecánico seleccionado. Podrás coordinar la visita y confirmar el
+            servicio desde tu correo o perfil.
+          </p>
+        </div>
+        <div class="info-list">
+          <article class="info-item">
+            <strong>1. Detecta tu ubicación</strong>
+            <span>Nos ayudará a proponerte talleres cercanos o calcular el desplazamiento a tu domicilio.</span>
+          </article>
+          <article class="info-item">
+            <strong>2. Selecciona un mecánico</strong>
+            <span>Todos los mecánicos cuentan con certificaciones verificadas por nuestro equipo.</span>
+          </article>
+          <article class="info-item">
+            <strong>3. Recibe la confirmación</strong>
+            <span>Te notificaremos cuando el mecánico acepte la solicitud y podrás seguirla desde tu perfil.</span>
+          </article>
+        </div>
+
+        <!-- Caja de pago -->
+        <div class="pay-box" id="paypal-box">
+          <h4>Pago de reserva <span class="badge-soft">PayPal</span></h4>
+          <div class="pay-row">
+            <div>
+              <div style="font-size:13px;color:#444;">Servicio seleccionado</div>
+              <strong id="pay-service-name">—</strong>
+            </div>
+            <div class="pay-amount" id="pay-amount">—</div>
+          </div>
+          <div class="pay-hint">El cobro se realiza para confirmar tu cita. Si el mecánico rechaza, se reversa.</div>
+          <div class="pay-error" id="pay-error">Completa el formulario (servicio, mecánico, fecha y dirección) para
+            continuar.</div>
+          <div id="paypal-button-container"></div>
+        </div>
+      </aside>
+    </div> <!-- /.layout -->
+  </main>
+
+  <!-- Scripts propios -->
+  <script src="../src/chatbot.js" defer></script>
+  <script src="../src/appointments.js" defer></script>
+
+  <!-- ✅ Inicialización única PayPal -->
+ <script>
+(function () {
+  if (window.__MECHAPP_PAYPAL_INIT__) return;
+  window.__MECHAPP_PAYPAL_INIT__ = true;
+
+  // --- DOM helpers ---
+  const $ = s => document.querySelector(s);
+  const serviceInput    = $('#service');
+  const mechanicSelect  = $('#mechanic-select');
+
+  // FECHA/HORA
+  const visitDateInput  = $('#visit-date');       // hidden del calendario (puede venir vacío)
+  const scheduledFor    = $('#scheduled-for');    // <-- el que suele rellenar appointments.js (ISO)
+  const visitTimeInput  = $('#visit-time');
+
+  // LUGAR
+  const visitTypeRadios = document.querySelectorAll('input[name="visit-type"]');
+  const workshopSelect  = $('#workshop-select');  // <-- select de taller sugerido
+  const workshopManual  = $('#workshop-manual');  // texto manual de taller
+  const addressInput    = $('#domicile-address'); // dirección a domicilio
+
+  // UI resumen
+  const payServiceName  = $('#pay-service-name');
+  const payAmountEl     = $('#pay-amount');
+  const payErrorEl      = $('#pay-error');
+
+  // --- Mapeo precios (USD) ---
+  const PRICE = [
+    { re: /diagn(o|ó)stico el(é|e)ctrico/i, usd: 20 },
+    { re: /cambio de aceite/i,               usd: 15 },
+    { re: /(frenos|suspensi(ó|o)n)/i,        usd: 35 },
+    { re: /(alineaci(ó|o)n|balanceo)/i,      usd: 18 },
+    { re: /mantenimiento preventivo/i,       usd: 25 },
+    { re: /revisi(ó|o)n general/i,           usd: 22 },
+  ];
+
+  function currentService() {
+    return (serviceInput?.value || '').trim();
+  }
+
+  // Dirección requerida según tipo de visita:
+  // - domicilio: #domicile-address
+  // - presencial: #workshop-select (valor) o #workshop-manual (texto)
+  function requiredAddress() {
+    const t = Array.from(visitTypeRadios).find(r => r.checked)?.value || 'presencial';
+    if (t === 'domicilio') {
+      return (addressInput?.value || '').trim();
+    }
+    const sel = (workshopSelect?.value || '').trim();
+    const man = (workshopManual?.value || '').trim();
+    return sel || man;
+  }
+
+  // Fecha válida: usa primero #scheduled-for (ISO), si no, #visit-date (hidden)
+  function hasDate() {
+    return !!((scheduledFor?.value || '').trim() || (visitDateInput?.value || '').trim());
+  }
+
+  function formOK() {
+    const hasService  = !!currentService();
+    const hasMechanic = !!(mechanicSelect && mechanicSelect.value);
+    const hasHour     = !!(visitTimeInput && visitTimeInput.value);
+    const hasAddr     = !!requiredAddress();
+    return hasService && hasMechanic && hasDate() && hasHour && hasAddr;
+  }
+
+  function priceUSD(text) {
+    if (!text) return 25;
+    for (const p of PRICE) if (p.re.test(text)) return p.usd;
+    return 25;
+  }
+
+  function fmtUSD(a) {
+    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(a); }
+    catch { return 'US$' + a; }
+  }
+
+  function updatePreview() {
+    const s = currentService();
+    const amt = priceUSD(s);
+    payServiceName.textContent = s || '—';
+    payAmountEl.textContent = fmtUSD(amt);
+    payErrorEl.style.display = formOK() ? 'none' : 'block';
+  }
+
+  // Escuchas (incluye select de taller y #scheduled-for)
+  ['input','change'].forEach(evt => {
+    serviceInput?.addEventListener(evt, updatePreview);
+    mechanicSelect?.addEventListener(evt, updatePreview);
+    visitDateInput?.addEventListener(evt, updatePreview);
+    scheduledFor?.addEventListener(evt, updatePreview);  // <-- importante
+    visitTimeInput?.addEventListener(evt, updatePreview);
+    addressInput?.addEventListener(evt, updatePreview);
+    workshopManual?.addEventListener(evt, updatePreview);
+    workshopSelect?.addEventListener(evt, updatePreview); // <-- importante
+    visitTypeRadios.forEach(r => r.addEventListener(evt, updatePreview));
+  });
+  updatePreview();
+
+  if (!window.paypal) {
+    console.error('[PayPal] SDK no cargó');
+    return;
+  }
+
+  paypal.Buttons({
+    style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', tagline: false },
+
+    onClick: (data, actions) => {
+      updatePreview();
+      if (!formOK()) {
+        payErrorEl.style.display = 'block';
+        console.warn('[PayPal] Form incompleto: servicio/mech/fecha/hora/dirección');
+        return actions.reject();
+      }
+      return actions.resolve();
+    },
+
+    createOrder: (data, actions) => {
+      const svc = currentService();
+      let amt = Number(priceUSD(svc));
+      if (!Number.isFinite(amt) || amt <= 0) {
+        console.warn('[PayPal] Monto inválido, usando 25 USD como fallback');
+        amt = 25;
+      }
+      const value = amt.toFixed(2);
+      console.log('[PayPal] createOrder →', { servicio: svc, amountUSD: value });
+
+      return actions.order.create({
+        purchase_units: [{
+          amount: { value },
+          description: `Reserva de cita: ${svc || 'Servicio MechApp'}`
+        }]
+      });
+    },
+
+    onApprove: (data, actions) => {
+      console.log('[PayPal] onApprove → orderID', data.orderID);
+      return actions.order.capture().then(details => {
+        console.log('[PayPal] capture OK →', details);
+        alert('✅ Pago realizado por ' + (details?.payer?.name?.given_name || 'cliente'));
+        // Si no tienes confirmacion.html, cámbialo por paginainicio.html o la que quieras
+        window.location.href = 'agendar-cita.html';
+      });
+    },
+
+    onError: (err) => {
+      console.error('[PayPal] ERROR →', err);
+      alert('Ocurrió un problema con PayPal. Revisa la consola para más detalle.');
+    }
+  }).render('#paypal-button-container');
+})();
+</script>
+
+
+</body>
 </html>
