@@ -247,6 +247,22 @@
     return response.json();
   }
 
+  function setupBackButton() {
+    const backButton = document.querySelector('[data-go-back]');
+    if (!backButton) {
+      return;
+    }
+
+    backButton.addEventListener('click', () => {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      window.location.href = './resenas-mecanicos.html';
+    });
+  }
+
   async function initialize() {
     const workshopId = getWorkshopIdFromQuery();
     if (!workshopId) {
@@ -271,5 +287,8 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', initialize);
+  document.addEventListener('DOMContentLoaded', () => {
+    setupBackButton();
+    initialize();
+  });
 })();
