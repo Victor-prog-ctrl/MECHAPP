@@ -12,7 +12,63 @@ const Database = require('better-sqlite3');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-// Database setup
+// ===== fetch polyfill (Node 18+ ya trae fetch; para 16/17 cargamos dinámico) =====
+if (typeof fetch !== 'function') {
+  global.fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+}
+
+// ====== PayPal (Sandbox) configuración básica ======
+const PAYPAL_API_BASE = process.env.PAYPAL_API || 'https://api-m.sandbox.paypal.com';
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg';
+const PAYPAL_SECRET = process.env.PAYPAL_SECRET || 'EDX3en15c1djJA8af0H_bDoqzysgedMIwwWtig2sa61XKMTaCTpXdqwMeNpWYEo0OTIwd5vAvbhnZHm1';
+
+// Helpers PayPal
+async function getPayPalAccessToken() {
+  const res = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials'
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`[paypal token] status ${res.status} ${text}`);
+  }
+  return res.json(); // { access_token, ... }
+}
+
+async function getOrderDetails(orderId, accessToken) {
+  const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`[paypal order] status ${res.status} ${text}`);
+  }
+  return res.json();
+}
+// Captura una orden en PayPal y devuelve el JSON de captura
+async function capturePayPalOrder(orderId) {
+  const { access_token } = await getPayPalAccessToken();
+  const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${access_token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`[paypal capture] status ${res.status} ${JSON.stringify(data)}`);
+  }
+  return data; // incluye purchase_units[0].payments.captures[0]
+}
+
+
+// =================== Database setup ===================
 const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
@@ -51,6 +107,20 @@ db.prepare(`
         photo TEXT NOT NULL,
         owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL
     )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,              -- 'paypal'
+    order_id TEXT NOT NULL UNIQUE,       -- id de la orden (PayPal)
+    status TEXT NOT NULL,                -- COMPLETED, etc.
+    payer_email TEXT,
+    amount_value TEXT,
+    amount_currency TEXT,
+    raw_json TEXT NOT NULL,              -- respuesta completa PayPal para auditoría
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
 `).run();
 
 db.prepare(`
@@ -211,14 +281,8 @@ function seedWorkshops() {
 seedWorkshops();
 
 function parseJsonArray(value) {
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value;
-  }
-
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [];
@@ -229,22 +293,14 @@ function parseJsonArray(value) {
 }
 
 function normalizeAverage(value, count) {
-  if (!count || value === null || value === undefined) {
-    return null;
-  }
-
+  if (!count || value === null || value === undefined) return null;
   const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return null;
-  }
-
+  if (!Number.isFinite(numeric)) return null;
   return Number(numeric.toFixed(1));
 }
 
 function getMechanicWorkshopSummary(mechanicId) {
-  if (!mechanicId) {
-    return null;
-  }
+  if (!mechanicId) return null;
 
   const row = db
     .prepare(
@@ -262,9 +318,7 @@ function getMechanicWorkshopSummary(mechanicId) {
     )
     .get(mechanicId);
 
-  if (!row) {
-    return null;
-  }
+  if (!row) return null;
 
   const reviewsCount = Number(row.reviews_count || 0);
 
@@ -320,15 +374,15 @@ function mapWorkshopSummary(row) {
     latestReview:
       row.latest_comment && row.latest_rating
         ? {
-          rating: Number(row.latest_rating),
-          comment: row.latest_comment,
-          headline: row.latest_headline || null,
-          service: row.latest_service || null,
-          visitDate: row.latest_visit_date || null,
-          visitType: row.latest_visit_type || null,
-          createdAt: row.latest_created_at,
-          clientName: row.latest_client_name || 'Cliente verificado',
-        }
+            rating: Number(row.latest_rating),
+            comment: row.latest_comment,
+            headline: row.latest_headline || null,
+            service: row.latest_service || null,
+            visitDate: row.latest_visit_date || null,
+            visitType: row.latest_visit_type || null,
+            createdAt: row.latest_created_at,
+            clientName: row.latest_client_name || 'Cliente verificado',
+          }
         : null,
   };
 }
@@ -480,9 +534,7 @@ const CLIENT_HISTORY_QUERY = `
 `;
 
 function mapAppointmentHistoryRow(row) {
-  if (!row) {
-    return null;
-  }
+  if (!row) return null;
 
   const mechanicId = Number(row.mechanic_id);
   const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
@@ -497,45 +549,35 @@ function mapAppointmentHistoryRow(row) {
     createdAt: row.created_at,
     mechanic: hasMechanic
       ? {
-        id: mechanicId,
-        name: row.mechanic_name || null,
-        email: row.mechanic_email || null,
-      }
+          id: mechanicId,
+          name: row.mechanic_name || null,
+          email: row.mechanic_email || null,
+        }
       : null,
     workshop: row.workshop_id
       ? {
-        id: row.workshop_id,
-        name: row.workshop_name || null,
-        address: row.workshop_address || null,
-        photo: row.workshop_photo || null,
-      }
+          id: row.workshop_id,
+          name: row.workshop_name || null,
+          address: row.workshop_address || null,
+          photo: row.workshop_photo || null,
+        }
       : null,
   };
 }
 
 function getClientAppointmentHistory(clientId) {
-  if (!clientId) {
-    return [];
-  }
-
+  if (!clientId) return [];
   const rows = db.prepare(CLIENT_HISTORY_QUERY).all(clientId);
   return rows.map(mapAppointmentHistoryRow).filter(Boolean);
 }
 
 function normalizeTextList(value) {
   if (Array.isArray(value)) {
-    return value
-      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
-      .filter(Boolean);
+    return value.map((entry) => (typeof entry === 'string' ? entry.trim() : '')).filter(Boolean);
   }
-
   if (typeof value === 'string') {
-    return value
-      .split(/[,\n]/)
-      .map((entry) => entry.trim())
-      .filter(Boolean);
+    return value.split(/[,\n]/).map((entry) => entry.trim()).filter(Boolean);
   }
-
   return [];
 }
 
@@ -555,21 +597,13 @@ function createWorkshopSlug(name) {
   while (db.prepare(`SELECT 1 FROM workshops WHERE id = ?`).get(slug)) {
     slug = `${baseSlug}-${counter++}`;
   }
-
   return slug;
 }
 
 function createShortDescription(description) {
   const text = String(description || '').trim();
-
-  if (!text) {
-    return 'Taller registrado en Mechapp.';
-  }
-
-  if (text.length <= 160) {
-    return text;
-  }
-
+  if (!text) return 'Taller registrado en Mechapp.';
+  if (text.length <= 160) return text;
   const truncated = text.slice(0, 157).replace(/[\s,;:.-]+$/g, '').trim();
   return `${truncated}…`;
 }
@@ -577,37 +611,31 @@ function createShortDescription(description) {
 function ensureCertificateStatusColumn() {
   const columns = db.prepare(`PRAGMA table_info(users)`).all();
   const hasCertificateStatus = columns.some((column) => column.name === 'certificate_status');
-
   if (!hasCertificateStatus) {
     db.prepare(
       `ALTER TABLE users ADD COLUMN certificate_status TEXT NOT NULL DEFAULT 'pendiente'`
     ).run();
   }
 }
-
 function ensureCertificatePathColumn() {
   const columns = db.prepare(`PRAGMA table_info(users)`).all();
   const hasCertificatePath = columns.some((column) => column.name === 'certificate_path');
-
   if (!hasCertificatePath) {
     db.prepare(`ALTER TABLE users ADD COLUMN certificate_path TEXT`).run();
   }
 }
-
 ensureCertificateStatusColumn();
 ensureCertificatePathColumn();
 
 function ensureWorkshopOwnerColumn() {
   const columns = db.prepare(`PRAGMA table_info(workshops)`).all();
   const hasOwnerId = columns.some((column) => column.name === 'owner_id');
-
   if (!hasOwnerId) {
     db.prepare(
       `ALTER TABLE workshops ADD COLUMN owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL`
     ).run();
   }
 }
-
 ensureWorkshopOwnerColumn();
 
 function ensureAppointmentsTable() {
@@ -630,7 +658,6 @@ function ensureAppointmentsTable() {
     )
   `).run();
 }
-
 ensureAppointmentsTable();
 
 const certificatesDir = path.join(dataDir, 'certificates');
@@ -646,18 +673,12 @@ function ensureDefaultAdminAccount() {
     const existingAdmin = db
       .prepare(`SELECT id FROM users WHERE account_type = 'admin' LIMIT 1`)
       .get();
-
-    if (existingAdmin) {
-      return;
-    }
+    if (existingAdmin) return;
 
     const duplicateEmail = db
       .prepare(`SELECT id FROM users WHERE email = ? LIMIT 1`)
       .get(DEFAULT_ADMIN_EMAIL.trim().toLowerCase());
-
-    if (duplicateEmail) {
-      return;
-    }
+    if (duplicateEmail) return;
 
     const passwordHash = bcrypt.hashSync(String(DEFAULT_ADMIN_PASSWORD), 10);
 
@@ -683,7 +704,6 @@ function ensureDefaultAdminAccount() {
     console.error('No se pudo crear la cuenta administradora predeterminada', error);
   }
 }
-
 ensureDefaultAdminAccount();
 
 const MAX_CERTIFICATE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -704,12 +724,8 @@ function parseBinaryDataUrl(dataUrl, { allowedTypes, maxSize, fieldLabel }) {
   if (!dataUrl || typeof dataUrl !== 'string') {
     throw new Error(`Archivo de ${fieldLabel} no válido.`);
   }
-
   const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
-
-  if (!matches) {
-    throw new Error(`Formato de ${fieldLabel} no soportado.`);
-  }
+  if (!matches) throw new Error(`Formato de ${fieldLabel} no soportado.`);
 
   const mimeType = matches[1];
   const base64Data = matches[2];
@@ -717,9 +733,7 @@ function parseBinaryDataUrl(dataUrl, { allowedTypes, maxSize, fieldLabel }) {
   if (!allowedTypes.has(mimeType)) {
     throw new Error(`Solo se aceptan archivos en formato JPG o PNG para ${fieldLabel}.`);
   }
-
   const buffer = Buffer.from(base64Data, 'base64');
-
   if (buffer.length > maxSize) {
     throw new Error(`El archivo excede el tamaño máximo permitido (5MB).`);
   }
@@ -770,6 +784,7 @@ async function storeWorkshopPhotoFile(dataUrl, identifier) {
   await fsp.writeFile(absolutePath, buffer);
   return `../${relativePath.replace(/\\/g, '/')}`;
 }
+
 // ----- BYPASS de seguridad SOLO para agendar-cita.html (test) -----
 const noSecurityHeaders = (req, res, next) => {
   // Quitamos headers que rompen el popup/iframe de PayPal SOLO en esta ruta
@@ -786,10 +801,7 @@ app.get('/pages/agendar-cita.html', noSecurityHeaders, (req, res) => {
   res.sendFile(path.join(__dirname, 'pages', 'agendar-cita.html'));
 });
 
-
 // ===== Middlewares =====
-
-
 app.use(helmet({
   contentSecurityPolicy: {
     crossOriginEmbedderPolicy: false,
@@ -885,8 +897,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -922,11 +932,9 @@ function requireAuth(req, res, next) {
 function requireAdmin(req, res, next) {
   try {
     const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
-
     if (!user || user.account_type !== 'admin') {
       return res.status(403).json({ error: 'Acceso restringido para administradores.' });
     }
-
     next();
   } catch (error) {
     console.error('Error verificando privilegios de administrador', error);
@@ -937,11 +945,9 @@ function requireAdmin(req, res, next) {
 function requireMechanic(req, res, next) {
   try {
     const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
-
     if (!user || user.account_type !== 'mecanico') {
       return res.status(403).json({ error: 'Acceso disponible solo para mecánicos.' });
     }
-
     next();
   } catch (error) {
     console.error('Error verificando privilegios de mecánico', error);
@@ -964,18 +970,14 @@ app.get('/api/workshops', (req, res) => {
 
 app.get('/api/workshops/:id', (req, res) => {
   const workshopId = String(req.params.id || '').trim();
-
   if (!workshopId) {
     return res.status(400).json({ error: 'Identificador de taller no válido.' });
   }
-
   try {
     const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(workshopId);
-
     if (!row) {
       return res.status(404).json({ error: 'Taller no encontrado.' });
     }
-
     res.json({ workshop: mapWorkshopDetail(row) });
   } catch (error) {
     console.error('Error obteniendo detalles del taller', error);
@@ -1029,7 +1031,6 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
     if (!parsedSpecialties.length) {
       parsedSpecialties = parsedServices.slice(0, 5);
     }
-
     if (!parsedSpecialties.length) {
       parsedSpecialties = ['Servicios generales'];
     }
@@ -1088,7 +1089,6 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
     );
 
     const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(slug);
-
     res.status(201).json({ workshop: row ? mapWorkshopDetail(row) : null });
   } catch (error) {
     console.error('Error registrando taller', error);
@@ -1098,10 +1098,7 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
 
 app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => {
   const workshopId = String(req.params.id || '').trim();
-
-  if (!workshopId) {
-    return res.status(400).json({ error: 'Identificador de taller no válido.' });
-  }
+  if (!workshopId) return res.status(400).json({ error: 'Identificador de taller no válido.' });
 
   try {
     const existing = db
@@ -1113,10 +1110,7 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
       )
       .get(workshopId);
 
-    if (!existing) {
-      return res.status(404).json({ error: 'Taller no encontrado.' });
-    }
-
+    if (!existing) return res.status(404).json({ error: 'Taller no encontrado.' });
     if (Number(existing.owner_id) !== Number(req.session.userId)) {
       return res.status(403).json({ error: 'No tienes permisos para editar este taller.' });
     }
@@ -1150,29 +1144,19 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
     const normalizedPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
     const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
 
-    if (!normalizedName) {
-      return res.status(400).json({ error: 'Ingresa el nombre del taller.' });
-    }
-
-    if (!normalizedDescription) {
-      return res.status(400).json({ error: 'Describe tu taller para continuar.' });
-    }
-
-    if (!normalizedAddress) {
-      return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
-    }
+    if (!normalizedName) return res.status(400).json({ error: 'Ingresa el nombre del taller.' });
+    if (!normalizedDescription) return res.status(400).json({ error: 'Describe tu taller para continuar.' });
+    if (!normalizedAddress) return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
 
     const parsedServices = normalizeTextList(services);
     const existingServices = parseJsonArray(existing.services);
     const servicesToStore = parsedServices.length ? parsedServices : existingServices;
-
     if (!servicesToStore.length) {
       return res.status(400).json({ error: 'Selecciona al menos un servicio destacado.' });
     }
 
     const parsedSpecialties = normalizeTextList(specialties);
     let specialtiesToStore = parsedSpecialties.length ? parsedSpecialties : parseJsonArray(existing.specialties);
-
     if (!specialtiesToStore.length) {
       specialtiesToStore = servicesToStore.slice(0, 5);
     }
@@ -1229,7 +1213,6 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
     );
 
     const row = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} WHERE w.id = ? LIMIT 1`).get(workshopId);
-
     res.json({
       message: 'Los cambios se guardaron correctamente.',
       workshop: row ? mapWorkshopDetail(row) : null,
@@ -1242,7 +1225,6 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
 
 app.get('/api/workshops/:id/reviews', (req, res) => {
   const workshopId = String(req.params.id || '').trim();
-
   if (!workshopId) {
     return res.status(400).json({ error: 'Identificador de taller no válido.' });
   }
@@ -1252,9 +1234,7 @@ app.get('/api/workshops/:id/reviews', (req, res) => {
 
   try {
     const exists = db.prepare(`SELECT 1 FROM workshops WHERE id = ? LIMIT 1`).get(workshopId);
-    if (!exists) {
-      return res.status(404).json({ error: 'Taller no encontrado.' });
-    }
+    if (!exists) return res.status(404).json({ error: 'Taller no encontrado.' });
 
     const rows = db
       .prepare(
@@ -1276,25 +1256,18 @@ app.get('/api/workshops/:id/reviews', (req, res) => {
 
 app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
   const workshopId = String(req.params.id || '').trim();
-
   if (!workshopId) {
     return res.status(400).json({ error: 'Identificador de taller no válido.' });
   }
 
   try {
     const workshop = db.prepare(`SELECT id FROM workshops WHERE id = ?`).get(workshopId);
-    if (!workshop) {
-      return res.status(404).json({ error: 'El taller seleccionado no existe.' });
-    }
+    if (!workshop) return res.status(404).json({ error: 'El taller seleccionado no existe.' });
 
     const user = db
       .prepare(`SELECT id, name, account_type FROM users WHERE id = ?`)
       .get(req.session.userId);
-
-    if (!user) {
-      return res.status(401).json({ error: 'No autorizado.' });
-    }
-
+    if (!user) return res.status(401).json({ error: 'No autorizado.' });
     if (user.account_type !== 'cliente') {
       return res.status(403).json({ error: 'Solo los clientes pueden publicar reseñas.' });
     }
@@ -1327,7 +1300,6 @@ app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
 
     const normalizedHeadline = typeof headline === 'string' ? headline.trim() : '';
     const normalizedComment = typeof comments === 'string' ? comments.trim() : '';
-
     if (!normalizedComment) {
       return res.status(400).json({ error: 'Comparte tu experiencia con algunos detalles.' });
     }
@@ -1372,7 +1344,6 @@ app.post('/api/register', async (req, res) => {
     if (!name || !email || !password || !accountType) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
     }
-
     if (!termsAccepted) {
       return res.status(400).json({ error: 'Debes aceptar los términos y condiciones para registrarte.' });
     }
@@ -1385,7 +1356,6 @@ app.post('/api/register', async (req, res) => {
       if (!certificate || typeof certificate !== 'object') {
         return res.status(400).json({ error: 'Debes adjuntar tu certificado profesional.' });
       }
-
       try {
         certificatePath = await storeCertificateFile(certificate, normalizedEmail);
       } catch (certificateError) {
@@ -1435,24 +1405,16 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({ error: 'Ingresa correo y contraseña.' });
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
-
     const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(normalizedEmail);
-
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
-    }
+    if (!user) return res.status(401).json({ error: 'Credenciales inválidas.' });
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
-    }
+    if (!isMatch) return res.status(401).json({ error: 'Credenciales inválidas.' });
 
     if (user.account_type === 'mecanico') {
       if (user.certificate_status === 'pendiente') {
@@ -1460,7 +1422,6 @@ app.post('/api/login', async (req, res) => {
           error: 'Tu certificado está pendiente de validación. Un administrador debe aprobarlo antes de que puedas iniciar sesión.',
         });
       }
-
       if (user.certificate_status === 'rechazado') {
         return res.status(403).json({
           error: 'Tu certificado fue rechazado. Comunícate con un administrador para recibir asistencia.',
@@ -1469,7 +1430,6 @@ app.post('/api/login', async (req, res) => {
     }
 
     req.session.userId = user.id;
-
     const redirectTo = user.account_type === 'admin' ? '/admin.html' : '/perfil.html';
 
     res.json({
@@ -1502,9 +1462,7 @@ app.get('/api/profile', requireAuth, (req, res) => {
         req.session.userId
       );
 
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
     res.json({
       id: user.id,
@@ -1526,17 +1484,11 @@ app.get('/api/profile', requireAuth, (req, res) => {
 app.get('/api/profile/history', requireAuth, (req, res) => {
   try {
     const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
-
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
     if (user.account_type !== 'cliente') {
       return res.status(403).json({ error: 'El historial está disponible solo para clientes.' });
     }
-
     const history = getClientAppointmentHistory(req.session.userId);
-
     res.json({ history });
   } catch (error) {
     console.error('Error obteniendo historial de visitas', error);
@@ -1571,7 +1523,6 @@ app.get('/api/mechanics', requireAuth, (req, res) => {
 app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
   try {
     const mechanicId = Number.parseInt(req.query.mechanicId, 10);
-
     if (!Number.isInteger(mechanicId) || mechanicId <= 0) {
       return res.json({ unavailableDays: [] });
     }
@@ -1581,7 +1532,6 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
         `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
       )
       .get(mechanicId);
-
     if (!mechanic) {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
     }
@@ -1629,11 +1579,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     const currentUser = db
       .prepare(`SELECT id, account_type FROM users WHERE id = ?`)
       .get(req.session.userId);
-
-    if (!currentUser) {
-      return res.status(401).json({ error: 'No autorizado.' });
-    }
-
+    if (!currentUser) return res.status(401).json({ error: 'No autorizado.' });
     if (currentUser.account_type === 'mecanico') {
       return res.status(403).json({ error: 'Los mecánicos no pueden agendar citas.' });
     }
@@ -1658,20 +1604,16 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     if (!Number.isInteger(parsedMechanicId) || parsedMechanicId <= 0) {
       return res.status(400).json({ error: 'Selecciona un mecánico válido.' });
     }
-
     if (!normalizedService) {
       return res.status(400).json({ error: 'Indica el servicio requerido.' });
     }
-
     if (!scheduledFor || typeof scheduledFor !== 'string') {
       return res.status(400).json({ error: 'Selecciona la fecha y hora de la visita.' });
     }
-
     const scheduledDate = new Date(scheduledFor);
     if (Number.isNaN(scheduledDate.getTime())) {
       return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
     }
-
     if (!normalizedAddress) {
       const message =
         normalizedVisitType === 'domicilio'
@@ -1685,15 +1627,12 @@ app.post('/api/appointments', requireAuth, (req, res) => {
         `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
       )
       .get(parsedMechanicId);
-
     if (!mechanic) {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
     }
 
     const parseCoordinate = (value) => {
-      if (value === null || value === undefined || value === '') {
-        return null;
-      }
+      if (value === null || value === undefined || value === '') return null;
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
     };
@@ -1775,9 +1714,9 @@ app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) =
         clientLocation:
           request.client_latitude !== null && request.client_longitude !== null
             ? {
-              latitude: request.client_latitude,
-              longitude: request.client_longitude,
-            }
+                latitude: request.client_latitude,
+                longitude: request.client_longitude,
+              }
             : null,
       })),
     });
@@ -1787,17 +1726,77 @@ app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) =
   }
 });
 
+// ====== ENDPOINTS PayPal ======
+// Confirmar en backend y guardar en BD
+// ====== ENDPOINT PayPal: CAPTURAR y guardar ======
+app.post('/api/paypal/capture', async (req, res) => {
+  try {
+    const { orderID } = req.body || {};
+    if (!orderID) return res.status(400).json({ error: 'orderID requerido' });
+
+    // 1) Capturar en PayPal (esto hace el cobro real en sandbox)
+    const data = await capturePayPalOrder(orderID);
+
+    // 2) Extraer datos útiles
+    const pu  = data?.purchase_units?.[0];
+    const cap = pu?.payments?.captures?.[0];
+
+    const status   = cap?.status || data?.status || 'COMPLETED';
+    const amount   = cap?.amount?.value || pu?.amount?.value || null;
+    const currency = cap?.amount?.currency_code || pu?.amount?.currency_code || null;
+    const payerEmail = data?.payer?.email_address || null;
+
+    // 3) Guardar en SQLite (tabla payments ya existe en tu server)
+    db.prepare(`
+      INSERT OR IGNORE INTO payments
+        (provider, order_id, status, payer_email, amount_value, amount_currency, raw_json)
+      VALUES ('paypal', ?, ?, ?, ?, ?, ?)
+    `).run(
+      String(data.id),
+      String(status),
+      payerEmail,
+      amount,
+      currency,
+      JSON.stringify(data)
+    );
+
+    // 4) Responder al front
+    res.json({
+      orderId: data.id,
+      status,
+      amount,
+      currency,
+      payerEmail
+    });
+  } catch (e) {
+    console.error('PayPal capture error:', e);
+    res.status(500).json({ error: 'No se pudo capturar el pago' });
+  }
+});
+
+
+// Admin: revisar últimos pagos
+app.get('/api/admin/payments', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT id, provider, order_id, status, payer_email, amount_value, amount_currency, created_at
+      FROM payments ORDER BY id DESC LIMIT 50
+    `).all();
+    res.json({ payments: rows });
+  } catch (e) {
+    console.error('payments admin list error', e);
+    res.status(500).json({ error: 'No se pudieron obtener los pagos.' });
+  }
+});
+
 app.put('/api/profile/name', requireAuth, (req, res) => {
   try {
     const { name } = req.body;
     const trimmedName = String(name || '').trim();
-
     if (!trimmedName) {
       return res.status(400).json({ error: 'El nombre no puede estar vacío.' });
     }
-
     db.prepare(`UPDATE users SET name = ? WHERE id = ?`).run(trimmedName, req.session.userId);
-
     res.json({ message: 'Nombre actualizado correctamente.' });
   } catch (error) {
     console.error('Error al actualizar el nombre', error);
@@ -1811,13 +1810,11 @@ app.put('/api/profile/email', requireAuth, (req, res) => {
     const normalizedEmail = String(email || '').trim().toLowerCase();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
       return res.status(400).json({ error: 'Ingresa un correo electrónico válido.' });
     }
 
     const update = db.prepare(`UPDATE users SET email = ? WHERE id = ?`);
-
     try {
       update.run(normalizedEmail, req.session.userId);
     } catch (error) {
@@ -1826,7 +1823,6 @@ app.put('/api/profile/email', requireAuth, (req, res) => {
       }
       throw error;
     }
-
     res.json({ message: 'Correo actualizado correctamente.' });
   } catch (error) {
     console.error('Error al actualizar el correo', error);
@@ -1837,29 +1833,20 @@ app.put('/api/profile/email', requireAuth, (req, res) => {
 app.put('/api/profile/password', requireAuth, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Debes proporcionar la contraseña actual y la nueva contraseña.' });
     }
-
     if (String(newPassword).length < 8) {
       return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres.' });
     }
 
     const user = db.prepare(`SELECT password_hash FROM users WHERE id = ?`).get(req.session.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
     const isMatch = await bcrypt.compare(String(currentPassword), user.password_hash);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: 'La contraseña actual no es correcta.' });
-    }
+    if (!isMatch) return res.status(401).json({ error: 'La contraseña actual no es correcta.' });
 
     const hashedPassword = await bcrypt.hash(String(newPassword), 10);
-
     db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hashedPassword, req.session.userId);
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
@@ -1878,8 +1865,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
          ORDER BY datetime(created_at) DESC`
       )
       .all();
-
-    res.json({ users });
+  res.json({ users });
   } catch (error) {
     console.error('Error obteniendo usuarios para el panel de administración', error);
     res.status(500).json({ error: 'No se pudieron obtener los usuarios.' });
@@ -1888,7 +1874,6 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
 
 app.get('/api/admin/users/:id/certificate-file', requireAuth, requireAdmin, (req, res) => {
   const userId = Number(req.params.id);
-
   if (!Number.isInteger(userId)) {
     return res.status(400).json({ error: 'Identificador de usuario inválido.' });
   }
@@ -1897,18 +1882,15 @@ app.get('/api/admin/users/:id/certificate-file', requireAuth, requireAdmin, (req
     const user = db
       .prepare(`SELECT certificate_path FROM users WHERE id = ?`)
       .get(userId);
-
     if (!user || !user.certificate_path) {
       return res.status(404).json({ error: 'Certificado no disponible.' });
     }
 
     const absolutePath = path.join(dataDir, user.certificate_path);
     const normalizedPath = path.normalize(absolutePath);
-
     if (!normalizedPath.startsWith(certificatesDirNormalized)) {
       return res.status(400).json({ error: 'Ruta de certificado no válida.' });
     }
-
     if (!fs.existsSync(normalizedPath)) {
       return res.status(404).json({ error: 'Certificado no encontrado.' });
     }
@@ -1956,7 +1938,6 @@ app.put('/api/admin/users/:id/account-type', requireAuth, requireAdmin, (req, re
     }
 
     const result = db.prepare(`UPDATE users SET account_type = ? WHERE id = ?`).run(accountType, userId);
-
     if (!result.changes) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }

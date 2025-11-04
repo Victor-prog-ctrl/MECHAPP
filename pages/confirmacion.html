@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Pago confirmado · Mechapp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../Styles/agendar-cita.css" />
+</head>
+<body>
+  <main class="form-card" style="max-width:720px;margin:40px auto">
+    <h1>✅ Pago confirmado</h1>
+    <p id="resume"></p>
+    <a class="button button-primary" href="./perfil.html">Ver mi perfil</a>
+    <a class="button" href="./paginainicio.html" style="margin-left:8px">Volver al inicio</a>
+  </main>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+    const order = p.get('order') || '—';
+    const status = p.get('status') || '—';
+    const amount = p.get('amount') || '—';
+    const currency = p.get('currency') || 'USD';
+    const service = p.get('service') || 'Servicio MechApp';
+    document.getElementById('resume').textContent =
+      `Orden ${order} · Estado: ${status} · ${amount} ${currency} · ${service}`;
+  </script>
+</body>
+</html>

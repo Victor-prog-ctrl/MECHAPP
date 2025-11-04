@@ -17,7 +17,8 @@
   <link rel="stylesheet" href="../Styles/chatbot.css" />
 
   <!-- ✅ SDK PayPal (USD). Deja UNA sola etiqueta -->
-  <script src="https://www.paypal.com/sdk/js?client-id=ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg&currency=USD&intent=capture&components=buttons"></script>
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg&currency=USD&intent=capture&components=buttons"></script>
 </head>
 
 <body>
@@ -200,159 +201,176 @@
   <script src="../src/appointments.js" defer></script>
 
   <!-- ✅ Inicialización única PayPal -->
- <script>
-(function () {
-  if (window.__MECHAPP_PAYPAL_INIT__) return;
-  window.__MECHAPP_PAYPAL_INIT__ = true;
+  <script>
+    (function () {
+      if (window.__MECHAPP_PAYPAL_INIT__) return;
+      window.__MECHAPP_PAYPAL_INIT__ = true;
 
-  // --- DOM helpers ---
-  const $ = s => document.querySelector(s);
-  const serviceInput    = $('#service');
-  const mechanicSelect  = $('#mechanic-select');
+      // --- DOM helpers ---
+      const $ = s => document.querySelector(s);
+      const serviceInput = $('#service');
+      const mechanicSelect = $('#mechanic-select');
 
-  // FECHA/HORA
-  const visitDateInput  = $('#visit-date');       // hidden del calendario (puede venir vacío)
-  const scheduledFor    = $('#scheduled-for');    // <-- el que suele rellenar appointments.js (ISO)
-  const visitTimeInput  = $('#visit-time');
+      // FECHA/HORA
+      const visitDateInput = $('#visit-date');       // hidden del calendario (puede venir vacío)
+      const scheduledFor = $('#scheduled-for');    // <-- lo rellena appointments.js (ISO)
+      const visitTimeInput = $('#visit-time');
 
-  // LUGAR
-  const visitTypeRadios = document.querySelectorAll('input[name="visit-type"]');
-  const workshopSelect  = $('#workshop-select');  // <-- select de taller sugerido
-  const workshopManual  = $('#workshop-manual');  // texto manual de taller
-  const addressInput    = $('#domicile-address'); // dirección a domicilio
+      // LUGAR
+      const visitTypeRadios = document.querySelectorAll('input[name="visit-type"]');
+      const workshopSelect = $('#workshop-select');
+      const workshopManual = $('#workshop-manual');
+      const addressInput = $('#domicile-address');
 
-  // UI resumen
-  const payServiceName  = $('#pay-service-name');
-  const payAmountEl     = $('#pay-amount');
-  const payErrorEl      = $('#pay-error');
+      // UI resumen
+      const payServiceName = $('#pay-service-name');
+      const payAmountEl = $('#pay-amount');
+      const payErrorEl = $('#pay-error');
 
-  // --- Mapeo precios (USD) ---
-  const PRICE = [
-    { re: /diagn(o|ó)stico el(é|e)ctrico/i, usd: 20 },
-    { re: /cambio de aceite/i,               usd: 15 },
-    { re: /(frenos|suspensi(ó|o)n)/i,        usd: 35 },
-    { re: /(alineaci(ó|o)n|balanceo)/i,      usd: 18 },
-    { re: /mantenimiento preventivo/i,       usd: 25 },
-    { re: /revisi(ó|o)n general/i,           usd: 22 },
-  ];
+      // --- Mapeo precios (USD) ---
+      const PRICE = [
+        { re: /diagn(o|ó)stico el(é|e)ctrico/i, usd: 20 },
+        { re: /cambio de aceite/i, usd: 15 },
+        { re: /(frenos|suspensi(ó|o)n)/i, usd: 35 },
+        { re: /(alineaci(ó|o)n|balanceo)/i, usd: 18 },
+        { re: /mantenimiento preventivo/i, usd: 25 },
+        { re: /revisi(ó|o)n general/i, usd: 22 },
+      ];
 
-  function currentService() {
-    return (serviceInput?.value || '').trim();
-  }
+      function currentService() {
+        return (serviceInput?.value || '').trim();
+      }
 
-  // Dirección requerida según tipo de visita:
-  // - domicilio: #domicile-address
-  // - presencial: #workshop-select (valor) o #workshop-manual (texto)
-  function requiredAddress() {
-    const t = Array.from(visitTypeRadios).find(r => r.checked)?.value || 'presencial';
-    if (t === 'domicilio') {
-      return (addressInput?.value || '').trim();
-    }
-    const sel = (workshopSelect?.value || '').trim();
-    const man = (workshopManual?.value || '').trim();
-    return sel || man;
-  }
+      function requiredAddress() {
+        const t = Array.from(visitTypeRadios).find(r => r.checked)?.value || 'presencial';
+        if (t === 'domicilio') {
+          return (addressInput?.value || '').trim();
+        }
+        const sel = (workshopSelect?.value || '').trim();
+        const man = (workshopManual?.value || '').trim();
+        return sel || man;
+      }
 
-  // Fecha válida: usa primero #scheduled-for (ISO), si no, #visit-date (hidden)
-  function hasDate() {
-    return !!((scheduledFor?.value || '').trim() || (visitDateInput?.value || '').trim());
-  }
+      function hasDate() {
+        return !!((scheduledFor?.value || '').trim() || (visitDateInput?.value || '').trim());
+      }
 
-  function formOK() {
-    const hasService  = !!currentService();
-    const hasMechanic = !!(mechanicSelect && mechanicSelect.value);
-    const hasHour     = !!(visitTimeInput && visitTimeInput.value);
-    const hasAddr     = !!requiredAddress();
-    return hasService && hasMechanic && hasDate() && hasHour && hasAddr;
-  }
+      function formOK() {
+        const hasService = !!currentService();
+        const hasMechanic = !!(mechanicSelect && mechanicSelect.value);
+        const hasHour = !!(visitTimeInput && visitTimeInput.value);
+        const hasAddr = !!requiredAddress();
+        return hasService && hasMechanic && hasDate() && hasHour && hasAddr;
+      }
 
-  function priceUSD(text) {
-    if (!text) return 25;
-    for (const p of PRICE) if (p.re.test(text)) return p.usd;
-    return 25;
-  }
+      function priceUSD(text) {
+        if (!text) return 25;
+        for (const p of PRICE) if (p.re.test(text)) return p.usd;
+        return 25;
+      }
 
-  function fmtUSD(a) {
-    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(a); }
-    catch { return 'US$' + a; }
-  }
+      function fmtUSD(a) {
+        try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(a); }
+        catch { return 'US$' + a; }
+      }
 
-  function updatePreview() {
-    const s = currentService();
-    const amt = priceUSD(s);
-    payServiceName.textContent = s || '—';
-    payAmountEl.textContent = fmtUSD(amt);
-    payErrorEl.style.display = formOK() ? 'none' : 'block';
-  }
+      function updatePreview() {
+        const s = currentService();
+        const amt = priceUSD(s);
+        payServiceName.textContent = s || '—';
+        payAmountEl.textContent = fmtUSD(amt);
+        payErrorEl.style.display = formOK() ? 'none' : 'block';
+      }
 
-  // Escuchas (incluye select de taller y #scheduled-for)
-  ['input','change'].forEach(evt => {
-    serviceInput?.addEventListener(evt, updatePreview);
-    mechanicSelect?.addEventListener(evt, updatePreview);
-    visitDateInput?.addEventListener(evt, updatePreview);
-    scheduledFor?.addEventListener(evt, updatePreview);  // <-- importante
-    visitTimeInput?.addEventListener(evt, updatePreview);
-    addressInput?.addEventListener(evt, updatePreview);
-    workshopManual?.addEventListener(evt, updatePreview);
-    workshopSelect?.addEventListener(evt, updatePreview); // <-- importante
-    visitTypeRadios.forEach(r => r.addEventListener(evt, updatePreview));
-  });
-  updatePreview();
-
-  if (!window.paypal) {
-    console.error('[PayPal] SDK no cargó');
-    return;
-  }
-
-  paypal.Buttons({
-    style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', tagline: false },
-
-    onClick: (data, actions) => {
+      ['input', 'change'].forEach(evt => {
+        serviceInput?.addEventListener(evt, updatePreview);
+        mechanicSelect?.addEventListener(evt, updatePreview);
+        visitDateInput?.addEventListener(evt, updatePreview);
+        scheduledFor?.addEventListener(evt, updatePreview);
+        visitTimeInput?.addEventListener(evt, updatePreview);
+        addressInput?.addEventListener(evt, updatePreview);
+        workshopManual?.addEventListener(evt, updatePreview);
+        workshopSelect?.addEventListener(evt, updatePreview);
+        visitTypeRadios.forEach(r => r.addEventListener(evt, updatePreview));
+      });
       updatePreview();
-      if (!formOK()) {
-        payErrorEl.style.display = 'block';
-        console.warn('[PayPal] Form incompleto: servicio/mech/fecha/hora/dirección');
-        return actions.reject();
+
+      if (!window.paypal) {
+        console.error('[PayPal] SDK no cargó');
+        return;
       }
-      return actions.resolve();
-    },
 
-    createOrder: (data, actions) => {
-      const svc = currentService();
-      let amt = Number(priceUSD(svc));
-      if (!Number.isFinite(amt) || amt <= 0) {
-        console.warn('[PayPal] Monto inválido, usando 25 USD como fallback');
-        amt = 25;
-      }
-      const value = amt.toFixed(2);
-      console.log('[PayPal] createOrder →', { servicio: svc, amountUSD: value });
+      paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', tagline: false },
 
-      return actions.order.create({
-        purchase_units: [{
-          amount: { value },
-          description: `Reserva de cita: ${svc || 'Servicio MechApp'}`
-        }]
-      });
-    },
+        onClick: (data, actions) => {
+          updatePreview();
+          if (!formOK()) {
+            payErrorEl.style.display = 'block';
+            console.warn('[PayPal] Form incompleto: servicio/mech/fecha/hora/dirección');
+            return actions.reject();
+          }
+          return actions.resolve();
+        },
 
-    onApprove: (data, actions) => {
-      console.log('[PayPal] onApprove → orderID', data.orderID);
-      return actions.order.capture().then(details => {
-        console.log('[PayPal] capture OK →', details);
-        alert('✅ Pago realizado por ' + (details?.payer?.name?.given_name || 'cliente'));
-        // Si no tienes confirmacion.html, cámbialo por paginainicio.html o la que quieras
-        window.location.href = 'agendar-cita.html';
-      });
-    },
+        createOrder: (data, actions) => {
+          const svc = currentService();
+          let amt = Number(priceUSD(svc));
+          if (!Number.isFinite(amt) || amt <= 0) {
+            console.warn('[PayPal] Monto inválido, usando 25 USD como fallback');
+            amt = 25;
+          }
+          const value = amt.toFixed(2);
+          console.log('[PayPal] createOrder →', { servicio: svc, amountUSD: value });
 
-    onError: (err) => {
-      console.error('[PayPal] ERROR →', err);
-      alert('Ocurrió un problema con PayPal. Revisa la consola para más detalle.');
-    }
-  }).render('#paypal-button-container');
-})();
-</script>
+          return actions.order.create({
+            purchase_units: [{
+              amount: { value },
+              description: `Reserva de cita: ${svc || 'Servicio MechApp'}`
+            }]
+          });
+        },
 
+        /* ✅ CAMBIO MÍNIMO: capturamos en el servidor y redirigimos a confirmación */
+        onApprove: async (data, actions) => {
+          try {
+            const r = await fetch('/api/paypal/capture', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID })
+            });
+
+            if (!r.ok) {
+              const err = await r.json().catch(() => ({}));
+              throw new Error(err?.error || 'Fallo al confirmar el pago');
+            }
+
+            const result = await r.json(); // { orderId, status, amount, currency, payerEmail }
+
+            const qs = new URLSearchParams({
+              order: result.orderId,
+              status: result.status || '',
+              amount: result.amount || '',
+              currency: result.currency || 'USD',
+              service: document.querySelector('#service')?.value || 'Servicio MechApp'
+            });
+
+            window.location.href = `/confirmacion.html?${qs.toString()}`;
+          } catch (e) {
+            console.error(e);
+            alert('Ocurrió un problema al confirmar el pago.');
+          }
+        },
+
+
+        onError: (err) => {
+          console.error('[PayPal] ERROR →', err);
+          alert('Ocurrió un problema con PayPal. Revisa la consola para más detalle.');
+        }
+      }).render('#paypal-button-container');
+    })();
+  </script>
 
 </body>
+
 </html>
