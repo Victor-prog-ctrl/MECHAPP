@@ -1741,7 +1741,7 @@ app.post('/api/paypal/capture', async (req, res) => {
     const pu  = data?.purchase_units?.[0];
     const cap = pu?.payments?.captures?.[0];
 
-    const status   = cap?.status || data?.status || 'COMPLETED';
+    const status   = cap?.status || data?.status || 'COMPLETADO';
     const amount   = cap?.amount?.value || pu?.amount?.value || null;
     const currency = cap?.amount?.currency_code || pu?.amount?.currency_code || null;
     const payerEmail = data?.payer?.email_address || null;
