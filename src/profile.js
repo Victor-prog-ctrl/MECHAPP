@@ -281,6 +281,10 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         const status = document.createElement("span");
         status.className = "request-status";
         status.textContent = getStatusLabel(request.status);
+        const statusClass = getStatusClass(request.status);
+        if (statusClass) {
+            status.classList.add(statusClass);
+        }
         header.appendChild(status);
 
         article.appendChild(header);
@@ -319,6 +323,18 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
             notes.textContent = request.notes;
             article.appendChild(notes);
         }
+
+        const actions = document.createElement("div");
+        actions.className = "request-actions";
+
+        const viewButton = document.createElement("a");
+        viewButton.className = "button ghost";
+        viewButton.textContent = "Ver más";
+        viewButton.href = `./solicitud.html?id=${encodeURIComponent(request.id)}`;
+        viewButton.setAttribute("aria-label", `Ver detalles de la solicitud ${request.service || "de servicio"}`);
+
+        actions.appendChild(viewButton);
+        article.appendChild(actions);
 
         fragment.appendChild(article);
     });
