@@ -1673,56 +1673,146 @@ app.post('/api/appointments', requireAuth, (req, res) => {
   }
 });
 
+const APPOINTMENT_REQUEST_BASE_QUERY = `
+  SELECT
+    a.id,
+    a.service,
+    a.visit_type,
+    a.scheduled_for,
+    a.address,
+    a.notes,
+    a.status,
+    a.created_at,
+    a.client_latitude,
+    a.client_longitude,
+    u.name AS client_name,
+    u.email AS client_email
+  FROM appointments a
+  JOIN users u ON u.id = a.client_id
+`;
+
+function mapAppointmentRequest(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    service: row.service,
+    visitType: row.visit_type,
+    scheduledFor: row.scheduled_for,
+    address: row.address,
+    notes: row.notes,
+    status: row.status,
+    createdAt: row.created_at,
+    client: {
+      name: row.client_name,
+      email: row.client_email,
+    },
+    clientLocation:
+      row.client_latitude !== null && row.client_longitude !== null
+        ? {
+            latitude: row.client_latitude,
+            longitude: row.client_longitude,
+          }
+        : null,
+  };
+}
+
 app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) => {
   try {
     const requests = db
       .prepare(
-        `SELECT
-          a.id,
-          a.service,
-          a.visit_type,
-          a.scheduled_for,
-          a.address,
-          a.notes,
-          a.status,
-          a.created_at,
-          a.client_latitude,
-          a.client_longitude,
-          u.name AS client_name,
-          u.email AS client_email
-        FROM appointments a
-        JOIN users u ON u.id = a.client_id
+        `${APPOINTMENT_REQUEST_BASE_QUERY}
         WHERE a.mechanic_id = ?
         ORDER BY datetime(a.scheduled_for) ASC`
       )
       .all(req.session.userId);
 
     res.json({
-      requests: requests.map((request) => ({
-        id: request.id,
-        service: request.service,
-        visitType: request.visit_type,
-        scheduledFor: request.scheduled_for,
-        address: request.address,
-        notes: request.notes,
-        status: request.status,
-        createdAt: request.created_at,
-        client: {
-          name: request.client_name,
-          email: request.client_email,
-        },
-        clientLocation:
-          request.client_latitude !== null && request.client_longitude !== null
-            ? {
-                latitude: request.client_latitude,
-                longitude: request.client_longitude,
-              }
-            : null,
-      })),
+      requests: requests.map(mapAppointmentRequest),
     });
   } catch (error) {
     console.error('Error obteniendo solicitudes de citas', error);
     res.status(500).json({ error: 'No se pudieron obtener las solicitudes de citas.' });
+  }
+});
+
+app.get('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, res) => {
+  const requestId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ error: 'Identificador de solicitud no válido.' });
+  }
+
+  try {
+    const row = db
+      .prepare(
+        `${APPOINTMENT_REQUEST_BASE_QUERY}
+        WHERE a.id = ? AND a.mechanic_id = ?
+        LIMIT 1`
+      )
+      .get(requestId, req.session.userId);
+
+    if (!row) {
+      return res.status(404).json({ error: 'Solicitud no encontrada.' });
+    }
+
+    res.json({ request: mapAppointmentRequest(row) });
+  } catch (error) {
+    console.error('Error obteniendo la solicitud de cita', error);
+    res.status(500).json({ error: 'No se pudo obtener la solicitud de cita.' });
+  }
+});
+
+app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, res) => {
+  const requestId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ error: 'Identificador de solicitud no válido.' });
+  }
+
+  const allowedStatuses = new Set(['confirmado', 'rechazado']);
+  const requestedStatus = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
+
+  if (!allowedStatuses.has(requestedStatus)) {
+    return res.status(400).json({ error: 'Estado de solicitud no válido.' });
+  }
+
+  try {
+    const existing = db
+      .prepare('SELECT status FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
+      .get(requestId, req.session.userId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Solicitud no encontrada.' });
+    }
+
+    if (existing.status !== 'pendiente' && existing.status !== requestedStatus) {
+      return res.status(400).json({ error: 'Solo puedes actualizar solicitudes pendientes.' });
+    }
+
+    if (existing.status !== requestedStatus) {
+      db.prepare('UPDATE appointments SET status = ? WHERE id = ? AND mechanic_id = ?')
+        .run(requestedStatus, requestId, req.session.userId);
+    }
+
+    const updated = db
+      .prepare(
+        `${APPOINTMENT_REQUEST_BASE_QUERY}
+        WHERE a.id = ? AND a.mechanic_id = ?
+        LIMIT 1`
+      )
+      .get(requestId, req.session.userId);
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Solicitud no encontrada tras la actualización.' });
+    }
+
+    res.json({ request: mapAppointmentRequest(updated) });
+  } catch (error) {
+    console.error('Error actualizando la solicitud de cita', error);
+    res.status(500).json({ error: 'No se pudo actualizar la solicitud de cita.' });
   }
 });
 
