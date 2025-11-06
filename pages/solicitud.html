@@ -18,18 +18,7 @@
         <link rel="stylesheet" href="../Styles/solicitud.css" />
     </head>
     <body>
-        <header class="site-header">
-            <a class="brand" href="./paginainicio.html" aria-label="Volver al inicio">
-                <div class="brand-icon" aria-hidden="true"></div>
-                <span class="brand-name">Mechapp</span>
-            </a>
-            <div class="header-actions">
-                <a href="./perfil.html" class="button ghost">Volver al perfil</a>
-                <button type="button" class="button" id="logout-button">Cerrar sesión</button>
-            </div>
-        </header>
-
-        <main>
+        <main class="request-page">
             <section class="request-loading" data-request-loading>
                 <p>Cargando solicitud...</p>
             </section>
@@ -40,17 +29,15 @@
                     Asegúrate de acceder desde el listado de solicitudes de tu perfil. Si el problema persiste,
                     intenta nuevamente más tarde o contacta a soporte.
                 </p>
-                <a href="./perfil.html" class="button ghost">Volver al perfil</a>
             </section>
 
             <section class="request-detail" data-request-container hidden>
                 <header class="request-detail__header">
-                    <div class="request-detail__title-group">
-                        <span class="request-detail__label">Solicitud de visita</span>
-                        <h1 data-request-service></h1>
-                    </div>
+                    <span class="request-detail__label">Solicitud del cliente</span>
                     <span class="status-badge" data-request-status>Estado</span>
                 </header>
+
+                <h1 class="request-detail__service" data-request-service></h1>
 
                 <p class="request-detail__created">
                     Recibida el <span data-request-created>—</span>
@@ -80,7 +67,7 @@
                 </dl>
 
                 <section class="request-detail__notes" data-request-notes-wrapper hidden>
-                    <h2>Notas adicionales</h2>
+                    <h2>Notas adicionales del cliente</h2>
                     <p data-request-notes></p>
                 </section>
 
@@ -92,10 +79,6 @@
                 <p class="request-detail__feedback" data-request-feedback hidden aria-live="polite"></p>
             </section>
         </main>
-
-        <footer class="site-footer">
-            <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
-        </footer>
 
         <script src="../src/request-detail.js" defer></script>
     </body>
