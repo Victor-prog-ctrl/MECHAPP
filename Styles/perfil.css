@@ -494,6 +494,24 @@ main {
     border: 1px solid rgba(59, 130, 246, 0.24);
 }
 
+.request-status.pending {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.24);
+}
+
+.request-status.success {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+    border-color: rgba(34, 197, 94, 0.32);
+}
+
+.request-status.cancelled {
+    background: rgba(239, 68, 68, 0.14);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.28);
+}
+
 .request-meta {
     display: flex;
     flex-wrap: wrap;
@@ -512,6 +530,15 @@ main {
     font-size: 0.95rem;
     color: var(--text-muted);
     line-height: 1.5;
+}
+
+.request-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.request-actions .button {
+    min-width: 140px;
 }
 
 .empty-state {
