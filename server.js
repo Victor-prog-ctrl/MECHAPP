@@ -660,6 +660,21 @@ function ensureAppointmentsTable() {
 }
 ensureAppointmentsTable();
 
+function ensureAppointmentLocationColumns() {
+  const columns = db.prepare(`PRAGMA table_info(appointments)`).all();
+  const hasLatitude = columns.some((column) => column.name === 'client_latitude');
+  const hasLongitude = columns.some((column) => column.name === 'client_longitude');
+
+  if (!hasLatitude) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
+  }
+
+  if (!hasLongitude) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN client_longitude REAL`).run();
+  }
+}
+ensureAppointmentLocationColumns();
+
 const certificatesDir = path.join(dataDir, 'certificates');
 fs.mkdirSync(certificatesDir, { recursive: true });
 const certificatesDirNormalized = path.normalize(certificatesDir + path.sep);
