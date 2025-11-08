@@ -329,7 +329,6 @@
         name: formData.get('workshop-name'),
         description: formData.get('workshop-description'),
         services,
-        specialties: parseTextList(formData.get('specialties')),
         experienceYears: formData.get('experience-years'),
         address: formData.get('address'),
         schedule: formData.get('schedule'),
