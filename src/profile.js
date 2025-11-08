@@ -614,6 +614,7 @@ function setupWorkshopManagement(profile) {
 
     manageButton.hidden = false;
     panel.hidden = true;
+    panel.classList.add("is-collapsed");
     manageButton.setAttribute("aria-expanded", "false");
     manageButton.setAttribute("aria-controls", "workshop-management");
 
@@ -927,6 +928,7 @@ function setupWorkshopManagement(profile) {
 
     function openPanel() {
         panel.hidden = false;
+        panel.classList.remove("is-collapsed");
         manageButton.setAttribute("aria-expanded", "true");
         if (closeButton) {
             closeButton.hidden = false;
@@ -936,6 +938,7 @@ function setupWorkshopManagement(profile) {
 
     function closePanel() {
         panel.hidden = true;
+        panel.classList.add("is-collapsed");
         manageButton.setAttribute("aria-expanded", "false");
         if (closeButton) {
             closeButton.hidden = true;

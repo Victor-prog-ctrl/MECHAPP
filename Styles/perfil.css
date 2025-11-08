@@ -20,6 +20,10 @@
     padding: 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family: "Manrope", sans-serif;
     background: var(--bg);
@@ -568,6 +572,10 @@ main {
     display: flex;
     flex-direction: column;
     gap: 24px;
+}
+
+.workshop-management.is-collapsed {
+    display: none;
 }
 
 .workshop-status,
