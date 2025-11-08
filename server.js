@@ -307,6 +307,7 @@ function getMechanicWorkshopSummary(mechanicId) {
       `SELECT
          w.id,
          w.name,
+         w.address,
          COUNT(r.id) AS reviews_count,
          AVG(r.rating) AS average_rating
        FROM workshops w
@@ -325,6 +326,7 @@ function getMechanicWorkshopSummary(mechanicId) {
   return {
     id: row.id,
     name: row.name,
+    address: row.address,
     reviewsCount,
     averageRating: normalizeAverage(row.average_rating, reviewsCount),
   };
@@ -1527,6 +1529,7 @@ app.get('/api/mechanics', requireAuth, (req, res) => {
         id: mechanic.id,
         name: mechanic.name,
         email: mechanic.email,
+        workshop: getMechanicWorkshopSummary(mechanic.id),
       })),
     });
   } catch (error) {
