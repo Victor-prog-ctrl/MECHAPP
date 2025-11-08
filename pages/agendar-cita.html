@@ -82,7 +82,7 @@
 
           <div class="field">
             <label for="visit-time">Hora preferida</label>
-            <input type="time" id="visit-time" name="visit-time" required />
+            <input type="time" id="visit-time" name="visit-time" min="09:00" max="18:00" required />
           </div>
 
           <input type="hidden" id="scheduled-for" name="scheduled-for" />
@@ -109,29 +109,12 @@
             <small id="mechanic-helper">Solo se muestran mecánicos validados.</small>
           </div>
 
-          <div class="field">
-            <label>Tu ubicación</label>
-            <div class="form-actions">
-              <button type="button" class="button button-secondary" id="detect-location">Usar mi ubicación</button>
-              <button type="button" class="button" id="clear-location">Limpiar</button>
-            </div>
-            <p class="location-status" id="location-status" aria-live="polite">
-              Activa la ubicación para sugerirte talleres cercanos o completar una visita a domicilio.
-            </p>
+          <div class="field" id="mechanic-workshop-field" hidden>
+            <label>Taller del mecánico</label>
+            <p id="mechanic-workshop-text" class="field-helper"></p>
           </div>
 
-          <div class="field" data-presencial-panel>
-            <label for="workshop-select">Taller sugerido</label>
-            <select id="workshop-select" name="workshop">
-              <option value="">Selecciona un taller cercano</option>
-            </select>
-            <div class="workshop-suggestions" id="workshop-suggestions"></div>
-            <div class="field">
-              <label for="workshop-manual">¿Prefieres otro lugar?</label>
-              <input type="text" id="workshop-manual" name="workshop-manual"
-                placeholder="Ingresa la dirección del taller" />
-            </div>
-          </div>
+          <input type="hidden" id="workshop-detail" name="workshop-detail" />
 
           <div class="field" data-domicilio-panel hidden>
             <label for="domicile-address">Dirección para la visita</label>
@@ -144,9 +127,6 @@
               placeholder="Comparte detalles del vehículo, síntomas o referencias importantes"></textarea>
           </div>
 
-          <input type="hidden" id="client-latitude" name="client-latitude" />
-          <input type="hidden" id="client-longitude" name="client-longitude" />
-
           <div class="form-actions">
             <button type="submit" class="button button-primary">Enviar solicitud</button>
             <p class="feedback" id="form-feedback" aria-live="polite"></p>
@@ -154,29 +134,7 @@
         </form>
       </section>
 
-      <aside class="info-card" aria-labelledby="consejos">
-        <div>
-          <h3 id="consejos">¿Cómo funciona?</h3>
-          <p>
-            Tu solicitud se envía directamente al mecánico seleccionado. Podrás coordinar la visita y confirmar el
-            servicio desde tu correo o perfil.
-          </p>
-        </div>
-        <div class="info-list">
-          <article class="info-item">
-            <strong>1. Detecta tu ubicación</strong>
-            <span>Nos ayudará a proponerte talleres cercanos o calcular el desplazamiento a tu domicilio.</span>
-          </article>
-          <article class="info-item">
-            <strong>2. Selecciona un mecánico</strong>
-            <span>Todos los mecánicos cuentan con certificaciones verificadas por nuestro equipo.</span>
-          </article>
-          <article class="info-item">
-            <strong>3. Recibe la confirmación</strong>
-            <span>Te notificaremos cuando el mecánico acepte la solicitud y podrás seguirla desde tu perfil.</span>
-          </article>
-        </div>
-
+      <aside class="info-card" aria-label="Pago de reserva">
         <!-- Caja de pago -->
         <div class="pay-box" id="paypal-box">
           <h4>Pago de reserva <span class="badge-soft">PayPal</span></h4>
@@ -218,9 +176,8 @@
 
       // LUGAR
       const visitTypeRadios = document.querySelectorAll('input[name="visit-type"]');
-      const workshopSelect = $('#workshop-select');
-      const workshopManual = $('#workshop-manual');
-      const addressInput = $('#domicile-address');
+      const workshopDetail = $('#workshop-detail');
+      const domicileAddress = $('#domicile-address');
 
       // UI resumen
       const payServiceName = $('#pay-service-name');
@@ -244,11 +201,9 @@
       function requiredAddress() {
         const t = Array.from(visitTypeRadios).find(r => r.checked)?.value || 'presencial';
         if (t === 'domicilio') {
-          return (addressInput?.value || '').trim();
+          return (domicileAddress?.value || '').trim();
         }
-        const sel = (workshopSelect?.value || '').trim();
-        const man = (workshopManual?.value || '').trim();
-        return sel || man;
+        return (workshopDetail?.value || '').trim();
       }
 
       function hasDate() {
@@ -288,9 +243,8 @@
         visitDateInput?.addEventListener(evt, updatePreview);
         scheduledFor?.addEventListener(evt, updatePreview);
         visitTimeInput?.addEventListener(evt, updatePreview);
-        addressInput?.addEventListener(evt, updatePreview);
-        workshopManual?.addEventListener(evt, updatePreview);
-        workshopSelect?.addEventListener(evt, updatePreview);
+        domicileAddress?.addEventListener(evt, updatePreview);
+        workshopDetail?.addEventListener(evt, updatePreview);
         visitTypeRadios.forEach(r => r.addEventListener(evt, updatePreview));
       });
       updatePreview();
