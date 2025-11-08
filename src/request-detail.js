@@ -98,17 +98,7 @@ function applyStatusClass(element, status) {
 }
 
 function showSection(section) {
-    const loading = document.querySelector("[data-request-loading]");
-    const empty = document.querySelector("[data-request-empty]");
     const container = document.querySelector("[data-request-container]");
-
-    if (loading) {
-        loading.hidden = section !== "loading";
-    }
-
-    if (empty) {
-        empty.hidden = section !== "empty";
-    }
 
     if (container) {
         container.hidden = section !== "detail";
@@ -116,21 +106,17 @@ function showSection(section) {
 }
 
 function showErrorState({ title, message } = {}) {
-    const empty = document.querySelector("[data-request-empty]");
-    if (empty) {
-        const heading = empty.querySelector("h1");
-        const paragraph = empty.querySelector("p");
+    const fallbackTitle = title || "No se pudo cargar la solicitud";
+    const fallbackMessage = message || "Intenta nuevamente en unos minutos. Si el problema persiste contacta a soporte.";
+    const alertMessage = [fallbackTitle, fallbackMessage].filter(Boolean).join("\n\n");
 
-        if (heading && title) {
-            heading.textContent = title;
-        }
+    showSection("loading");
 
-        if (paragraph && message) {
-            paragraph.textContent = message;
-        }
+    if (alertMessage) {
+        window.alert(alertMessage);
     }
 
-    showSection("empty");
+    window.location.href = "./perfil.html";
 }
 
 function clearFeedback() {
@@ -343,13 +329,8 @@ async function handleStatusChange(newStatus) {
             throw new Error("No se pudo actualizar la solicitud.");
         }
 
-        const successMessage =
-            newStatus === "confirmado"
-                ? "Has aceptado la solicitud. El cliente será notificado."
-                : "Has rechazado la solicitud. El cliente recibirá una notificación.";
-
         renderRequest(updatedRequest, { preserveFeedback: true });
-        showFeedback(successMessage, newStatus === "confirmado" ? "success" : "error");
+        window.location.href = "./perfil.html";
     } catch (error) {
         console.error(error);
         showFeedback(
