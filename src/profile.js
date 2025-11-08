@@ -970,7 +970,9 @@ function setupWorkshopManagement(profile) {
 }
 
 async function fetchMechanicRequests() {
-    const response = await fetch("/api/appointments/requests");
+    const response = await fetch("/api/appointments/requests", {
+        credentials: "same-origin",
+    });
 
     if (response.status === 401) {
         window.location.href = "./login.html";
@@ -990,7 +992,9 @@ async function fetchMechanicRequests() {
 }
 
 async function fetchClientHistory() {
-    const response = await fetch("/api/profile/history");
+    const response = await fetch("/api/profile/history", {
+        credentials: "same-origin",
+    });
 
     if (response.status === 401) {
         window.location.href = "./login.html";

@@ -274,7 +274,9 @@ function renderRequest(request, { preserveFeedback = false } = {}) {
 }
 
 async function fetchRequest(id) {
-    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(id)}`);
+    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(id)}`, {
+        credentials: "same-origin",
+    });
 
     if (response.status === 401) {
         window.location.href = "./login.html";
@@ -301,6 +303,7 @@ async function updateRequestStatus(id, status) {
     const response = await fetch(`/api/appointments/requests/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ status }),
     });
 
