@@ -188,8 +188,18 @@
         isMechanic: false,
       };
 
-      const normalizeText = (t = "") =>
-        t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
+      const normalizeText = (value = "") => {
+        if (typeof value !== "string") {
+          return "";
+        }
+
+        return value
+          .trim()
+          .toLocaleLowerCase("es-CL")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/ñ/g, "n");
+      };
 
       const setElementVisibility = (el, shouldShow) => {
         if (shouldShow) {
@@ -358,7 +368,14 @@
           return;
         }
 
-        const filtered = workshops.filter((workshop) => normalizeText(workshop.name).includes(term));
+        const filtered = workshops.filter((workshop) => {
+          const normalizedName = normalizeText(workshop?.name);
+          if (!normalizedName) {
+            return false;
+          }
+
+          return normalizedName.includes(term);
+        });
         renderSearchResults(filtered);
       });
 
