@@ -5,7 +5,6 @@
     --surface-alt: #f8fafc;
     --accent: #f97316;
     --accent-dark: #ea580c;
-    --danger: #dc2626;
     --text: #0f172a;
     --text-muted: #475569;
     --border: rgba(15, 23, 42, 0.08);
@@ -368,11 +367,6 @@ main {
     border: 1px solid var(--border);
 }
 
-.history-item__info {
-    flex: 1;
-    min-width: 0;
-}
-
 .history-item h3 {
     font-size: 1.1rem;
     margin-bottom: 4px;
@@ -393,11 +387,6 @@ main {
     border: 1px solid var(--border);
 }
 
-.history-item__status {
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
 .status.success {
     background: rgba(34, 197, 94, 0.12);
     color: #15803d;
@@ -411,34 +400,6 @@ main {
 .status.cancelled {
     background: rgba(248, 113, 113, 0.12);
     color: #b91c1c;
-}
-
-.history-item__remove {
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-}
-
-.history-item__remove:hover,
-.history-item__remove:focus-visible {
-    color: var(--danger);
-    background: rgba(220, 38, 38, 0.12);
-    transform: translateY(-1px);
-    outline: none;
-}
-
-.history-item__remove[disabled] {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .mechanic-rating {
