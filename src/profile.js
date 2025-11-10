@@ -177,6 +177,10 @@ const workshopState = {
     loading: false,
 };
 
+const historyState = {
+    records: [],
+};
+
 let currentProfile = null;
 
 async function fetchProfile() {
@@ -232,12 +236,18 @@ function toggleMechanicSection(visible) {
 function toggleAudienceSections(isMechanic) {
     const sections = document.querySelectorAll("[data-visible-for]");
     sections.forEach((section) => {
-        const audience = section.dataset.visibleFor;
-        if (audience === "mecanico") {
-            section.hidden = !isMechanic;
-        } else if (audience === "cliente") {
-            section.hidden = isMechanic;
+        const audiences = (section.dataset.visibleFor || "")
+            .split(/\s+/)
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+        if (!audiences.length) {
+            section.hidden = false;
+            return;
         }
+
+        const targetAudience = isMechanic ? "mecanico" : "cliente";
+        section.hidden = !audiences.includes(targetAudience);
     });
 }
 
@@ -343,7 +353,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     container.appendChild(fragment);
 }
 
-function renderClientHistory(history, { errorMessage } = {}) {
+function renderHistoryRecords(history, { errorMessage } = {}) {
     const container = document.querySelector("[data-client-history]");
     const emptyState = document.querySelector("[data-client-history-empty]");
 
@@ -351,14 +361,15 @@ function renderClientHistory(history, { errorMessage } = {}) {
         return;
     }
 
-    const records = Array.isArray(history) ? history : [];
+    const records = Array.isArray(history) ? history.slice() : [];
+    historyState.records = records.slice();
 
     if (!records.length) {
         container.innerHTML = "";
         if (emptyState) {
             emptyState.textContent =
                 errorMessage ||
-                "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.";
+                "Aún no hay visitas registradas en tu historial.";
             emptyState.hidden = false;
         }
         return;
@@ -373,13 +384,18 @@ function renderClientHistory(history, { errorMessage } = {}) {
     records.forEach((record) => {
         const article = document.createElement("article");
         article.className = "history-item";
+        if (typeof record?.id === "number") {
+            article.dataset.historyId = String(record.id);
+        }
 
         const info = document.createElement("div");
+        info.className = "history-item__info";
 
         const title = document.createElement("h3");
         const workshopName = record?.workshop?.name ? String(record.workshop.name).trim() : "";
         const mechanicName = record?.mechanic?.name ? String(record.mechanic.name).trim() : "";
-        title.textContent = workshopName || mechanicName || "Visita al taller";
+        const titleText = workshopName || mechanicName || "Visita al taller";
+        title.textContent = titleText;
         info.appendChild(title);
 
         const metaParts = [];
@@ -415,13 +431,97 @@ function renderClientHistory(history, { errorMessage } = {}) {
         const statusClass = getStatusClass(record?.status);
         statusBadge.className = `status ${statusClass}`;
         statusBadge.textContent = getStatusLabel(record?.status);
+
+        statusBadge.classList.add("history-item__status");
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "history-item__remove";
+        removeButton.textContent = "×";
+        removeButton.setAttribute(
+            "aria-label",
+            `Eliminar la solicitud "${titleText || "del historial"}"`,
+        );
+        removeButton.addEventListener("click", () => {
+            handleHistoryRemoval(record?.id, removeButton);
+        });
+
         article.appendChild(statusBadge);
+        article.appendChild(removeButton);
 
         fragment.appendChild(article);
     });
 
     container.innerHTML = "";
     container.appendChild(fragment);
+}
+
+async function deleteHistoryEntry(appointmentId) {
+    const response = await fetch(`/api/profile/history/${encodeURIComponent(appointmentId)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return false;
+    }
+
+    if (!response.ok) {
+        let errorMessage = "No se pudo eliminar la solicitud del historial.";
+        try {
+            const data = await response.json();
+            if (data?.error) {
+                errorMessage = String(data.error);
+            }
+        } catch (error) {
+            // Ignorar errores al parsear la respuesta.
+        }
+        throw new Error(errorMessage);
+    }
+
+    return true;
+}
+
+async function handleHistoryRemoval(recordId, triggerButton) {
+    const appointmentId = Number(recordId);
+    if (!Number.isInteger(appointmentId)) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        "¿Quieres eliminar esta solicitud del historial? Esta acción no se puede deshacer.",
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    if (triggerButton) {
+        triggerButton.disabled = true;
+        triggerButton.setAttribute("aria-busy", "true");
+    }
+
+    try {
+        const deleted = await deleteHistoryEntry(appointmentId);
+        if (!deleted) {
+            if (triggerButton) {
+                triggerButton.disabled = false;
+                triggerButton.removeAttribute("aria-busy");
+            }
+            return;
+        }
+        const nextRecords = historyState.records.filter((record) => record.id !== appointmentId);
+        historyState.records = nextRecords.slice();
+        renderHistoryRecords(nextRecords);
+    } catch (error) {
+        console.error(error);
+        alert(error?.message || "No se pudo eliminar la solicitud. Intenta nuevamente.");
+        if (triggerButton) {
+            triggerButton.disabled = false;
+            triggerButton.removeAttribute("aria-busy");
+        }
+    }
 }
 
 function renderCompletedAppointmentsMetric(isMechanic, metrics) {
@@ -994,7 +1094,7 @@ async function fetchMechanicRequests() {
     return Array.isArray(data?.requests) ? data.requests : [];
 }
 
-async function fetchClientHistory() {
+async function fetchProfileHistory() {
     const response = await fetch("/api/profile/history", {
         credentials: "same-origin",
     });
@@ -1045,15 +1145,16 @@ async function setupProfilePage() {
             }
         } else {
             renderMechanicRequests([]);
-            try {
-                const history = await fetchClientHistory();
-                renderClientHistory(history);
-            } catch (error) {
-                console.error(error);
-                renderClientHistory([], {
-                    errorMessage: "No se pudo cargar tu historial de visitas. Intenta nuevamente más tarde.",
-                });
-            }
+        }
+
+        try {
+            const history = await fetchProfileHistory();
+            renderHistoryRecords(history);
+        } catch (error) {
+            console.error(error);
+            renderHistoryRecords([], {
+                errorMessage: "No se pudo cargar el historial de visitas. Intenta nuevamente más tarde.",
+            });
         }
     } catch (error) {
         console.error(error);
