@@ -406,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const acceptButton = document.querySelector('[data-action="accept"]');
     const rejectButton = document.querySelector('[data-action="reject"]');
+    const backButton = document.querySelector('[data-action="go-back"]');
     const logoutButton = document.getElementById("logout-button");
 
     if (acceptButton) {
@@ -414,6 +415,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (rejectButton) {
         rejectButton.addEventListener("click", () => handleStatusChange("rechazado"));
+    }
+
+    if (backButton) {
+        backButton.addEventListener("click", () => {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "./perfil.html";
+            }
+        });
     }
 
     if (logoutButton) {

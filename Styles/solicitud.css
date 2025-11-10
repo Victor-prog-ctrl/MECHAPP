@@ -45,6 +45,15 @@ body {
     gap: 20px;
 }
 
+.request-page__toolbar {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.request-page__toolbar .button {
+    padding-inline: 20px;
+}
+
 .request-detail {
     background: var(--surface);
     border: 1px solid var(--border);
