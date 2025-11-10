@@ -522,61 +522,16 @@ const CLIENT_HISTORY_QUERY = `
     a.address,
     a.created_at,
     a.mechanic_id,
-    a.client_id,
     lw.workshop_id,
     lw.workshop_name,
     lw.workshop_address,
     lw.workshop_photo,
     m.name AS mechanic_name,
-    m.email AS mechanic_email,
-    c.name AS client_name,
-    c.email AS client_email
+    m.email AS mechanic_email
   FROM appointments a
   LEFT JOIN latest_workshops lw ON lw.owner_id = a.mechanic_id
   LEFT JOIN users m ON m.id = a.mechanic_id
-  LEFT JOIN users c ON c.id = a.client_id
   WHERE a.client_id = ?
-  ORDER BY datetime(a.scheduled_for) DESC, a.id DESC
-`;
-
-const MECHANIC_HISTORY_QUERY = `
-  WITH latest_workshops AS (
-    SELECT
-      owner_id,
-      id AS workshop_id,
-      name AS workshop_name,
-      address AS workshop_address,
-      photo AS workshop_photo
-    FROM (
-      SELECT *,
-             ROW_NUMBER() OVER (PARTITION BY owner_id ORDER BY rowid DESC) AS row_number
-      FROM workshops
-    )
-    WHERE row_number = 1
-  )
-  SELECT
-    a.id,
-    a.service,
-    a.visit_type,
-    a.scheduled_for,
-    COALESCE(a.status, 'pendiente') AS status,
-    a.address,
-    a.created_at,
-    a.mechanic_id,
-    a.client_id,
-    lw.workshop_id,
-    lw.workshop_name,
-    lw.workshop_address,
-    lw.workshop_photo,
-    m.name AS mechanic_name,
-    m.email AS mechanic_email,
-    c.name AS client_name,
-    c.email AS client_email
-  FROM appointments a
-  LEFT JOIN latest_workshops lw ON lw.owner_id = a.mechanic_id
-  LEFT JOIN users m ON m.id = a.mechanic_id
-  LEFT JOIN users c ON c.id = a.client_id
-  WHERE a.mechanic_id = ?
   ORDER BY datetime(a.scheduled_for) DESC, a.id DESC
 `;
 
@@ -585,9 +540,6 @@ function mapAppointmentHistoryRow(row) {
 
   const mechanicId = Number(row.mechanic_id);
   const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
-
-  const clientId = Number(row.client_id);
-  const hasClient = Number.isInteger(clientId) && clientId > 0;
 
   return {
     id: Number(row.id),
@@ -602,13 +554,6 @@ function mapAppointmentHistoryRow(row) {
           id: mechanicId,
           name: row.mechanic_name || null,
           email: row.mechanic_email || null,
-        }
-      : null,
-    client: hasClient
-      ? {
-          id: clientId,
-          name: row.client_name || null,
-          email: row.client_email || null,
         }
       : null,
     workshop: row.workshop_id
@@ -626,35 +571,6 @@ function getClientAppointmentHistory(clientId) {
   if (!clientId) return [];
   const rows = db.prepare(CLIENT_HISTORY_QUERY).all(clientId);
   return rows.map(mapAppointmentHistoryRow).filter(Boolean);
-}
-
-function getMechanicAppointmentHistory(mechanicId) {
-  if (!mechanicId) return [];
-  const rows = db.prepare(MECHANIC_HISTORY_QUERY).all(mechanicId);
-  return rows.map(mapAppointmentHistoryRow).filter(Boolean);
-}
-
-function deleteAppointmentFromHistory(appointmentId, userId, accountType) {
-  if (!appointmentId || !userId) return false;
-
-  if (accountType === 'cliente') {
-    const result = db
-      .prepare(`DELETE FROM appointments WHERE id = ? AND client_id = ?`)
-      .run(appointmentId, userId);
-    return result.changes > 0;
-  }
-
-  if (accountType === 'mecanico') {
-    const result = db
-      .prepare(`DELETE FROM appointments WHERE id = ? AND mechanic_id = ?`)
-      .run(appointmentId, userId);
-    return result.changes > 0;
-  }
-
-  const result = db
-    .prepare(`DELETE FROM appointments WHERE id = ? AND (client_id = ? OR mechanic_id = ?)`)
-    .run(appointmentId, userId, userId);
-  return result.changes > 0;
 }
 
 function normalizeTextList(value) {
@@ -1584,53 +1500,16 @@ app.get('/api/profile', requireAuth, (req, res) => {
 
 app.get('/api/profile/history', requireAuth, (req, res) => {
   try {
-    const user = db
-      .prepare(`SELECT account_type FROM users WHERE id = ?`)
-      .get(req.session.userId);
+    const user = db.prepare(`SELECT account_type FROM users WHERE id = ?`).get(req.session.userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
-
-    let history = [];
-    if (user.account_type === 'cliente') {
-      history = getClientAppointmentHistory(req.session.userId);
-    } else if (user.account_type === 'mecanico') {
-      history = getMechanicAppointmentHistory(req.session.userId);
-    } else {
-      return res.status(403).json({ error: 'El historial está disponible solo para clientes y mecánicos.' });
+    if (user.account_type !== 'cliente') {
+      return res.status(403).json({ error: 'El historial está disponible solo para clientes.' });
     }
-
+    const history = getClientAppointmentHistory(req.session.userId);
     res.json({ history });
   } catch (error) {
     console.error('Error obteniendo historial de visitas', error);
     res.status(500).json({ error: 'No se pudo obtener el historial de visitas.' });
-  }
-});
-
-app.delete('/api/profile/history/:appointmentId', requireAuth, (req, res) => {
-  const appointmentId = Number.parseInt(req.params.appointmentId, 10);
-
-  if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
-    return res.status(400).json({ error: 'Identificador de solicitud inválido.' });
-  }
-
-  try {
-    const user = db
-      .prepare(`SELECT account_type FROM users WHERE id = ?`)
-      .get(req.session.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
-
-    const deleted = deleteAppointmentFromHistory(appointmentId, req.session.userId, user.account_type);
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'No se encontró la solicitud especificada.' });
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error eliminando solicitud del historial', error);
-    res.status(500).json({ error: 'No se pudo eliminar la solicitud del historial.' });
   }
 });
 
