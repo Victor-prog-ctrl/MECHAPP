@@ -179,8 +179,11 @@ const workshopState = {
 
 let currentProfile = null;
 const dismissedRequestIds = new Set();
+const dismissedHistoryIds = new Set();
 const DEFAULT_MECHANIC_EMPTY_MESSAGE =
     "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+
+let clientHistoryRecords = [];
 
 async function fetchProfile() {
     const response = await fetch("/api/profile");
@@ -385,14 +388,27 @@ function renderClientHistory(history, { errorMessage } = {}) {
         return;
     }
 
-    const records = Array.isArray(history) ? history : [];
+    clientHistoryRecords = Array.isArray(history) ? history : [];
+
+    const records = clientHistoryRecords.filter((record) => {
+        const recordId = record?.id;
+        if (recordId === null || recordId === undefined) {
+            return true;
+        }
+
+        const normalizedId = String(recordId);
+        return !dismissedHistoryIds.has(normalizedId);
+    });
 
     if (!records.length) {
         container.innerHTML = "";
         if (emptyState) {
+            const hasOriginalRecords = clientHistoryRecords.length > 0;
             emptyState.textContent =
                 errorMessage ||
-                "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.";
+                (hasOriginalRecords
+                    ? "Has ocultado todas las visitas de tu historial en esta sesión."
+                    : "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.");
             emptyState.hidden = false;
         }
         return;
@@ -445,11 +461,31 @@ function renderClientHistory(history, { errorMessage } = {}) {
 
         article.appendChild(info);
 
+        const actions = document.createElement("div");
+        actions.className = "history-actions";
+
         const statusBadge = document.createElement("span");
         const statusClass = getStatusClass(record?.status);
         statusBadge.className = `status ${statusClass}`;
         statusBadge.textContent = getStatusLabel(record?.status);
-        article.appendChild(statusBadge);
+        actions.appendChild(statusBadge);
+
+        const recordId = record?.id;
+        if (recordId !== null && recordId !== undefined) {
+            const normalizedId = String(recordId);
+            const dismissButton = document.createElement("button");
+            dismissButton.type = "button";
+            dismissButton.className = "history-dismiss";
+            dismissButton.innerHTML = '<span aria-hidden="true">×</span>';
+            dismissButton.setAttribute("aria-label", "Ocultar visita del historial");
+            dismissButton.addEventListener("click", () => {
+                dismissedHistoryIds.add(normalizedId);
+                renderClientHistory(clientHistoryRecords);
+            });
+            actions.appendChild(dismissButton);
+        }
+
+        article.appendChild(actions);
 
         fragment.appendChild(article);
     });

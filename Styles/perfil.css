@@ -372,6 +372,37 @@ main {
     margin-bottom: 4px;
 }
 
+.history-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.history-dismiss {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.history-dismiss:hover,
+.history-dismiss:focus-visible {
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--text);
+    outline: none;
+}
+
+.history-dismiss span {
+    display: block;
+    line-height: 1;
+}
+
 .item-meta {
     color: var(--text-muted);
     font-size: 0.95rem;
