@@ -298,6 +298,29 @@
 
     </main>
 
+    <div
+        class="completion-dialog-backdrop"
+        data-complete-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="completion-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <div class="completion-dialog">
+            <h2 id="completion-dialog-title">Finalizar cita</h2>
+            <p class="completion-dialog__message">
+                Si le das a aceptar es porque su cita con el cliente ya se completó de manera eficiente.
+            </p>
+            <p class="completion-dialog__details" data-complete-details hidden></p>
+            <p class="completion-dialog__feedback" data-complete-feedback hidden></p>
+            <div class="completion-dialog__actions">
+                <button type="button" class="button" data-complete-confirm>Aceptar</button>
+                <button type="button" class="button ghost" data-complete-cancel>Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="site-footer">
         <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
     </footer>

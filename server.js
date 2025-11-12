@@ -1790,7 +1790,7 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
     return res.status(400).json({ error: 'Identificador de solicitud no válido.' });
   }
 
-  const allowedStatuses = new Set(['confirmado', 'rechazado']);
+  const allowedStatuses = new Set(['confirmado', 'rechazado', 'completado']);
   const requestedStatus = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
 
   if (!allowedStatuses.has(requestedStatus)) {
@@ -1806,11 +1806,20 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
       return res.status(404).json({ error: 'Solicitud no encontrada.' });
     }
 
-    if (existing.status !== 'pendiente' && existing.status !== requestedStatus) {
-      return res.status(400).json({ error: 'Solo puedes actualizar solicitudes pendientes.' });
+    const normalizedExisting = existing.status ? existing.status.toLowerCase() : '';
+
+    const isSameStatus = normalizedExisting === requestedStatus;
+    const canTransition =
+      normalizedExisting === 'pendiente' ||
+      (normalizedExisting === 'confirmado' && requestedStatus === 'completado');
+
+    if (!isSameStatus && !canTransition) {
+      return res
+        .status(400)
+        .json({ error: 'Solo puedes actualizar solicitudes pendientes o confirmadas.' });
     }
 
-    if (existing.status !== requestedStatus) {
+    if (!isSameStatus) {
       db.prepare('UPDATE appointments SET status = ? WHERE id = ? AND mechanic_id = ?')
         .run(requestedStatus, requestId, req.session.userId);
     }
