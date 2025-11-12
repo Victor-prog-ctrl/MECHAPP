@@ -62,6 +62,11 @@ function getStatusClass(status) {
     }
 }
 
+function canRequestBeCompleted(status) {
+    const normalized = typeof status === "string" ? status.toLowerCase() : "";
+    return normalized === "pendiente" || normalized === "confirmado";
+}
+
 function formatDateTime(dateString) {
     if (!dateString) {
         return "";
@@ -184,6 +189,288 @@ const DEFAULT_MECHANIC_EMPTY_MESSAGE =
     "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
 
 let clientHistoryRecords = [];
+let mechanicRequestRecords = [];
+const completionDialogState = {
+    container: null,
+    confirmButton: null,
+    cancelButton: null,
+    detailsElement: null,
+    feedbackElement: null,
+    requestId: null,
+    triggerButton: null,
+    busy: false,
+};
+
+function setCompletionDialogFeedback(message, type = "info") {
+    const { feedbackElement } = completionDialogState;
+    if (!feedbackElement) {
+        return;
+    }
+
+    if (!message) {
+        feedbackElement.textContent = "";
+        feedbackElement.hidden = true;
+        feedbackElement.dataset.state = "";
+        return;
+    }
+
+    feedbackElement.textContent = message;
+    feedbackElement.hidden = false;
+    feedbackElement.dataset.state = type;
+}
+
+function setCompletionDialogBusy(busy) {
+    completionDialogState.busy = busy;
+
+    const { confirmButton, cancelButton, container } = completionDialogState;
+
+    if (confirmButton) {
+        confirmButton.disabled = busy;
+    }
+
+    if (cancelButton) {
+        cancelButton.disabled = busy;
+    }
+
+    if (container) {
+        if (busy) {
+            container.dataset.state = "busy";
+        } else {
+            container.removeAttribute("data-state");
+        }
+    }
+}
+
+function closeCompletionDialog() {
+    const { container } = completionDialogState;
+    if (!container) {
+        return;
+    }
+
+    container.hidden = true;
+    container.setAttribute("aria-hidden", "true");
+    setCompletionDialogBusy(false);
+    setCompletionDialogFeedback("");
+
+    if (completionDialogState.detailsElement) {
+        completionDialogState.detailsElement.textContent = "";
+        completionDialogState.detailsElement.hidden = true;
+    }
+
+    const trigger = completionDialogState.triggerButton;
+    completionDialogState.requestId = null;
+    completionDialogState.triggerButton = null;
+
+    if (trigger && typeof trigger.focus === "function") {
+        trigger.focus();
+    }
+}
+
+function openCompletionDialog(request, triggerButton) {
+    const { container, confirmButton, detailsElement } = completionDialogState;
+
+    if (!container || !request) {
+        return;
+    }
+
+    completionDialogState.requestId = request.id != null ? String(request.id) : null;
+    completionDialogState.triggerButton = triggerButton || null;
+    setCompletionDialogBusy(false);
+    setCompletionDialogFeedback("");
+
+    if (detailsElement) {
+        const details = [];
+        if (request.service) {
+            details.push(`Servicio: ${request.service}`);
+        }
+
+        const formattedDate = formatDateTime(request.scheduledFor);
+        if (formattedDate) {
+            details.push(`Fecha: ${formattedDate}`);
+        }
+
+        if (details.length) {
+            detailsElement.textContent = details.join(" · ");
+            detailsElement.hidden = false;
+        } else {
+            detailsElement.textContent = "";
+            detailsElement.hidden = true;
+        }
+    }
+
+    container.hidden = false;
+    container.setAttribute("aria-hidden", "false");
+
+    if (typeof container.focus === "function") {
+        container.focus();
+    }
+
+    if (confirmButton && typeof confirmButton.focus === "function") {
+        confirmButton.focus();
+    }
+}
+
+async function updateMechanicRequestStatus(requestId, status) {
+    if (!requestId) {
+        throw new Error("Identificador de solicitud no válido.");
+    }
+
+    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(requestId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ status }),
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return null;
+    }
+
+    if (response.status === 403) {
+        throw new Error("No tienes permisos para actualizar esta solicitud.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("No encontramos la solicitud que intentas actualizar.");
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudo actualizar la solicitud.");
+    }
+
+    const data = await response.json();
+    return data?.request || null;
+}
+
+async function refreshMechanicMetrics() {
+    if (!currentProfile || currentProfile.accountType !== "mecanico") {
+        return;
+    }
+
+    try {
+        const updatedProfile = await fetchProfile();
+        if (!updatedProfile) {
+            return;
+        }
+
+        currentProfile = {
+            ...currentProfile,
+            ...updatedProfile,
+        };
+
+        renderCompletedAppointmentsMetric(true, updatedProfile.mechanicMetrics || null);
+    } catch (error) {
+        console.error("No se pudieron actualizar las métricas del mecánico", error);
+    }
+}
+
+async function handleCompleteRequestConfirmation() {
+    if (!completionDialogState.requestId || completionDialogState.busy) {
+        return;
+    }
+
+    setCompletionDialogBusy(true);
+    setCompletionDialogFeedback("Finalizando cita...", "info");
+
+    try {
+        const updatedRequest = await updateMechanicRequestStatus(
+            completionDialogState.requestId,
+            "completado",
+        );
+
+        if (!updatedRequest) {
+            throw new Error("No se pudo completar la cita.");
+        }
+
+        let refreshedRequests = null;
+        try {
+            refreshedRequests = await fetchMechanicRequests();
+        } catch (requestsError) {
+            console.error(requestsError);
+            refreshedRequests = mechanicRequestRecords.map((item) => {
+                if (!item || item.id !== updatedRequest.id) {
+                    return item;
+                }
+
+                return {
+                    ...item,
+                    ...updatedRequest,
+                };
+            });
+        }
+
+        if (refreshedRequests) {
+            renderMechanicRequests(refreshedRequests);
+        }
+
+        await refreshMechanicMetrics();
+
+        setCompletionDialogFeedback("La cita se marcó como completada.", "success");
+
+        window.setTimeout(() => {
+            closeCompletionDialog();
+        }, 900);
+    } catch (error) {
+        console.error(error);
+        setCompletionDialogFeedback(
+            error instanceof Error
+                ? error.message
+                : "No se pudo completar la cita. Inténtalo nuevamente más tarde.",
+            "error",
+        );
+        setCompletionDialogBusy(false);
+    }
+}
+
+function setupCompletionDialog() {
+    const container = document.querySelector("[data-complete-dialog]");
+    if (!container) {
+        return;
+    }
+
+    const confirmButton = container.querySelector("[data-complete-confirm]");
+    const cancelButton = container.querySelector("[data-complete-cancel]");
+    const detailsElement = container.querySelector("[data-complete-details]");
+    const feedbackElement = container.querySelector("[data-complete-feedback]");
+
+    completionDialogState.container = container;
+    completionDialogState.confirmButton = confirmButton;
+    completionDialogState.cancelButton = cancelButton;
+    completionDialogState.detailsElement = detailsElement;
+    completionDialogState.feedbackElement = feedbackElement;
+
+    if (detailsElement) {
+        detailsElement.hidden = true;
+    }
+
+    container.hidden = true;
+    container.setAttribute("aria-hidden", "true");
+
+    if (confirmButton) {
+        confirmButton.addEventListener("click", handleCompleteRequestConfirmation);
+    }
+
+    if (cancelButton) {
+        cancelButton.addEventListener("click", () => {
+            if (!completionDialogState.busy) {
+                closeCompletionDialog();
+            }
+        });
+    }
+
+    container.addEventListener("click", (event) => {
+        if (event.target === container && !completionDialogState.busy) {
+            closeCompletionDialog();
+        }
+    });
+
+    container.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !completionDialogState.busy) {
+            closeCompletionDialog();
+        }
+    });
+}
 
 async function fetchProfile() {
     const response = await fetch("/api/profile");
@@ -256,6 +543,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     }
 
     const normalizedRequests = Array.isArray(requests) ? requests : [];
+    mechanicRequestRecords = normalizedRequests;
 
     const visibleRequests = normalizedRequests.filter((request) => {
         const requestId = request?.id != null ? String(request.id) : "";
@@ -368,7 +656,21 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         viewButton.className = "button ghost";
         viewButton.textContent = "Ver más";
         viewButton.href = `./solicitud.html?id=${encodeURIComponent(request.id)}`;
-        viewButton.setAttribute("aria-label", `Ver detalles de la solicitud ${request.service || "de servicio"}`);
+        viewButton.setAttribute(
+            "aria-label",
+            `Ver detalles de la solicitud ${request.service || "de servicio"}`,
+        );
+
+        if (canRequestBeCompleted(request.status)) {
+            const completeButton = document.createElement("button");
+            completeButton.type = "button";
+            completeButton.className = "button button--primary";
+            completeButton.textContent = "Cita finalizada";
+            completeButton.addEventListener("click", () => {
+                openCompletionDialog(request, completeButton);
+            });
+            actions.appendChild(completeButton);
+        }
 
         actions.appendChild(viewButton);
         article.appendChild(actions);
@@ -1236,6 +1538,7 @@ function setupSubscriptionForm() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    setupCompletionDialog();
     setupProfilePage();
     setupSubscriptionForm();
 
