@@ -178,6 +178,9 @@ const workshopState = {
 };
 
 let currentProfile = null;
+const dismissedRequestIds = new Set();
+const DEFAULT_MECHANIC_EMPTY_MESSAGE =
+    "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
 
 async function fetchProfile() {
     const response = await fetch("/api/profile");
@@ -251,11 +254,15 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
 
     const normalizedRequests = Array.isArray(requests) ? requests : [];
 
-    if (!normalizedRequests.length) {
+    const visibleRequests = normalizedRequests.filter((request) => {
+        const requestId = request?.id != null ? String(request.id) : "";
+        return requestId ? !dismissedRequestIds.has(requestId) : true;
+    });
+
+    if (!visibleRequests.length) {
         container.innerHTML = "";
         if (emptyState) {
-            emptyState.textContent = errorMessage ||
-                "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+            emptyState.textContent = errorMessage || DEFAULT_MECHANIC_EMPTY_MESSAGE;
             emptyState.hidden = false;
         }
         return;
@@ -267,7 +274,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
 
     const fragment = document.createDocumentFragment();
 
-    normalizedRequests.forEach((request) => {
+    visibleRequests.forEach((request) => {
         const article = document.createElement("article");
         article.className = "request-card";
 
@@ -278,6 +285,9 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         title.textContent = request.service || "Servicio solicitado";
         header.appendChild(title);
 
+        const headerActions = document.createElement("div");
+        headerActions.className = "request-header-actions";
+
         const status = document.createElement("span");
         status.className = "request-status";
         status.textContent = getStatusLabel(request.status);
@@ -285,7 +295,31 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         if (statusClass) {
             status.classList.add(statusClass);
         }
-        header.appendChild(status);
+        headerActions.appendChild(status);
+
+        const dismissButton = document.createElement("button");
+        dismissButton.type = "button";
+        dismissButton.className = "request-dismiss";
+        dismissButton.innerHTML = "<span aria-hidden=\"true\">×</span>";
+        dismissButton.setAttribute("aria-label", "Ocultar solicitud de la lista");
+
+        dismissButton.addEventListener("click", () => {
+            const requestId = request?.id != null ? String(request.id) : "";
+            if (requestId) {
+                dismissedRequestIds.add(requestId);
+            }
+
+            article.remove();
+
+            if (emptyState) {
+                const hasVisibleRequests = container.querySelector(".request-card");
+                emptyState.textContent = DEFAULT_MECHANIC_EMPTY_MESSAGE;
+                emptyState.hidden = Boolean(hasVisibleRequests);
+            }
+        });
+
+        headerActions.appendChild(dismissButton);
+        header.appendChild(headerActions);
 
         article.appendChild(header);
 
