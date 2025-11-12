@@ -1,6 +1,15 @@
 (function () {
   const EMPTY_MESSAGE = '<p class="featured-services__empty">Aún no hay servicios registrados.</p>';
   const ERROR_MESSAGE = '<p class="featured-services__empty">No pudimos cargar los servicios destacados.</p>';
+  const DEFAULT_WORKSHOP_PHOTO = '../assets/logo-oscuro.png';
+
+  const serviceWorkshopMap = new Map();
+  let modalElement = null;
+  let modalTitleElement = null;
+  let modalCountElement = null;
+  let modalContentElement = null;
+  let previouslyFocusedElement = null;
+  let escapeKeyHandler = null;
 
   function normalizeText(value) {
     return value
@@ -15,6 +24,9 @@
   function createServiceCard(entry) {
     const article = document.createElement('article');
     article.className = 'featured-service-card';
+    article.dataset.serviceKey = entry.key;
+    article.setAttribute('role', 'button');
+    article.setAttribute('tabindex', '0');
 
     const title = document.createElement('h3');
     title.className = 'featured-service-card__title';
@@ -26,6 +38,8 @@
     const suffix = entry.count === 1 ? 'taller lo ofrece' : 'talleres lo ofrecen';
     meta.textContent = `${entry.count} ${suffix}`;
     article.appendChild(meta);
+
+    article.setAttribute('aria-label', `${entry.name}. ${entry.count} ${suffix}. Ver talleres que lo ofrecen.`);
 
     return article;
   }
@@ -49,7 +63,7 @@
     return response.json();
   }
 
-  function buildServiceEntries(workshops) {
+  function buildServiceData(workshops) {
     const map = new Map();
 
     workshops.forEach((workshop) => {
@@ -74,20 +88,253 @@
         seen.add(key);
 
         if (!map.has(key)) {
-          map.set(key, { key, name: trimmed, count: 0 });
+          map.set(key, { key, name: trimmed, count: 0, workshops: [] });
         }
 
         const entry = map.get(key);
         entry.count += 1;
+
+        entry.workshops.push({
+          id: workshop.id,
+          name: workshop.name,
+          photo: workshop.photo || DEFAULT_WORKSHOP_PHOTO,
+          averageRating: workshop.averageRating,
+          reviewsCount: workshop.reviewsCount,
+        });
       });
     });
 
-    return Array.from(map.values()).sort((a, b) => {
+    const entries = Array.from(map.values());
+    entries.forEach((entry) => {
+      entry.workshops.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    });
+
+    return entries.sort((a, b) => {
       if (b.count === a.count) {
         return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
       }
       return b.count - a.count;
     });
+  }
+
+  function closeServiceModal() {
+    if (!modalElement || modalElement.hasAttribute('hidden')) {
+      return;
+    }
+
+    modalElement.setAttribute('hidden', '');
+    document.body.classList.remove('service-modal-open');
+
+    if (escapeKeyHandler) {
+      document.removeEventListener('keydown', escapeKeyHandler);
+      escapeKeyHandler = null;
+    }
+
+    if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+      previouslyFocusedElement.focus();
+    }
+
+    previouslyFocusedElement = null;
+  }
+
+  function ensureModalElement() {
+    if (modalElement) {
+      return modalElement;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'service-modal';
+    modal.dataset.serviceModal = '';
+    modal.setAttribute('hidden', '');
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'service-modal__backdrop';
+    backdrop.dataset.serviceModalDismiss = '';
+    modal.appendChild(backdrop);
+
+    const dialog = document.createElement('div');
+    dialog.className = 'service-modal__dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'service-modal-title');
+    modal.appendChild(dialog);
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'service-modal__close';
+    closeButton.setAttribute('aria-label', 'Cerrar');
+    closeButton.dataset.serviceModalDismiss = '';
+    closeButton.textContent = '×';
+    dialog.appendChild(closeButton);
+
+    const heading = document.createElement('h3');
+    heading.id = 'service-modal-title';
+    heading.className = 'service-modal__title';
+    heading.textContent = 'Talleres que ofrecen ';
+    const titleSpan = document.createElement('span');
+    titleSpan.dataset.serviceModalTitle = '';
+    heading.appendChild(titleSpan);
+    dialog.appendChild(heading);
+
+    const count = document.createElement('p');
+    count.className = 'service-modal__subtitle';
+    count.id = 'service-modal-count';
+    count.dataset.serviceModalCount = '';
+    dialog.appendChild(count);
+    dialog.setAttribute('aria-describedby', 'service-modal-count');
+
+    const content = document.createElement('div');
+    content.className = 'service-modal__content';
+    content.dataset.serviceModalContent = '';
+    dialog.appendChild(content);
+
+    modalElement = modal;
+    modalTitleElement = titleSpan;
+    modalCountElement = count;
+    modalContentElement = content;
+
+    modal.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLElement && event.target.dataset.serviceModalDismiss !== undefined) {
+        closeServiceModal();
+      }
+    });
+
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function createModalWorkshopCard(workshop) {
+    const article = document.createElement('article');
+    article.className = 'service-modal__workshop';
+
+    const header = document.createElement('div');
+    header.className = 'service-modal__workshop-header';
+
+    const image = document.createElement('img');
+    image.src = workshop.photo || DEFAULT_WORKSHOP_PHOTO;
+    image.alt = `Imagen del taller ${workshop.name}`;
+    image.loading = 'lazy';
+    header.appendChild(image);
+
+    const info = document.createElement('div');
+    info.className = 'service-modal__workshop-info';
+
+    const title = document.createElement('h4');
+    title.textContent = workshop.name;
+    info.appendChild(title);
+
+    const rating = document.createElement('p');
+    rating.className = 'service-modal__workshop-rating';
+    const averageRating = Number.parseFloat(workshop.averageRating);
+    const reviewsCount = Number.parseInt(workshop.reviewsCount, 10);
+    if (Number.isFinite(averageRating) && Number.isFinite(reviewsCount) && reviewsCount > 0) {
+      const average = averageRating.toFixed(1);
+      const suffix = reviewsCount === 1 ? 'reseña' : 'reseñas';
+      rating.innerHTML = `<strong>${average}</strong> · ${reviewsCount} ${suffix}`;
+    } else {
+      rating.textContent = 'Aún no tiene reseñas publicadas.';
+      rating.classList.add('service-modal__workshop-rating--empty');
+    }
+    info.appendChild(rating);
+
+    const actions = document.createElement('div');
+    actions.className = 'service-modal__workshop-actions';
+    const link = document.createElement('a');
+    link.className = 'button ghost button-small';
+    link.href = `./perfil-taller.html?id=${encodeURIComponent(workshop.id)}`;
+    link.textContent = 'Ver perfil';
+    link.setAttribute('aria-label', `Ver perfil del taller ${workshop.name}`);
+    actions.appendChild(link);
+    info.appendChild(actions);
+
+    header.appendChild(info);
+    article.appendChild(header);
+
+    return article;
+  }
+
+  function openServiceModal(entry, triggerElement) {
+    const modal = ensureModalElement();
+    previouslyFocusedElement = triggerElement || document.activeElement;
+
+    modalTitleElement.textContent = entry.name;
+    const suffix = entry.count === 1 ? '1 taller ofrece este servicio.' : `${entry.count} talleres ofrecen este servicio.`;
+    modalCountElement.textContent = suffix;
+
+    modalContentElement.innerHTML = '';
+
+    if (!entry.workshops.length) {
+      const empty = document.createElement('p');
+      empty.className = 'service-modal__empty';
+      empty.textContent = 'No encontramos talleres disponibles para este servicio en este momento.';
+      modalContentElement.appendChild(empty);
+    } else {
+      const fragment = document.createDocumentFragment();
+      entry.workshops.forEach((workshop) => {
+        fragment.appendChild(createModalWorkshopCard(workshop));
+      });
+      modalContentElement.appendChild(fragment);
+    }
+
+    modal.removeAttribute('hidden');
+    document.body.classList.add('service-modal-open');
+
+    const closeButton = modal.querySelector('.service-modal__close');
+    if (closeButton) {
+      closeButton.focus();
+    }
+
+    escapeKeyHandler = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeServiceModal();
+      }
+    };
+    document.addEventListener('keydown', escapeKeyHandler);
+  }
+
+  function setupServiceSelection(track) {
+    if (!track || track.dataset.serviceSelectionReady) {
+      return;
+    }
+
+    const handleActivation = (card) => {
+      if (!card) {
+        return;
+      }
+      const key = card.dataset.serviceKey;
+      if (!key) {
+        return;
+      }
+      const entry = serviceWorkshopMap.get(key);
+      if (!entry) {
+        return;
+      }
+      openServiceModal(entry, card);
+    };
+
+    track.addEventListener('click', (event) => {
+      const card = event.target.closest('.featured-service-card');
+      if (!card) {
+        return;
+      }
+      event.preventDefault();
+      handleActivation(card);
+    });
+
+    track.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+      const card = event.target.closest('.featured-service-card');
+      if (!card) {
+        return;
+      }
+      event.preventDefault();
+      handleActivation(card);
+    });
+
+    track.dataset.serviceSelectionReady = 'true';
   }
 
   function getScrollAmount(track, wrapper) {
@@ -161,7 +408,9 @@
     try {
       const data = await fetchWorkshops();
       const workshops = Array.isArray(data?.workshops) ? data.workshops : [];
-      const services = buildServiceEntries(workshops);
+      const services = buildServiceData(workshops);
+
+      serviceWorkshopMap.clear();
 
       if (!services.length) {
         track.classList.add('featured-services-track--empty');
@@ -173,15 +422,18 @@
       const fragment = document.createDocumentFragment();
       services.forEach((service) => {
         fragment.appendChild(createServiceCard(service));
+        serviceWorkshopMap.set(service.key, service);
       });
 
       track.classList.remove('featured-services-track--empty');
       track.innerHTML = '';
       track.appendChild(fragment);
       setupCarousel(track);
+      setupServiceSelection(track);
       setNavDisabled(container, false);
     } catch (error) {
       console.error(error);
+      serviceWorkshopMap.clear();
       track.classList.add('featured-services-track--empty');
       track.innerHTML = ERROR_MESSAGE;
       setNavDisabled(container, true);
