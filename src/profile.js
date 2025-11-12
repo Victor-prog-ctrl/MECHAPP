@@ -117,6 +117,44 @@ function pluralize(count, singular, plural) {
     return count === 1 ? singular : plural;
 }
 
+function readPersistedIds(storageKey) {
+    if (typeof window === "undefined" || !window.localStorage) {
+        return [];
+    }
+
+    try {
+        const storedValue = window.localStorage.getItem(storageKey);
+        if (!storedValue) {
+            return [];
+        }
+
+        const parsed = JSON.parse(storedValue);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .map((value) => (value == null ? "" : String(value)))
+            .filter((value) => value.length > 0);
+    } catch (error) {
+        console.error("No se pudieron recuperar los elementos ocultos almacenados.", error);
+        return [];
+    }
+}
+
+function persistIds(storageKey, values) {
+    if (typeof window === "undefined" || !window.localStorage) {
+        return;
+    }
+
+    try {
+        const serialized = JSON.stringify(Array.from(values));
+        window.localStorage.setItem(storageKey, serialized);
+    } catch (error) {
+        console.error("No se pudieron guardar los elementos ocultos.", error);
+    }
+}
+
 function parseTextList(value) {
     if (Array.isArray(value)) {
         return value
@@ -183,8 +221,10 @@ const workshopState = {
 };
 
 let currentProfile = null;
-const dismissedRequestIds = new Set();
-const dismissedHistoryIds = new Set();
+const DISMISSED_REQUESTS_STORAGE_KEY = "profile.dismissedRequests";
+const DISMISSED_HISTORY_STORAGE_KEY = "profile.dismissedHistory";
+const dismissedRequestIds = new Set(readPersistedIds(DISMISSED_REQUESTS_STORAGE_KEY));
+const dismissedHistoryIds = new Set(readPersistedIds(DISMISSED_HISTORY_STORAGE_KEY));
 const DEFAULT_MECHANIC_EMPTY_MESSAGE =
     "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
 
@@ -545,6 +585,24 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     const normalizedRequests = Array.isArray(requests) ? requests : [];
     mechanicRequestRecords = normalizedRequests;
 
+    const availableRequestIds = new Set(
+        normalizedRequests
+            .map((request) => (request?.id != null ? String(request.id) : ""))
+            .filter((requestId) => requestId.length > 0),
+    );
+
+    let removedStoredRequest = false;
+    dismissedRequestIds.forEach((storedId) => {
+        if (!availableRequestIds.has(storedId)) {
+            dismissedRequestIds.delete(storedId);
+            removedStoredRequest = true;
+        }
+    });
+
+    if (removedStoredRequest) {
+        persistIds(DISMISSED_REQUESTS_STORAGE_KEY, dismissedRequestIds);
+    }
+
     const visibleRequests = normalizedRequests.filter((request) => {
         const requestId = request?.id != null ? String(request.id) : "";
         return requestId ? !dismissedRequestIds.has(requestId) : true;
@@ -598,6 +656,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
             const requestId = request?.id != null ? String(request.id) : "";
             if (requestId) {
                 dismissedRequestIds.add(requestId);
+                persistIds(DISMISSED_REQUESTS_STORAGE_KEY, dismissedRequestIds);
             }
 
             article.remove();
@@ -692,6 +751,24 @@ function renderClientHistory(history, { errorMessage } = {}) {
 
     clientHistoryRecords = Array.isArray(history) ? history : [];
 
+    const availableHistoryIds = new Set(
+        clientHistoryRecords
+            .map((record) => (record?.id !== null && record?.id !== undefined ? String(record.id) : ""))
+            .filter((recordId) => recordId.length > 0),
+    );
+
+    let removedStoredHistory = false;
+    dismissedHistoryIds.forEach((storedId) => {
+        if (!availableHistoryIds.has(storedId)) {
+            dismissedHistoryIds.delete(storedId);
+            removedStoredHistory = true;
+        }
+    });
+
+    if (removedStoredHistory) {
+        persistIds(DISMISSED_HISTORY_STORAGE_KEY, dismissedHistoryIds);
+    }
+
     const records = clientHistoryRecords.filter((record) => {
         const recordId = record?.id;
         if (recordId === null || recordId === undefined) {
@@ -782,6 +859,7 @@ function renderClientHistory(history, { errorMessage } = {}) {
             dismissButton.setAttribute("aria-label", "Ocultar visita del historial");
             dismissButton.addEventListener("click", () => {
                 dismissedHistoryIds.add(normalizedId);
+                persistIds(DISMISSED_HISTORY_STORAGE_KEY, dismissedHistoryIds);
                 renderClientHistory(clientHistoryRecords);
             });
             actions.appendChild(dismissButton);
