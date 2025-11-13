@@ -315,6 +315,39 @@
       let workshopsReady = false;
       let workshopsLoadError = false;
       let notifications = [];
+      const DISMISSED_NOTIFICATIONS_KEY = "mechapp.dismissedNotifications";
+      const isStorageAvailable =
+        typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+      const dismissedNotifications = (() => {
+        if (!isStorageAvailable) {
+          return new Set();
+        }
+        try {
+          const stored = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+          const parsed = stored ? JSON.parse(stored) : [];
+          if (!Array.isArray(parsed)) {
+            return new Set();
+          }
+          return new Set(parsed.filter((value) => typeof value === "string"));
+        } catch (error) {
+          console.error("No se pudo leer el estado de notificaciones descartadas", error);
+          return new Set();
+        }
+      })();
+
+      const persistDismissedNotifications = () => {
+        if (!isStorageAvailable) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(
+            DISMISSED_NOTIFICATIONS_KEY,
+            JSON.stringify([...dismissedNotifications])
+          );
+        } catch (error) {
+          console.error("No se pudo guardar el estado de notificaciones descartadas", error);
+        }
+      };
 
       const ROLE_NOTIFICATIONS = {
         cliente: [
@@ -421,7 +454,8 @@
       };
 
       const setNotifications = (items = []) => {
-        notifications = Array.isArray(items) ? [...items] : [];
+        const incoming = Array.isArray(items) ? [...items] : [];
+        notifications = incoming.filter((item) => !dismissedNotifications.has(item.id));
         renderNotifications();
       };
 
@@ -472,12 +506,17 @@
         if (!button) {
           return;
         }
+        event.stopPropagation();
         const { notificationId } = button.dataset;
         if (!notificationId) {
           return;
         }
         notifications = notifications.filter((item) => item.id !== notificationId);
         renderNotifications();
+        if (notificationId) {
+          dismissedNotifications.add(notificationId);
+          persistDismissedNotifications();
+        }
       });
 
       document.addEventListener("click", (event) => {
