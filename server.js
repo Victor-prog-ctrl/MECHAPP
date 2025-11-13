@@ -519,6 +519,7 @@ const CLIENT_HISTORY_QUERY = `
     a.visit_type,
     a.scheduled_for,
     COALESCE(a.status, 'pendiente') AS status,
+    a.rejection_reason,
     a.address,
     a.created_at,
     a.mechanic_id,
@@ -547,6 +548,7 @@ function mapAppointmentHistoryRow(row) {
     visitType: row.visit_type,
     scheduledFor: row.scheduled_for,
     status: row.status || 'pendiente',
+    rejectionReason: row.rejection_reason || null,
     address: row.address || null,
     createdAt: row.created_at,
     mechanic: hasMechanic
@@ -654,6 +656,7 @@ function ensureAppointmentsTable() {
       client_latitude REAL,
       client_longitude REAL,
       status TEXT NOT NULL DEFAULT 'pendiente',
+      rejection_reason TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (client_id) REFERENCES users(id),
       FOREIGN KEY (mechanic_id) REFERENCES users(id)
@@ -666,6 +669,7 @@ function ensureAppointmentLocationColumns() {
   const columns = db.prepare(`PRAGMA table_info(appointments)`).all();
   const hasLatitude = columns.some((column) => column.name === 'client_latitude');
   const hasLongitude = columns.some((column) => column.name === 'client_longitude');
+  const hasRejectionReason = columns.some((column) => column.name === 'rejection_reason');
 
   if (!hasLatitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
@@ -673,6 +677,10 @@ function ensureAppointmentLocationColumns() {
 
   if (!hasLongitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_longitude REAL`).run();
+  }
+
+  if (!hasRejectionReason) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN rejection_reason TEXT`).run();
   }
 }
 ensureAppointmentLocationColumns();
@@ -1700,6 +1708,7 @@ const APPOINTMENT_REQUEST_BASE_QUERY = `
     a.address,
     a.notes,
     a.status,
+    a.rejection_reason,
     a.created_at,
     a.client_latitude,
     a.client_longitude,
@@ -1722,6 +1731,7 @@ function mapAppointmentRequest(row) {
     address: row.address,
     notes: row.notes,
     status: row.status,
+    rejectionReason: row.rejection_reason || null,
     createdAt: row.created_at,
     client: {
       name: row.client_name,
@@ -1792,9 +1802,19 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
 
   const allowedStatuses = new Set(['confirmado', 'rechazado', 'completado']);
   const requestedStatus = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
+  const rejectionReason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
 
   if (!allowedStatuses.has(requestedStatus)) {
     return res.status(400).json({ error: 'Estado de solicitud no válido.' });
+  }
+
+  if (requestedStatus === 'rechazado') {
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Debes indicar el motivo del rechazo.' });
+    }
+    if (rejectionReason.length > 500) {
+      return res.status(400).json({ error: 'El motivo del rechazo no puede superar los 500 caracteres.' });
+    }
   }
 
   try {
@@ -1820,8 +1840,18 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
     }
 
     if (!isSameStatus) {
-      db.prepare('UPDATE appointments SET status = ? WHERE id = ? AND mechanic_id = ?')
-        .run(requestedStatus, requestId, req.session.userId);
+      const fields = ['status = ?'];
+      const params = [requestedStatus];
+
+      if (requestedStatus === 'rechazado') {
+        fields.push('rejection_reason = ?');
+        params.push(rejectionReason);
+      } else if (normalizedExisting === 'rechazado') {
+        fields.push('rejection_reason = NULL');
+      }
+
+      db.prepare(`UPDATE appointments SET ${fields.join(', ')} WHERE id = ? AND mechanic_id = ?`)
+        .run(...params, requestId, req.session.userId);
     }
 
     const updated = db
