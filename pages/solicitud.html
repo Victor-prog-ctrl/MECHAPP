@@ -73,6 +73,36 @@
             </section>
         </main>
 
+        <div class="rejection-panel-backdrop" data-rejection-panel hidden tabindex="-1">
+            <section
+                class="rejection-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="rejection-panel-title"
+                data-rejection-panel-content
+            >
+                <h2 id="rejection-panel-title">Motivo del rechazo</h2>
+                <p>El cliente verá este mensaje debajo de su solicitud rechazada.</p>
+                <form data-rejection-form>
+                    <label for="rejection-reason" class="sr-only">Describe el motivo del rechazo</label>
+                    <textarea
+                        id="rejection-reason"
+                        name="rejection-reason"
+                        rows="4"
+                        maxlength="500"
+                        data-rejection-input
+                        placeholder="Ej. Tengo la agenda llena para esa fecha. Podemos reagendar para la próxima semana."
+                        required
+                    ></textarea>
+                    <p class="rejection-panel__feedback" data-rejection-feedback hidden></p>
+                    <div class="rejection-panel__actions">
+                        <button type="button" class="button ghost" data-rejection-cancel>Cancelar</button>
+                        <button type="submit" class="button danger" data-rejection-confirm>Rechazar cita</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
         <script src="../src/request-detail.js" defer></script>
     </body>
 </html>

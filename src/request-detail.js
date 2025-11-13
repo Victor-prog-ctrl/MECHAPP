@@ -4,6 +4,17 @@ const requestState = {
     updating: false,
 };
 
+const rejectionPanelElements = {
+    wrapper: null,
+    form: null,
+    textarea: null,
+    feedback: null,
+    cancel: null,
+    confirm: null,
+};
+
+let rejectionPanelTrigger = null;
+
 function getStatusLabel(status) {
     const normalized = typeof status === "string" ? status.toLowerCase() : "";
 
@@ -155,6 +166,184 @@ function setInitialFeedback(status) {
     } else {
         clearFeedback();
     }
+}
+
+function isRejectionPanelReady() {
+    return (
+        Boolean(rejectionPanelElements.wrapper) &&
+        Boolean(rejectionPanelElements.form) &&
+        Boolean(rejectionPanelElements.textarea) &&
+        Boolean(rejectionPanelElements.cancel) &&
+        Boolean(rejectionPanelElements.confirm)
+    );
+}
+
+function resetRejectionPanel() {
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    rejectionPanelElements.textarea.value = "";
+    rejectionPanelElements.textarea.disabled = false;
+    rejectionPanelElements.cancel.disabled = false;
+    rejectionPanelElements.confirm.disabled = false;
+    rejectionPanelElements.textarea.removeAttribute("aria-invalid");
+
+    if (rejectionPanelElements.feedback) {
+        rejectionPanelElements.feedback.hidden = true;
+        rejectionPanelElements.feedback.textContent = "";
+    }
+}
+
+function showRejectionPanelFeedback(message) {
+    if (!rejectionPanelElements.feedback) {
+        return;
+    }
+
+    if (!message) {
+        rejectionPanelElements.feedback.hidden = true;
+        rejectionPanelElements.feedback.textContent = "";
+        return;
+    }
+
+    rejectionPanelElements.feedback.hidden = false;
+    rejectionPanelElements.feedback.textContent = message;
+}
+
+function setRejectionPanelLoading(isLoading) {
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    rejectionPanelElements.textarea.disabled = isLoading;
+    rejectionPanelElements.cancel.disabled = isLoading;
+    rejectionPanelElements.confirm.disabled = isLoading;
+}
+
+function closeRejectionPanel() {
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    rejectionPanelElements.wrapper.hidden = true;
+    rejectionPanelElements.wrapper.setAttribute("aria-hidden", "true");
+    resetRejectionPanel();
+
+    if (rejectionPanelTrigger && typeof rejectionPanelTrigger.focus === "function") {
+        rejectionPanelTrigger.focus();
+    }
+
+    rejectionPanelTrigger = null;
+}
+
+function openRejectionPanel(triggerElement) {
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    rejectionPanelTrigger = triggerElement || null;
+    rejectionPanelElements.wrapper.hidden = false;
+    rejectionPanelElements.wrapper.removeAttribute("aria-hidden");
+    showRejectionPanelFeedback("");
+    rejectionPanelElements.textarea.value = "";
+    rejectionPanelElements.textarea.disabled = false;
+    rejectionPanelElements.cancel.disabled = false;
+    rejectionPanelElements.confirm.disabled = false;
+
+    window.requestAnimationFrame(() => {
+        rejectionPanelElements.textarea.focus();
+    });
+}
+
+async function submitRejectionReason(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    const reason = rejectionPanelElements.textarea.value.trim();
+
+    if (!reason) {
+        rejectionPanelElements.textarea.setAttribute("aria-invalid", "true");
+        showRejectionPanelFeedback("Ingresa el motivo del rechazo.");
+        rejectionPanelElements.textarea.focus();
+        return;
+    }
+
+    rejectionPanelElements.textarea.removeAttribute("aria-invalid");
+    showRejectionPanelFeedback("");
+    setRejectionPanelLoading(true);
+
+    const success = await handleStatusChange("rechazado", { reason });
+
+    setRejectionPanelLoading(false);
+
+    if (success) {
+        closeRejectionPanel();
+    } else {
+        showRejectionPanelFeedback("No se pudo rechazar la solicitud. Intenta nuevamente.");
+    }
+}
+
+function setupRejectionPanel() {
+    rejectionPanelElements.wrapper = document.querySelector("[data-rejection-panel]");
+    rejectionPanelElements.form = document.querySelector("[data-rejection-form]");
+    rejectionPanelElements.textarea = document.querySelector("[data-rejection-input]");
+    rejectionPanelElements.feedback = document.querySelector("[data-rejection-feedback]");
+    rejectionPanelElements.cancel = document.querySelector("[data-rejection-cancel]");
+    rejectionPanelElements.confirm = document.querySelector("[data-rejection-confirm]");
+
+    if (!isRejectionPanelReady()) {
+        return;
+    }
+
+    rejectionPanelElements.wrapper.hidden = true;
+    rejectionPanelElements.wrapper.setAttribute("aria-hidden", "true");
+
+    rejectionPanelElements.form.addEventListener("submit", submitRejectionReason);
+    rejectionPanelElements.cancel.addEventListener("click", (event) => {
+        event.preventDefault();
+        closeRejectionPanel();
+    });
+
+    rejectionPanelElements.wrapper.addEventListener("click", (event) => {
+        if (event.target === rejectionPanelElements.wrapper) {
+            closeRejectionPanel();
+        }
+    });
+
+    rejectionPanelElements.wrapper.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeRejectionPanel();
+        }
+    });
+}
+
+function startRejectionFlow(triggerElement) {
+    if (isRejectionPanelReady()) {
+        openRejectionPanel(triggerElement);
+        return;
+    }
+
+    const reason = window.prompt(
+        "Describe brevemente el motivo del rechazo. El cliente verá este mensaje.",
+    );
+
+    if (reason === null) {
+        return;
+    }
+
+    const trimmed = reason.trim();
+    if (!trimmed) {
+        showFeedback("Debes ingresar un motivo para rechazar la solicitud.", "error");
+        return;
+    }
+
+    handleStatusChange("rechazado", { reason: trimmed });
 }
 
 function updateActionButtons(status) {
@@ -314,29 +503,22 @@ async function updateRequestStatus(id, payload) {
     return data?.request || null;
 }
 
-async function handleStatusChange(newStatus) {
+async function handleStatusChange(newStatus, { reason } = {}) {
     if (!requestState.id || requestState.updating) {
-        return;
+        return false;
     }
 
     const payload = { status: newStatus };
 
     if (newStatus === "rechazado") {
-        const reason = window.prompt(
-            "Describe brevemente el motivo del rechazo. El cliente verá este mensaje.",
-        );
+        const trimmedReason = typeof reason === "string" ? reason.trim() : "";
 
-        if (reason === null) {
-            return;
-        }
-
-        const trimmed = reason.trim();
-        if (!trimmed) {
+        if (!trimmedReason) {
             showFeedback("Debes ingresar un motivo para rechazar la solicitud.", "error");
-            return;
+            return false;
         }
 
-        payload.reason = trimmed;
+        payload.reason = trimmedReason;
     }
 
     requestState.updating = true;
@@ -351,12 +533,14 @@ async function handleStatusChange(newStatus) {
 
         renderRequest(updatedRequest, { preserveFeedback: true });
         window.location.href = "./perfil.html";
+        return true;
     } catch (error) {
         console.error(error);
         showFeedback(
             error instanceof Error ? error.message : "No se pudo actualizar la solicitud. Intenta más tarde.",
             "error",
         );
+        return false;
     } finally {
         requestState.updating = false;
         updateActionButtons(requestState.data?.status || "");
@@ -423,6 +607,7 @@ async function initializePage() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initializePage();
+    setupRejectionPanel();
 
     const acceptButton = document.querySelector('[data-action="accept"]');
     const rejectButton = document.querySelector('[data-action="reject"]');
@@ -434,7 +619,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (rejectButton) {
-        rejectButton.addEventListener("click", () => handleStatusChange("rechazado"));
+        rejectButton.addEventListener("click", (event) => startRejectionFlow(event.currentTarget));
     }
 
     if (backButton) {
