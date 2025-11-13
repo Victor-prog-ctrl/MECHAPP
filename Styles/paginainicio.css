@@ -51,6 +51,8 @@ main {
     justify-content: space-between;
     gap: 24px;
     margin-bottom: 32px;
+    position: relative;
+    z-index: 20;
 }
 
 .brand {
@@ -147,7 +149,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    z-index: 10;
+    z-index: 40;
 }
 
 .notification-panel__header {
