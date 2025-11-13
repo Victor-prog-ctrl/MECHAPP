@@ -843,11 +843,24 @@ function renderClientHistory(history, { errorMessage } = {}) {
         const actions = document.createElement("div");
         actions.className = "history-actions";
 
+        const statusWrapper = document.createElement("div");
+        statusWrapper.className = "history-status";
+
         const statusBadge = document.createElement("span");
         const statusClass = getStatusClass(record?.status);
         statusBadge.className = `status ${statusClass}`;
         statusBadge.textContent = getStatusLabel(record?.status);
-        actions.appendChild(statusBadge);
+        statusWrapper.appendChild(statusBadge);
+
+        const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
+        if (normalizedStatus === "rechazado" && record?.rejectionReason) {
+            const reason = document.createElement("p");
+            reason.className = "history-rejection-reason";
+            reason.textContent = `Motivo: ${record.rejectionReason}`;
+            statusWrapper.appendChild(reason);
+        }
+
+        actions.appendChild(statusWrapper);
 
         const recordId = record?.id;
         if (recordId !== null && recordId !== undefined) {

@@ -285,12 +285,12 @@ async function fetchRequest(id) {
     return data?.request || null;
 }
 
-async function updateRequestStatus(id, status) {
+async function updateRequestStatus(id, payload) {
     const response = await fetch(`/api/appointments/requests/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(payload),
     });
 
     if (response.status === 401) {
@@ -319,12 +319,32 @@ async function handleStatusChange(newStatus) {
         return;
     }
 
+    const payload = { status: newStatus };
+
+    if (newStatus === "rechazado") {
+        const reason = window.prompt(
+            "Describe brevemente el motivo del rechazo. El cliente verá este mensaje.",
+        );
+
+        if (reason === null) {
+            return;
+        }
+
+        const trimmed = reason.trim();
+        if (!trimmed) {
+            showFeedback("Debes ingresar un motivo para rechazar la solicitud.", "error");
+            return;
+        }
+
+        payload.reason = trimmed;
+    }
+
     requestState.updating = true;
     updateActionButtons(requestState.data?.status || "");
     showFeedback("Actualizando solicitud...", "info");
 
     try {
-        const updatedRequest = await updateRequestStatus(requestState.id, newStatus);
+        const updatedRequest = await updateRequestStatus(requestState.id, payload);
         if (!updatedRequest) {
             throw new Error("No se pudo actualizar la solicitud.");
         }
