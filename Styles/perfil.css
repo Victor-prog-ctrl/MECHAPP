@@ -387,11 +387,12 @@ main {
 }
 
 .history-rejection-reason {
-    color: #d14343;
+    color: #b91c1c;
     font-size: 0.9rem;
-    margin: 0;
-    max-width: 280px;
-    text-align: right;
+    margin: 6px 0 0;
+    max-width: 460px;
+    text-align: left;
+    line-height: 1.4;
 }
 
 .history-dismiss {

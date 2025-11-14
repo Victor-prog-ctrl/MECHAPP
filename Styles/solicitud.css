@@ -199,13 +199,17 @@ body {
 }
 
 .button.ghost.danger {
+    background: transparent;
     color: var(--danger);
-    border-color: var(--danger-border);
+    border-color: rgba(185, 28, 28, 0.5);
+    box-shadow: none;
 }
 
 .button.ghost.danger:hover,
 .button.ghost.danger:focus {
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(185, 28, 28, 0.12);
+    color: var(--danger);
+    box-shadow: none;
 }
 
 .status-badge {

@@ -62,9 +62,26 @@ function getStatusClass(status) {
     }
 }
 
-function canRequestBeCompleted(status) {
-    const normalized = typeof status === "string" ? status.toLowerCase() : "";
-    return normalized === "pendiente" || normalized === "confirmado";
+function canRequestBeCompleted(request) {
+    if (!request) {
+        return false;
+    }
+
+    const normalized = typeof request.status === "string" ? request.status.toLowerCase() : "";
+    if (normalized !== "confirmado") {
+        return false;
+    }
+
+    if (!request.scheduledFor) {
+        return true;
+    }
+
+    const scheduledDate = new Date(request.scheduledFor);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return true;
+    }
+
+    return scheduledDate.getTime() <= Date.now();
 }
 
 function formatDateTime(dateString) {
@@ -221,9 +238,7 @@ const workshopState = {
 };
 
 let currentProfile = null;
-const DISMISSED_REQUESTS_STORAGE_KEY = "profile.dismissedRequests";
 const DISMISSED_HISTORY_STORAGE_KEY = "profile.dismissedHistory";
-const dismissedRequestIds = new Set(readPersistedIds(DISMISSED_REQUESTS_STORAGE_KEY));
 const dismissedHistoryIds = new Set(readPersistedIds(DISMISSED_HISTORY_STORAGE_KEY));
 const DEFAULT_MECHANIC_EMPTY_MESSAGE =
     "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
@@ -585,28 +600,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     const normalizedRequests = Array.isArray(requests) ? requests : [];
     mechanicRequestRecords = normalizedRequests;
 
-    const availableRequestIds = new Set(
-        normalizedRequests
-            .map((request) => (request?.id != null ? String(request.id) : ""))
-            .filter((requestId) => requestId.length > 0),
-    );
-
-    let removedStoredRequest = false;
-    dismissedRequestIds.forEach((storedId) => {
-        if (!availableRequestIds.has(storedId)) {
-            dismissedRequestIds.delete(storedId);
-            removedStoredRequest = true;
-        }
-    });
-
-    if (removedStoredRequest) {
-        persistIds(DISMISSED_REQUESTS_STORAGE_KEY, dismissedRequestIds);
-    }
-
-    const visibleRequests = normalizedRequests.filter((request) => {
-        const requestId = request?.id != null ? String(request.id) : "";
-        return requestId ? !dismissedRequestIds.has(requestId) : true;
-    });
+    const visibleRequests = normalizedRequests;
 
     if (!visibleRequests.length) {
         container.innerHTML = "";
@@ -652,19 +646,34 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         dismissButton.innerHTML = "<span aria-hidden=\"true\">×</span>";
         dismissButton.setAttribute("aria-label", "Ocultar solicitud de la lista");
 
-        dismissButton.addEventListener("click", () => {
+        dismissButton.addEventListener("click", async () => {
             const requestId = request?.id != null ? String(request.id) : "";
-            if (requestId) {
-                dismissedRequestIds.add(requestId);
-                persistIds(DISMISSED_REQUESTS_STORAGE_KEY, dismissedRequestIds);
+            if (!requestId || dismissButton.disabled) {
+                return;
             }
 
-            article.remove();
+            dismissButton.disabled = true;
 
-            if (emptyState) {
-                const hasVisibleRequests = container.querySelector(".request-card");
-                emptyState.textContent = DEFAULT_MECHANIC_EMPTY_MESSAGE;
-                emptyState.hidden = Boolean(hasVisibleRequests);
+            try {
+                await dismissMechanicRequest(requestId);
+                mechanicRequestRecords = mechanicRequestRecords.filter((item) => {
+                    return item?.id != null ? String(item.id) !== requestId : true;
+                });
+                article.remove();
+
+                if (emptyState) {
+                    const hasVisibleRequests = container.querySelector(".request-card");
+                    emptyState.textContent = DEFAULT_MECHANIC_EMPTY_MESSAGE;
+                    emptyState.hidden = Boolean(hasVisibleRequests);
+                }
+            } catch (error) {
+                console.error(error);
+                window.alert(
+                    error instanceof Error
+                        ? error.message
+                        : "No se pudo ocultar la solicitud. Intenta nuevamente.",
+                );
+                dismissButton.disabled = false;
             }
         });
 
@@ -720,7 +729,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
             `Ver detalles de la solicitud ${request.service || "de servicio"}`,
         );
 
-        if (canRequestBeCompleted(request.status)) {
+        if (canRequestBeCompleted(request)) {
             const completeButton = document.createElement("button");
             completeButton.type = "button";
             completeButton.className = "button button--primary";
@@ -838,6 +847,17 @@ function renderClientHistory(history, { errorMessage } = {}) {
             info.appendChild(meta);
         }
 
+        const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
+        if (normalizedStatus === "rechazado") {
+            const reasonDetail = document.createElement("p");
+            reasonDetail.className = "history-rejection-reason";
+            const reasonText = typeof record?.rejectionReason === "string" ? record.rejectionReason.trim() : "";
+            reasonDetail.textContent = reasonText
+                ? `Motivo del rechazo: ${reasonText}`
+                : "Motivo del rechazo: el taller no indicó un motivo.";
+            info.appendChild(reasonDetail);
+        }
+
         article.appendChild(info);
 
         const actions = document.createElement("div");
@@ -851,14 +871,6 @@ function renderClientHistory(history, { errorMessage } = {}) {
         statusBadge.className = `status ${statusClass}`;
         statusBadge.textContent = getStatusLabel(record?.status);
         statusWrapper.appendChild(statusBadge);
-
-        const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
-        if (normalizedStatus === "rechazado" && record?.rejectionReason) {
-            const reason = document.createElement("p");
-            reason.className = "history-rejection-reason";
-            reason.textContent = `Motivo: ${record.rejectionReason}`;
-            statusWrapper.appendChild(reason);
-        }
 
         actions.appendChild(statusWrapper);
 
@@ -1455,6 +1467,37 @@ async function fetchMechanicRequests() {
 
     const data = await response.json();
     return Array.isArray(data?.requests) ? data.requests : [];
+}
+
+async function dismissMechanicRequest(requestId) {
+    if (!requestId) {
+        throw new Error("Identificador de solicitud no válido.");
+    }
+
+    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(requestId)}/dismiss`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return false;
+    }
+
+    if (response.status === 403) {
+        throw new Error("No tienes permisos para ocultar esta solicitud.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("No encontramos la solicitud que intentas ocultar.");
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudo ocultar la solicitud. Intenta nuevamente.");
+    }
+
+    return true;
 }
 
 async function fetchClientHistory() {
