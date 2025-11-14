@@ -499,6 +499,15 @@ function mapReviewRow(row) {
   };
 }
 
+function normalizeReason(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : '';
+}
+
 const CLIENT_HISTORY_QUERY = `
   WITH latest_workshops AS (
     SELECT
@@ -542,6 +551,7 @@ function mapAppointmentHistoryRow(row) {
 
   const mechanicId = Number(row.mechanic_id);
   const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
+  const rejectionReason = normalizeReason(row.rejection_reason);
 
   return {
     id: Number(row.id),
@@ -549,7 +559,7 @@ function mapAppointmentHistoryRow(row) {
     visitType: row.visit_type,
     scheduledFor: row.scheduled_for,
     status: row.status || 'pendiente',
-    rejectionReason: row.rejection_reason || null,
+    rejectionReason: rejectionReason || null,
     address: row.address || null,
     createdAt: row.created_at,
     mechanic: hasMechanic
@@ -626,13 +636,12 @@ function getClientNotifications(clientId) {
     const scheduledLabel = formatNotificationDate(row.scheduled_for);
 
     if (normalizedStatus === 'rechazado') {
-      const reasonText = row.rejection_reason
-        ? ` Motivo: ${row.rejection_reason}`
-        : ' Motivo: el taller no indicó un motivo.';
+      const reasonText = normalizeReason(row.rejection_reason);
+      const reasonSuffix = reasonText ? ` Motivo: ${reasonText}` : '';
       notifications.push({
         id: `client-rejected-${row.id}`,
         type: 'warning',
-        message: `El taller rechazó ${service}.${reasonText}`,
+        message: `El taller rechazó ${service}.${reasonSuffix}`,
         action: { label: 'Ver historial', href: './perfil.html#historial' },
       });
       return;
@@ -1912,6 +1921,8 @@ function mapAppointmentRequest(row) {
     return null;
   }
 
+  const rejectionReason = normalizeReason(row.rejection_reason);
+
   return {
     id: row.id,
     service: row.service,
@@ -1920,7 +1931,7 @@ function mapAppointmentRequest(row) {
     address: row.address,
     notes: row.notes,
     status: row.status,
-    rejectionReason: row.rejection_reason || null,
+    rejectionReason: rejectionReason || null,
     createdAt: row.created_at,
     client: {
       name: row.client_name,

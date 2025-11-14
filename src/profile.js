@@ -849,9 +849,6 @@ function renderClientHistory(history, { errorMessage } = {}) {
 
         const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
         if (normalizedStatus === "rechazado") {
-            const reasonDetail = document.createElement("p");
-            reasonDetail.className = "history-rejection-reason";
-
             const rawReason =
                 typeof record?.rejectionReason === "string"
                     ? record.rejectionReason
@@ -862,10 +859,12 @@ function renderClientHistory(history, { errorMessage } = {}) {
                           : "";
             const reasonText = rawReason.trim();
 
-            reasonDetail.textContent = reasonText
-                ? `Motivo del rechazo: ${reasonText}`
-                : "Motivo del rechazo: el taller no indicó un motivo.";
-            info.appendChild(reasonDetail);
+            if (reasonText) {
+                const reasonDetail = document.createElement("p");
+                reasonDetail.className = "history-rejection-reason";
+                reasonDetail.textContent = `Motivo del rechazo: ${reasonText}`;
+                info.appendChild(reasonDetail);
+            }
         }
 
         article.appendChild(info);
