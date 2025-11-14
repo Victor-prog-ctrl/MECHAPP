@@ -848,23 +848,22 @@ function renderClientHistory(history, { errorMessage } = {}) {
         }
 
         const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
-        if (normalizedStatus === "rechazado") {
-            const rawReason =
-                typeof record?.rejectionReason === "string"
-                    ? record.rejectionReason
-                    : typeof record?.rejection_reason === "string"
-                      ? record.rejection_reason
-                      : typeof record?.reason === "string"
-                          ? record.reason
-                          : "";
-            const reasonText = rawReason.trim();
+        const rawReason =
+            typeof record?.rejectionReason === "string"
+                ? record.rejectionReason
+                : typeof record?.rejection_reason === "string"
+                  ? record.rejection_reason
+                  : typeof record?.reason === "string"
+                      ? record.reason
+                      : "";
+        const reasonText = rawReason.trim();
 
-            if (reasonText) {
-                const reasonDetail = document.createElement("p");
-                reasonDetail.className = "history-rejection-reason";
-                reasonDetail.textContent = `Motivo del rechazo: ${reasonText}`;
-                info.appendChild(reasonDetail);
-            }
+        if (reasonText) {
+            const reasonDetail = document.createElement("p");
+            reasonDetail.className = "history-rejection-reason";
+            const prefix = normalizedStatus === "rechazado" ? "Motivo del rechazo" : "Mensaje del taller";
+            reasonDetail.textContent = `${prefix}: ${reasonText}`;
+            info.appendChild(reasonDetail);
         }
 
         article.appendChild(info);
