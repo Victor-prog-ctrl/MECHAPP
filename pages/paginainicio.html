@@ -277,6 +277,7 @@
               visibilityState.isAuthenticated = false;
               visibilityState.isMechanic = false;
               applyVisibilityState();
+              clearNotifications();
               return;
             }
             throw new Error("No se pudo obtener el perfil del usuario");
@@ -285,8 +286,7 @@
           visibilityState.isAuthenticated = true;
           visibilityState.isMechanic = profile?.accountType === "mecanico";
           applyVisibilityState();
-          const role = visibilityState.isMechanic ? "mecanico" : "cliente";
-          setNotifications(ROLE_NOTIFICATIONS[role] ?? []);
+          fetchNotifications();
         } catch (e) {
           console.error(e);
           visibilityState.isAuthenticated = false;
@@ -347,56 +347,6 @@
         } catch (error) {
           console.error("No se pudo guardar el estado de notificaciones descartadas", error);
         }
-      };
-
-      const ROLE_NOTIFICATIONS = {
-        cliente: [
-          {
-            id: "client-registration",
-            message: "¡Tu registro en Mechapp se completó correctamente!",
-            type: "success",
-          },
-          {
-            id: "client-request-sent",
-            message: "Tu solicitud al taller fue enviada con éxito. En breve te contactarán.",
-            type: "info",
-          },
-          {
-            id: "client-appointment-accepted",
-            message: "El taller Ruta 5 aceptó tu cita del 25 de junio.",
-            type: "success",
-          },
-          {
-            id: "client-appointment-rejected",
-            message: "El taller Ciudad Motor no puede atender tu cita del 28 de junio.",
-            type: "warning",
-          },
-        ],
-        mecanico: [
-          {
-            id: "mechanic-registration",
-            message: "Tu taller se registró correctamente en Mechapp.",
-            type: "success",
-          },
-          {
-            id: "mechanic-requests",
-            message: "Tienes nuevas solicitudes esperando confirmación.",
-            type: "info",
-            action: {
-              label: "Ir a solicitudes",
-              href: "./perfil.html#solicitudes",
-            },
-          },
-          {
-            id: "mechanic-review",
-            message: "Un cliente acaba de escribir una reseña sobre tu servicio.",
-            type: "info",
-            action: {
-              label: "Ver reseñas",
-              href: "./resenas-taller.html",
-            },
-          },
-        ],
       };
 
       const renderNotifications = () => {
@@ -491,6 +441,37 @@
         notifications = [];
         renderNotifications();
         closeNotificationPanel();
+      };
+
+      const fetchNotifications = async () => {
+        if (!visibilityState.isAuthenticated) {
+          clearNotifications();
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/notifications", {
+            credentials: "same-origin",
+          });
+
+          if (response.status === 401) {
+            clearNotifications();
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("No se pudieron obtener las notificaciones.");
+          }
+
+          const data = await response.json();
+          const serverNotifications = Array.isArray(data?.notifications)
+            ? data.notifications
+            : [];
+          setNotifications(serverNotifications);
+        } catch (error) {
+          console.error("No se pudieron obtener las notificaciones", error);
+          clearNotifications();
+        }
       };
 
       notificationToggle?.addEventListener("click", () => {
