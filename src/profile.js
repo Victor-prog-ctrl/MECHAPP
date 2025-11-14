@@ -851,7 +851,17 @@ function renderClientHistory(history, { errorMessage } = {}) {
         if (normalizedStatus === "rechazado") {
             const reasonDetail = document.createElement("p");
             reasonDetail.className = "history-rejection-reason";
-            const reasonText = typeof record?.rejectionReason === "string" ? record.rejectionReason.trim() : "";
+
+            const rawReason =
+                typeof record?.rejectionReason === "string"
+                    ? record.rejectionReason
+                    : typeof record?.rejection_reason === "string"
+                      ? record.rejection_reason
+                      : typeof record?.reason === "string"
+                          ? record.reason
+                          : "";
+            const reasonText = rawReason.trim();
+
             reasonDetail.textContent = reasonText
                 ? `Motivo del rechazo: ${reasonText}`
                 : "Motivo del rechazo: el taller no indicó un motivo.";
