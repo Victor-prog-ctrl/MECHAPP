@@ -1,13 +1,13 @@
 :root {
-  --bg: #005187;
-  --surface: #f3f8ff;
-  --surface-alt: #dbe9ff;
-  --text: #0b1f33;
-  --text-muted: #4d6784;
-  --accent: #00c2ff;
-  --accent-dark: #0086c9;
-  --accent-soft: rgba(0, 162, 255, 0.18);
-  --border: rgba(0, 53, 106, 0.15);
+  --bg: #0f172a;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --accent: #f97316;
+  --accent-dark: #ea580c;
+  --accent-soft: rgba(249, 115, 22, 0.12);
+  --border: rgba(15, 23, 42, 0.08);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -21,7 +21,8 @@
 
 body {
   font-family: "Manrope", sans-serif;
-  background: #005187;
+  background: radial-gradient(circle at 10% -10%, rgba(249, 115, 22, 0.15), transparent 55%),
+    radial-gradient(circle at 90% 110%, rgba(249, 115, 22, 0.1), transparent 50%), var(--bg);
   color: var(--text);
   min-height: 100vh;
   padding: 36px 24px 64px;
@@ -36,8 +37,9 @@ main {
 
 .site-header {
   width: min(1120px, 100%);
-  background: linear-gradient(135deg, #f3f8ff, #cfe3ff);
-  border: 1px solid rgba(0, 82, 135, 0.18);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
   border-radius: var(--radius-lg);
   padding: 18px 32px;
   display: flex;
@@ -45,7 +47,7 @@ main {
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 32px;
-  box-shadow: 0 18px 48px rgba(0, 28, 61, 0.25);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
 }
 
 .brand {
@@ -54,7 +56,7 @@ main {
   gap: 12px;
   font-weight: 700;
   font-size: 1.25rem;
-  color: var(--text);
+  color: #fff;
   text-decoration: none;
 }
 
@@ -88,12 +90,12 @@ main {
 .button.button-primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 12px 28px rgba(0, 162, 255, 0.42);
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.28);
 }
 
 .button.button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(0, 162, 255, 0.46);
+  box-shadow: 0 18px 40px rgba(249, 115, 22, 0.3);
 }
 
 .button.ghost {
