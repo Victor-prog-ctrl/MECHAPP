@@ -377,15 +377,15 @@ function mapWorkshopSummary(row) {
     latestReview:
       row.latest_comment && row.latest_rating
         ? {
-            rating: Number(row.latest_rating),
-            comment: row.latest_comment,
-            headline: row.latest_headline || null,
-            service: row.latest_service || null,
-            visitDate: row.latest_visit_date || null,
-            visitType: row.latest_visit_type || null,
-            createdAt: row.latest_created_at,
-            clientName: row.latest_client_name || 'Cliente verificado',
-          }
+          rating: Number(row.latest_rating),
+          comment: row.latest_comment,
+          headline: row.latest_headline || null,
+          service: row.latest_service || null,
+          visitDate: row.latest_visit_date || null,
+          visitType: row.latest_visit_type || null,
+          createdAt: row.latest_created_at,
+          clientName: row.latest_client_name || 'Cliente verificado',
+        }
         : null,
   };
 }
@@ -564,18 +564,18 @@ function mapAppointmentHistoryRow(row) {
     createdAt: row.created_at,
     mechanic: hasMechanic
       ? {
-          id: mechanicId,
-          name: row.mechanic_name || null,
-          email: row.mechanic_email || null,
-        }
+        id: mechanicId,
+        name: row.mechanic_name || null,
+        email: row.mechanic_email || null,
+      }
       : null,
     workshop: row.workshop_id
       ? {
-          id: row.workshop_id,
-          name: row.workshop_name || null,
-          address: row.workshop_address || null,
-          photo: row.workshop_photo || null,
-        }
+        id: row.workshop_id,
+        name: row.workshop_name || null,
+        address: row.workshop_address || null,
+        photo: row.workshop_photo || null,
+      }
       : null,
   };
 }
@@ -648,16 +648,45 @@ function getClientNotifications(clientId) {
     }
 
     if (normalizedStatus === 'confirmado') {
+      const abonoPagado =
+        row.abono_pagado === 1 ||
+        row.abono_pagado === '1' ||
+        row.abono_pagado === true;
+
+      if (abonoPagado) {
+        notifications.push({
+          id: `client-abono-paid-${row.id}`,
+          type: 'success',
+          message: scheduledLabel
+            ? `Tu abono para la cita de ${service} del ${scheduledLabel} ya fue pagado.`
+            : `Tu abono para la cita de ${service} ya fue pagado.`,
+          // sin action, porque ya está pagado
+        });
+        return;
+      }
+
+      // Si NO está pagado, mostramos el botón para ir a pagar
+      const query = new URLSearchParams();
+      if (row.id) {
+        query.set('appointmentId', row.id);
+      }
+      if (service) {
+        query.set('service', service);
+      }
+      const paymentHref = `./pago-abono.html${query.toString() ? `?${query.toString()}` : ''}`;
+
       notifications.push({
         id: `client-confirmed-${row.id}`,
         type: 'success',
         message: scheduledLabel
-          ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada.`
-          : `Tu cita de ${service} fue confirmada.`,
-        action: { label: 'Ver historial', href: './perfil.html#historial' },
+          ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada. Paga tu abono para reconfirmar tu visita.`
+          : `Tu cita de ${service} fue confirmada. Paga tu abono para reconfirmar tu visita.`,
+        action: { label: 'Paga tu abono', href: paymentHref },
       });
       return;
     }
+
+
 
     if (normalizedStatus === 'pendiente') {
       notifications.push({
@@ -1940,9 +1969,9 @@ function mapAppointmentRequest(row) {
     clientLocation:
       row.client_latitude !== null && row.client_longitude !== null
         ? {
-            latitude: row.client_latitude,
-            longitude: row.client_longitude,
-          }
+          latitude: row.client_latitude,
+          longitude: row.client_longitude,
+        }
         : null,
   };
 }
@@ -2131,11 +2160,11 @@ app.post('/api/paypal/capture', async (req, res) => {
     const data = await capturePayPalOrder(orderID);
 
     // 2) Extraer datos útiles
-    const pu  = data?.purchase_units?.[0];
+    const pu = data?.purchase_units?.[0];
     const cap = pu?.payments?.captures?.[0];
 
-    const status   = cap?.status || data?.status || 'COMPLETADO';
-    const amount   = cap?.amount?.value || pu?.amount?.value || null;
+    const status = cap?.status || data?.status || 'COMPLETADO';
+    const amount = cap?.amount?.value || pu?.amount?.value || null;
     const currency = cap?.amount?.currency_code || pu?.amount?.currency_code || null;
     const payerEmail = data?.payer?.email_address || null;
 
@@ -2258,7 +2287,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
          ORDER BY datetime(created_at) DESC`
       )
       .all();
-  res.json({ users });
+    res.json({ users });
   } catch (error) {
     console.error('Error obteniendo usuarios para el panel de administración', error);
     res.status(500).json({ error: 'No se pudieron obtener los usuarios.' });
