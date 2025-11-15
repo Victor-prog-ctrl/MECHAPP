@@ -662,7 +662,11 @@ function getClientNotifications(clientId) {
         message: scheduledLabel
           ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada. Paga tu abono para reconfirmar tu visita.`
           : `Tu cita de ${service} fue confirmada. Paga tu abono para reconfirmar tu visita.`,
+ codex/add-payment-button-to-appointment-confirmation-s0wxbk
         action: { label: 'Pagar abono', href: paymentHref },
+=======
+        action: { label: 'Paga tu abono', href: paymentHref },
+ main
       });
       return;
     }
