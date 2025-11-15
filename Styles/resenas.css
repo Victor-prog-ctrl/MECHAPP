@@ -1,14 +1,14 @@
 :root {
-  --bg: #0f172a;
-  --bg-secondary: #1e293b;
-  --surface: #ffffff;
-  --surface-alt: #f8fafc;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --accent: #f97316;
-  --accent-dark: #ea580c;
-  --accent-soft: rgba(249, 115, 22, 0.12);
-  --border: rgba(15, 23, 42, 0.08);
+  --bg: #005187;
+  --bg-secondary: #0b6fbf;
+  --surface: #f3f8ff;
+  --surface-alt: #dbe9ff;
+  --text: #0b1f33;
+  --text-muted: #4d6784;
+  --accent: #00c2ff;
+  --accent-dark: #0086c9;
+  --accent-soft: rgba(0, 162, 255, 0.18);
+  --border: rgba(0, 53, 106, 0.15);
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -22,9 +22,8 @@
 
 body {
   font-family: "Manrope", sans-serif;
-  background: radial-gradient(circle at 10% -10%, rgba(249, 115, 22, 0.18), transparent 55%),
-    radial-gradient(circle at 90% 110%, rgba(249, 115, 22, 0.12), transparent 50%), var(--bg);
-  color: var(--surface);
+  background: #005187;
+  color: var(--text);
   min-height: 100vh;
   padding: 36px 24px 64px;
   display: flex;
@@ -38,122 +37,155 @@ main {
 
 .site-header {
   width: min(1120px, 100%);
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
-  border-radius: var(--radius-lg);
-  padding: 18px 32px;
+  background: linear-gradient(135deg, var(--surface), #cfe3ff);
+  border: 1px solid rgba(0, 82, 135, 0.18);
+  border-radius: 999px;
+  padding: 16px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+  gap: 20px;
+  margin-bottom: 36px;
+  box-shadow: 0 18px 48px rgba(0, 28, 61, 0.25);
+  flex-wrap: wrap;
 }
 
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 12px;
   font-weight: 700;
-  font-size: 1.25rem;
-  color: #fff;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .brand-logo {
-  width: 70px;
-  height: 70px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.4));
+  filter: drop-shadow(0 8px 14px rgba(16, 24, 40, 0.08));
+}
+
+.brand-name {
+  letter-spacing: 0.02em;
 }
 
 .main-nav {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   flex: 1;
   justify-content: center;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
   flex-wrap: wrap;
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--text-muted);
   text-decoration: none;
-  font-weight: 500;
-  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 18px;
   border-radius: 999px;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .nav-link:hover,
+.nav-link:focus {
+  color: var(--text);
+  background: rgba(0, 162, 255, 0.12);
+}
+
 .nav-link.active {
-  background: rgba(249, 115, 22, 0.2);
-  color: #fff;
+  color: var(--accent);
+  background: rgba(0, 162, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(0, 162, 255, 0.26);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
+
 
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 18px;
+  min-height: 44px;
+  min-width: 148px;
+  padding: 0 24px;
   border-radius: 999px;
+  border: 1px solid var(--accent);
   font-weight: 600;
-  font-size: 0.95rem;
-  border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  color: #fff;
+  background: var(--accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(0, 162, 255, 0.4);
+  background: var(--accent-dark);
 }
 
 .button.button-small {
-  padding: 8px 14px;
-  font-size: 0.85rem;
-}
-
-.button-primary {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.28);
-}
-
-.button-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(249, 115, 22, 0.3);
+  min-width: auto;
+  padding: 0 18px;
+  font-size: 0.9rem;
 }
 
 .button-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #fff;
+  color: var(--accent);
+  border-color: rgba(0, 162, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(0, 162, 255, 0.3);
 }
 
-.button-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
+.button-secondary:hover,
+.button-secondary:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0, 162, 255, 0.12);
 }
 
 .button.ghost {
-  background: rgba(15, 23, 42, 0.16);
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: var(--accent);
+  border-color: rgba(0, 162, 255, 0.78);
+  box-shadow: none;
 }
 
-.button.ghost:hover {
-  background: rgba(15, 23, 42, 0.26);
+.button.ghost:hover,
+.button.ghost:focus-visible {
+  background: rgba(0, 162, 255, 0.12);
+}
+
+.header-actions .button {
+  min-width: 160px;
 }
 
 .hero {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.65)),
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 244, 247, 0.95)),
     url("../assets/autoinicio.jpg") center / cover no-repeat;
   border-radius: var(--radius-lg);
   padding: 56px 48px;
-  color: #fff;
+  color: var(--text);
   margin-bottom: 36px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 48px rgba(16, 24, 40, 0.08);
 }
 
 .visually-hidden {
@@ -170,7 +202,8 @@ main {
 
 .hero span {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--accent-soft);
+  color: var(--accent);
   padding: 6px 14px;
   border-radius: 999px;
   font-weight: 600;
@@ -188,7 +221,7 @@ main {
   font-size: 1.05rem;
   line-height: 1.6;
   max-width: 540px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-muted);
 }
 
 .review-toolbar {
@@ -198,7 +231,12 @@ main {
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 28px;
-  color: rgba(248, 250, 252, 0.85);
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.08);
+  color: var(--text);
 }
 
 .review-toolbar .stats {
@@ -237,17 +275,18 @@ main {
 .filter-group select {
   padding: 10px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid var(--border);
   font-size: 0.95rem;
   color: var(--text);
-  background: var(--surface);
+  background: var(--surface-alt);
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .filter-group select:focus {
   outline: none;
-  border-color: rgba(249, 115, 22, 0.5);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 162, 255, 0.26);
 }
 
 .review-grid {
@@ -259,9 +298,9 @@ main {
 .review-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--border);
   padding: 26px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -279,7 +318,7 @@ main {
   height: 70px;
   border-radius: 18px;
   object-fit: cover;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.15);
 }
 
 .review-header .identity {
@@ -339,7 +378,7 @@ main {
   border-radius: var(--radius-lg);
   background: var(--surface-alt);
   color: var(--text-muted);
-  border: 1px dashed rgba(15, 23, 42, 0.12);
+  border: 1px dashed var(--border);
 }
 
 .review-footer {
@@ -363,14 +402,15 @@ main {
 
 .review-actions .button {
   margin-left: auto;
+  min-width: auto;
   background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  border: 1px solid rgba(0, 162, 255, 0.52);
 }
 
 .review-actions .button:hover,
 .review-actions .button:focus-visible {
-  background: rgba(249, 115, 22, 0.22);
+  background: rgba(0, 162, 255, 0.34);
   color: #fff;
 }
 
