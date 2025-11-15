@@ -1,13 +1,13 @@
 :root {
-    --bg: #0f172a;
-    --bg-secondary: #1e293b;
-    --surface: #ffffff;
-    --surface-alt: #f8fafc;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: rgba(15, 23, 42, 0.08);
+    --bg: #005187;
+    --bg-secondary: #0b6fbf;
+    --surface: #f3f8ff;
+    --surface-alt: #dbe9ff;
+    --accent: #00c2ff;
+    --accent-dark: #0086c9;
+    --text: #0b1f33;
+    --text-muted: #4d6784;
+    --border: rgba(0, 53, 106, 0.15);
     --radius-lg: 24px;
     --radius-md: 18px;
     --radius-sm: 12px;
@@ -22,8 +22,8 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: var(--bg);
-    color: var(--surface);
+    background: #005187;
+    color: var(--text);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -43,7 +43,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 24px 48px rgba(0, 30, 60, 0.3);
     color: var(--text);
 }
 
@@ -176,7 +176,7 @@ form {
     background: var(--surface);
     color: var(--text);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+    box-shadow: 0 0 0 3px rgba(0, 162, 255, 0.28);
 }
 
 .password-toggle-button:focus {
@@ -217,8 +217,8 @@ select {
 
 input:focus {
     outline: none;
-    border-color: rgba(249, 115, 22, 0.6);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
+    border-color: rgba(0, 162, 255, 0.82);
+    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.32);
 }
 
 input[aria-invalid="true"],
@@ -253,7 +253,7 @@ select[aria-invalid="true"] {
     position: absolute;
     left: 0;
     top: 0;
-    color: #f87171;
+    color: #7edaff;
     font-weight: 700;
 }
 

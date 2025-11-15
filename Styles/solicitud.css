@@ -1,21 +1,21 @@
 :root {
-    --bg: #0f172a;
-    --bg-secondary: #1e293b;
-    --surface: #ffffff;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --accent: #f97316;
-    --accent-strong: #ea580c;
+    --bg: #005187;
+    --bg-secondary: #0b6fbf;
+    --surface: #f3f8ff;
+    --text: #0b1f33;
+    --text-muted: #4d6784;
+    --accent: #00c2ff;
+    --accent-strong: #0086c9;
     --success: #15803d;
     --success-bg: rgba(34, 197, 94, 0.14);
     --success-border: rgba(34, 197, 94, 0.3);
-    --danger: #b91c1c;
+    --danger: #0086c9;
     --danger-bg: rgba(239, 68, 68, 0.14);
     --danger-border: rgba(239, 68, 68, 0.32);
     --info: #1d4ed8;
     --info-bg: rgba(59, 130, 246, 0.12);
     --info-border: rgba(59, 130, 246, 0.24);
-    --border: rgba(15, 23, 42, 0.08);
+    --border: rgba(0, 53, 106, 0.15);
     --radius-lg: 24px;
     --radius-md: 16px;
     --radius-sm: 12px;
@@ -40,8 +40,8 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: var(--bg);
-    color: var(--surface);
+    background: #005187;
+    color: var(--text);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -162,7 +162,7 @@ body {
 .button:hover,
 .button:focus {
     transform: translateY(-1px);
-    box-shadow: 0 12px 22px rgba(249, 115, 22, 0.28);
+    box-shadow: 0 12px 22px rgba(0, 162, 255, 0.42);
     background: var(--accent-strong);
 }
 
@@ -177,13 +177,13 @@ body {
 .button.ghost {
     background: transparent;
     color: var(--accent);
-    border-color: rgba(249, 115, 22, 0.45);
+    border-color: rgba(0, 162, 255, 0.66);
     box-shadow: none;
 }
 
 .button.ghost:hover,
 .button.ghost:focus {
-    background: rgba(249, 115, 22, 0.08);
+    background: rgba(0, 162, 255, 0.12);
 }
 
 .button.danger {
