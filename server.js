@@ -648,13 +648,21 @@ function getClientNotifications(clientId) {
     }
 
     if (normalizedStatus === 'confirmado') {
+      const query = new URLSearchParams();
+      if (row.id) {
+        query.set('appointmentId', row.id);
+      }
+      if (service) {
+        query.set('service', service);
+      }
+      const paymentHref = `./pago-abono.html${query.toString() ? `?${query.toString()}` : ''}`;
       notifications.push({
         id: `client-confirmed-${row.id}`,
         type: 'success',
         message: scheduledLabel
-          ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada.`
-          : `Tu cita de ${service} fue confirmada.`,
-        action: { label: 'Ver historial', href: './perfil.html#historial' },
+          ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada. Paga tu abono para reconfirmar tu visita.`
+          : `Tu cita de ${service} fue confirmada. Paga tu abono para reconfirmar tu visita.`,
+        action: { label: 'Pagar abono', href: paymentHref },
       });
       return;
     }
