@@ -7,6 +7,8 @@
     <title>Mechapp · Perfil de Usuario</title>
     <meta name="description" content="Consulta los datos de tu cuenta y el historial de talleres visitados." />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -295,6 +297,29 @@
         </section>
 
     </main>
+
+    <div
+        class="completion-dialog-backdrop"
+        data-complete-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="completion-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <div class="completion-dialog">
+            <h2 id="completion-dialog-title">Finalizar cita</h2>
+            <p class="completion-dialog__message">
+                Si le das a aceptar es porque su cita con el cliente ya se completó de manera eficiente.
+            </p>
+            <p class="completion-dialog__details" data-complete-details hidden></p>
+            <p class="completion-dialog__feedback" data-complete-feedback hidden></p>
+            <div class="completion-dialog__actions">
+                <button type="button" class="button" data-complete-confirm>Aceptar</button>
+                <button type="button" class="button ghost" data-complete-cancel>Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="site-footer">
         <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>

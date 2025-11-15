@@ -3,3 +3,4 @@ data/*.db
 npm-debug.log*
 .DS_Store
 data/app.db-wal
+data/app.db-wal

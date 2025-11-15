@@ -8,6 +8,8 @@
   <meta name="description" content="Servicio automotriz profesional." />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,6 +39,37 @@
       </a>
     </nav>
     <div class="header-actions">
+      <div class="notification-center" data-auth-visibility="authenticated" data-notification-center hidden>
+        <button
+          type="button"
+          class="notification-bell"
+          aria-label="Abrir notificaciones"
+          aria-expanded="false"
+          aria-haspopup="true"
+          data-notification-toggle
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="notification-bell__icon">
+            <path
+              d="M12 2a6 6 0 0 0-6 6v3.382l-.894 2.236A1 1 0 0 0 6.03 15h11.94a1 1 0 0 0 .924-1.382L18 11.382V8a6 6 0 0 0-6-6Z"
+            />
+            <path d="M9 18a3 3 0 0 0 6 0H9Z" />
+          </svg>
+          <span class="notification-count" data-notification-count hidden>0</span>
+        </button>
+        <div class="notification-panel" data-notification-panel hidden role="region" aria-live="polite">
+          <div class="notification-panel__header">
+            <div>
+              <p class="notification-panel__label">Centro de notificaciones</p>
+              <p class="notification-panel__title">Tus avisos</p>
+            </div>
+            <button type="button" class="notification-panel__close" aria-label="Cerrar" data-notification-close>
+              &times;
+            </button>
+          </div>
+          <ul class="notification-list" data-notification-list aria-label="Notificaciones"></ul>
+          <p class="notification-empty" data-notification-empty hidden>No tienes notificaciones nuevas.</p>
+        </div>
+      </div>
       <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
       <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
     </div>
@@ -51,6 +84,21 @@
         <p>Tu Solución para el Mantenimiento Automotriz.</p>
         <a class="button" href="./perfil.html">Ver Perfil</a>
       </div>
+    </section>
+
+    <section class="search-section" aria-labelledby="buscador">
+      <div class="section-header">
+        <div>
+          <h2 id="buscador">Encuentra tu taller de confianza</h2>
+          <p>Escribe el nombre de un taller para ver sus detalles y reseñas.</p>
+        </div>
+      </div>
+      <div class="search-control">
+        <label class="visually-hidden" for="search-input">Buscar talleres por nombre</label>
+        <input type="search" id="search-input" placeholder="Ej. Taller Los Andes" autocomplete="off" />
+      </div>
+      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
+
     </section>
 
     <section class="featured-services" aria-labelledby="featured-services-title">
@@ -91,21 +139,6 @@
           <span aria-hidden="true">&#10095;</span>
         </button>
       </div>
-    </section>
-
-    <section class="search-section" aria-labelledby="buscador">
-      <div class="section-header">
-        <div>
-          <h2 id="buscador">Encuentra tu taller o servicio</h2>
-          <p>Escribe el nombre de un taller para ver sus detalles y reseñas.</p>
-        </div>
-      </div>
-      <div class="search-control">
-        <label class="visually-hidden" for="search-input">Buscar talleres por nombre</label>
-        <input type="search" id="search-input" placeholder="Ej. Taller Los Andes" autocomplete="off" />
-      </div>
-      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
-
     </section>
 
     <!-- ===== Sección de ubicación con Google Maps ===== -->
@@ -188,8 +221,18 @@
         isMechanic: false,
       };
 
-      const normalizeText = (t = "") =>
-        t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
+      const normalizeText = (value = "") => {
+        if (typeof value !== "string") {
+          return "";
+        }
+
+        return value
+          .trim()
+          .toLocaleLowerCase("es-CL")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/ñ/g, "n");
+      };
 
       const setElementVisibility = (el, shouldShow) => {
         if (shouldShow) {
@@ -234,6 +277,7 @@
               visibilityState.isAuthenticated = false;
               visibilityState.isMechanic = false;
               applyVisibilityState();
+              clearNotifications();
               return;
             }
             throw new Error("No se pudo obtener el perfil del usuario");
@@ -242,11 +286,13 @@
           visibilityState.isAuthenticated = true;
           visibilityState.isMechanic = profile?.accountType === "mecanico";
           applyVisibilityState();
+          fetchNotifications();
         } catch (e) {
           console.error(e);
           visibilityState.isAuthenticated = false;
           visibilityState.isMechanic = false;
           applyVisibilityState();
+          clearNotifications();
         }
       };
       verifyMechanicProfile();
@@ -257,9 +303,212 @@
       const SEARCH_ERROR_MESSAGE = '<p class="empty-results">No se pudieron cargar los talleres. Intenta nuevamente más tarde.</p>';
       const SEARCH_EMPTY_MESSAGE = '<p class="empty-results">No encontramos talleres que coincidan con tu búsqueda.</p>';
 
+      const notificationCenter = document.querySelector('[data-notification-center]');
+      const notificationPanel = document.querySelector('[data-notification-panel]');
+      const notificationToggle = document.querySelector('[data-notification-toggle]');
+      const notificationList = document.querySelector('[data-notification-list]');
+      const notificationEmpty = document.querySelector('[data-notification-empty]');
+      const notificationCount = document.querySelector('[data-notification-count]');
+      const notificationCloseButton = document.querySelector('[data-notification-close]');
+
       let workshops = [];
       let workshopsReady = false;
       let workshopsLoadError = false;
+      let notifications = [];
+      const DISMISSED_NOTIFICATIONS_KEY = "mechapp.dismissedNotifications";
+      const isStorageAvailable =
+        typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+      const dismissedNotifications = (() => {
+        if (!isStorageAvailable) {
+          return new Set();
+        }
+        try {
+          const stored = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+          const parsed = stored ? JSON.parse(stored) : [];
+          if (!Array.isArray(parsed)) {
+            return new Set();
+          }
+          return new Set(parsed.filter((value) => typeof value === "string"));
+        } catch (error) {
+          console.error("No se pudo leer el estado de notificaciones descartadas", error);
+          return new Set();
+        }
+      })();
+
+      const persistDismissedNotifications = () => {
+        if (!isStorageAvailable) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(
+            DISMISSED_NOTIFICATIONS_KEY,
+            JSON.stringify([...dismissedNotifications])
+          );
+        } catch (error) {
+          console.error("No se pudo guardar el estado de notificaciones descartadas", error);
+        }
+      };
+
+      const renderNotifications = () => {
+        if (!notificationList || !notificationEmpty || !notificationCount) {
+          return;
+        }
+
+        notificationList.innerHTML = "";
+
+        if (!notifications.length) {
+          notificationEmpty.removeAttribute("hidden");
+          notificationCount.setAttribute("hidden", "");
+          notificationCount.textContent = "0";
+          return;
+        }
+
+        notificationEmpty.setAttribute("hidden", "");
+        notificationCount.textContent = notifications.length.toString();
+        notificationCount.removeAttribute("hidden");
+
+        const fragment = document.createDocumentFragment();
+        notifications.forEach((item) => {
+          const entry = document.createElement("li");
+          entry.className = `notification-item notification-item--${item.type ?? "info"}`;
+
+          const content = document.createElement("div");
+          content.className = "notification-item__content";
+
+          const text = document.createElement("p");
+          text.textContent = item.message;
+          content.appendChild(text);
+
+          if (item.action?.href && item.action?.label) {
+            const actionLink = document.createElement("a");
+            actionLink.href = item.action.href;
+            actionLink.textContent = item.action.label;
+            actionLink.className = "notification-item__action";
+            content.appendChild(actionLink);
+          }
+
+          entry.appendChild(content);
+
+          const closeButton = document.createElement("button");
+          closeButton.type = "button";
+          closeButton.className = "notification-item__dismiss";
+          closeButton.setAttribute("aria-label", "Descartar notificación");
+          closeButton.dataset.notificationId = item.id;
+          closeButton.textContent = "×";
+          entry.appendChild(closeButton);
+
+          fragment.appendChild(entry);
+        });
+
+        notificationList.appendChild(fragment);
+      };
+
+      const setNotifications = (items = []) => {
+        const incoming = Array.isArray(items) ? [...items] : [];
+        notifications = incoming.filter((item) => !dismissedNotifications.has(item.id));
+        renderNotifications();
+      };
+
+      const closeNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        notificationPanel.setAttribute("hidden", "");
+        notificationToggle.setAttribute("aria-expanded", "false");
+      };
+
+      const openNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        notificationPanel.removeAttribute("hidden");
+        notificationToggle.setAttribute("aria-expanded", "true");
+      };
+
+      const toggleNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        const isHidden = notificationPanel.hasAttribute("hidden");
+        if (isHidden) {
+          openNotificationPanel();
+        } else {
+          closeNotificationPanel();
+        }
+      };
+
+      const clearNotifications = () => {
+        notifications = [];
+        renderNotifications();
+        closeNotificationPanel();
+      };
+
+      const fetchNotifications = async () => {
+        if (!visibilityState.isAuthenticated) {
+          clearNotifications();
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/notifications", {
+            credentials: "same-origin",
+          });
+
+          if (response.status === 401) {
+            clearNotifications();
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("No se pudieron obtener las notificaciones.");
+          }
+
+          const data = await response.json();
+          const serverNotifications = Array.isArray(data?.notifications)
+            ? data.notifications
+            : [];
+          setNotifications(serverNotifications);
+        } catch (error) {
+          console.error("No se pudieron obtener las notificaciones", error);
+          clearNotifications();
+        }
+      };
+
+      notificationToggle?.addEventListener("click", () => {
+        toggleNotificationPanel();
+      });
+
+      notificationCloseButton?.addEventListener("click", () => {
+        closeNotificationPanel();
+      });
+
+      notificationList?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-notification-id]");
+        if (!button) {
+          return;
+        }
+        event.stopPropagation();
+        const { notificationId } = button.dataset;
+        if (!notificationId) {
+          return;
+        }
+        notifications = notifications.filter((item) => item.id !== notificationId);
+        renderNotifications();
+        if (notificationId) {
+          dismissedNotifications.add(notificationId);
+          persistDismissedNotifications();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!notificationCenter || !notificationPanel || notificationPanel.hasAttribute("hidden")) {
+          return;
+        }
+        if (notificationCenter.contains(event.target)) {
+          return;
+        }
+        closeNotificationPanel();
+      });
 
       function createWorkshopResult(workshop) {
         const article = document.createElement("article");
@@ -358,7 +607,14 @@
           return;
         }
 
-        const filtered = workshops.filter((workshop) => normalizeText(workshop.name).includes(term));
+        const filtered = workshops.filter((workshop) => {
+          const normalizedName = normalizeText(workshop?.name);
+          if (!normalizedName) {
+            return false;
+          }
+
+          return normalizedName.includes(term);
+        });
         renderSearchResults(filtered);
       });
 

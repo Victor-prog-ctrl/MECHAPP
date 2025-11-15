@@ -77,6 +77,7 @@ const db = new Database(dbPath);
 const fsp = fs.promises;
 
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.prepare(`
     CREATE TABLE IF NOT EXISTS users (
@@ -498,6 +499,15 @@ function mapReviewRow(row) {
   };
 }
 
+function normalizeReason(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : '';
+}
+
 const CLIENT_HISTORY_QUERY = `
   WITH latest_workshops AS (
     SELECT
@@ -519,6 +529,7 @@ const CLIENT_HISTORY_QUERY = `
     a.visit_type,
     a.scheduled_for,
     COALESCE(a.status, 'pendiente') AS status,
+    a.rejection_reason,
     a.address,
     a.created_at,
     a.mechanic_id,
@@ -540,6 +551,7 @@ function mapAppointmentHistoryRow(row) {
 
   const mechanicId = Number(row.mechanic_id);
   const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
+  const rejectionReason = normalizeReason(row.rejection_reason);
 
   return {
     id: Number(row.id),
@@ -547,6 +559,7 @@ function mapAppointmentHistoryRow(row) {
     visitType: row.visit_type,
     scheduledFor: row.scheduled_for,
     status: row.status || 'pendiente',
+    rejectionReason: rejectionReason || null,
     address: row.address || null,
     createdAt: row.created_at,
     mechanic: hasMechanic
@@ -571,6 +584,158 @@ function getClientAppointmentHistory(clientId) {
   if (!clientId) return [];
   const rows = db.prepare(CLIENT_HISTORY_QUERY).all(clientId);
   return rows.map(mapAppointmentHistoryRow).filter(Boolean);
+}
+
+function formatNotificationDate(value, { includeTime = true } = {}) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const options = includeTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' };
+  try {
+    return new Intl.DateTimeFormat('es', options).format(date);
+  } catch (error) {
+    console.error('No se pudo formatear la fecha para la notificación', error);
+    return null;
+  }
+}
+
+function limitNotifications(list, limit = 6) {
+  const seen = new Set();
+  const filtered = [];
+  list.forEach((notification) => {
+    if (!notification?.id || seen.has(notification.id)) {
+      return;
+    }
+    seen.add(notification.id);
+    filtered.push(notification);
+  });
+  return filtered.slice(0, limit);
+}
+
+function getClientNotifications(clientId) {
+  if (!clientId) return [];
+
+  const rows = db
+    .prepare(
+      `SELECT id, service, status, rejection_reason, scheduled_for, created_at
+       FROM appointments
+       WHERE client_id = ?
+       ORDER BY datetime(created_at) DESC, id DESC
+       LIMIT 20`
+    )
+    .all(clientId);
+
+  const notifications = [];
+
+  rows.forEach((row) => {
+    const normalizedStatus = (row.status || 'pendiente').toLowerCase();
+    const service = row.service || 'tu cita';
+    const scheduledLabel = formatNotificationDate(row.scheduled_for);
+
+    if (normalizedStatus === 'rechazado') {
+      const reasonText = normalizeReason(row.rejection_reason);
+      const reasonSuffix = reasonText ? ` Motivo: ${reasonText}` : '';
+      notifications.push({
+        id: `client-rejected-${row.id}`,
+        type: 'warning',
+        message: `El taller rechazó ${service}.${reasonSuffix}`,
+        action: { label: 'Ver historial', href: './perfil.html#historial' },
+      });
+      return;
+    }
+
+    if (normalizedStatus === 'confirmado') {
+      notifications.push({
+        id: `client-confirmed-${row.id}`,
+        type: 'success',
+        message: scheduledLabel
+          ? `Tu cita de ${service} para ${scheduledLabel} fue confirmada.`
+          : `Tu cita de ${service} fue confirmada.`,
+        action: { label: 'Ver historial', href: './perfil.html#historial' },
+      });
+      return;
+    }
+
+    if (normalizedStatus === 'pendiente') {
+      notifications.push({
+        id: `client-pending-${row.id}`,
+        type: 'info',
+        message: scheduledLabel
+          ? `Tu solicitud de ${service} está pendiente para ${scheduledLabel}.`
+          : `Tu solicitud de ${service} está pendiente de confirmación.`,
+        action: { label: 'Ver historial', href: './perfil.html#historial' },
+      });
+      return;
+    }
+
+    if (normalizedStatus === 'completado') {
+      notifications.push({
+        id: `client-completed-${row.id}`,
+        type: 'info',
+        message: scheduledLabel
+          ? `Tu visita de ${service} del ${scheduledLabel} fue finalizada. ¡Comparte tu reseña!`
+          : `Tu visita de ${service} fue finalizada. ¡Comparte tu reseña!`,
+        action: { label: 'Escribir reseña', href: './resenas-mecanicos.html' },
+      });
+    }
+  });
+
+  return limitNotifications(notifications, 6);
+}
+
+function getMechanicNotifications(mechanicId) {
+  if (!mechanicId) return [];
+
+  const pendingRequests = db
+    .prepare(
+      `SELECT id, service, scheduled_for, created_at
+       FROM appointments
+       WHERE mechanic_id = ? AND status = 'pendiente'
+       ORDER BY datetime(created_at) DESC, id DESC
+       LIMIT 8`
+    )
+    .all(mechanicId);
+
+  const upcomingConfirmed = db
+    .prepare(
+      `SELECT id, service, scheduled_for
+       FROM appointments
+       WHERE mechanic_id = ? AND status = 'confirmado'
+       ORDER BY datetime(scheduled_for) ASC, id ASC
+       LIMIT 8`
+    )
+    .all(mechanicId);
+
+  const notifications = [];
+
+  pendingRequests.forEach((row) => {
+    const scheduledLabel = formatNotificationDate(row.scheduled_for);
+    notifications.push({
+      id: `mechanic-pending-${row.id}`,
+      type: 'info',
+      message: scheduledLabel
+        ? `Nueva solicitud de ${row.service || 'servicio'} propuesta para ${scheduledLabel}.`
+        : `Tienes una nueva solicitud de ${row.service || 'servicio'}.`,
+      action: { label: 'Gestionar solicitud', href: `./solicitud.html?id=${row.id}` },
+    });
+  });
+
+  upcomingConfirmed.forEach((row) => {
+    const scheduledLabel = formatNotificationDate(row.scheduled_for);
+    notifications.push({
+      id: `mechanic-confirmed-${row.id}`,
+      type: 'success',
+      message: scheduledLabel
+        ? `Cita confirmada para ${row.service || 'servicio'} el ${scheduledLabel}.`
+        : `Tienes una cita confirmada próxima a realizarse.`,
+      action: { label: 'Ver agenda', href: './perfil.html#solicitudes' },
+    });
+  });
+
+  return limitNotifications(notifications, 8);
 }
 
 function normalizeTextList(value) {
@@ -654,6 +819,7 @@ function ensureAppointmentsTable() {
       client_latitude REAL,
       client_longitude REAL,
       status TEXT NOT NULL DEFAULT 'pendiente',
+      rejection_reason TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (client_id) REFERENCES users(id),
       FOREIGN KEY (mechanic_id) REFERENCES users(id)
@@ -666,6 +832,7 @@ function ensureAppointmentLocationColumns() {
   const columns = db.prepare(`PRAGMA table_info(appointments)`).all();
   const hasLatitude = columns.some((column) => column.name === 'client_latitude');
   const hasLongitude = columns.some((column) => column.name === 'client_longitude');
+  const hasRejectionReason = columns.some((column) => column.name === 'rejection_reason');
 
   if (!hasLatitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
@@ -674,8 +841,26 @@ function ensureAppointmentLocationColumns() {
   if (!hasLongitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_longitude REAL`).run();
   }
+
+  if (!hasRejectionReason) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN rejection_reason TEXT`).run();
+  }
 }
 ensureAppointmentLocationColumns();
+
+function ensureMechanicDismissedRequestsTable() {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS mechanic_dismissed_requests (
+      mechanic_id INTEGER NOT NULL,
+      appointment_id INTEGER NOT NULL,
+      dismissed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (mechanic_id, appointment_id),
+      FOREIGN KEY (mechanic_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
+    )
+  `).run();
+}
+ensureMechanicDismissedRequestsTable();
 
 const certificatesDir = path.join(dataDir, 'certificates');
 fs.mkdirSync(certificatesDir, { recursive: true });
@@ -1513,6 +1698,27 @@ app.get('/api/profile/history', requireAuth, (req, res) => {
   }
 });
 
+app.get('/api/notifications', requireAuth, (req, res) => {
+  try {
+    const user = db.prepare(`SELECT id, account_type FROM users WHERE id = ?`).get(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    let notifications = [];
+    if (user.account_type === 'mecanico') {
+      notifications = getMechanicNotifications(user.id);
+    } else if (user.account_type === 'cliente') {
+      notifications = getClientNotifications(user.id);
+    }
+
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Error obteniendo notificaciones', error);
+    res.status(500).json({ error: 'No se pudieron obtener las notificaciones.' });
+  }
+});
+
 app.get('/api/mechanics', requireAuth, (req, res) => {
   try {
     const mechanics = db
@@ -1700,6 +1906,7 @@ const APPOINTMENT_REQUEST_BASE_QUERY = `
     a.address,
     a.notes,
     a.status,
+    a.rejection_reason,
     a.created_at,
     a.client_latitude,
     a.client_longitude,
@@ -1714,6 +1921,8 @@ function mapAppointmentRequest(row) {
     return null;
   }
 
+  const rejectionReason = normalizeReason(row.rejection_reason);
+
   return {
     id: row.id,
     service: row.service,
@@ -1722,6 +1931,7 @@ function mapAppointmentRequest(row) {
     address: row.address,
     notes: row.notes,
     status: row.status,
+    rejectionReason: rejectionReason || null,
     createdAt: row.created_at,
     client: {
       name: row.client_name,
@@ -1743,9 +1953,12 @@ app.get('/api/appointments/requests', requireAuth, requireMechanic, (req, res) =
       .prepare(
         `${APPOINTMENT_REQUEST_BASE_QUERY}
         WHERE a.mechanic_id = ?
+          AND a.id NOT IN (
+            SELECT appointment_id FROM mechanic_dismissed_requests WHERE mechanic_id = ?
+          )
         ORDER BY datetime(a.scheduled_for) ASC`
       )
-      .all(req.session.userId);
+      .all(req.session.userId, req.session.userId);
 
     res.json({
       requests: requests.map(mapAppointmentRequest),
@@ -1783,6 +1996,34 @@ app.get('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, re
   }
 });
 
+app.post('/api/appointments/requests/:id/dismiss', requireAuth, requireMechanic, (req, res) => {
+  const requestId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ error: 'Identificador de solicitud no válido.' });
+  }
+
+  try {
+    const existing = db
+      .prepare('SELECT id FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
+      .get(requestId, req.session.userId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Solicitud no encontrada.' });
+    }
+
+    db.prepare(
+      `INSERT OR REPLACE INTO mechanic_dismissed_requests (mechanic_id, appointment_id)
+       VALUES (?, ?)`
+    ).run(req.session.userId, requestId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error ocultando solicitud de cita', error);
+    res.status(500).json({ error: 'No se pudo ocultar la solicitud.' });
+  }
+});
+
 app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, res) => {
   const requestId = Number.parseInt(req.params.id, 10);
 
@@ -1790,29 +2031,73 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
     return res.status(400).json({ error: 'Identificador de solicitud no válido.' });
   }
 
-  const allowedStatuses = new Set(['confirmado', 'rechazado']);
+  const allowedStatuses = new Set(['confirmado', 'rechazado', 'completado']);
   const requestedStatus = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
+  const rejectionReason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
 
   if (!allowedStatuses.has(requestedStatus)) {
     return res.status(400).json({ error: 'Estado de solicitud no válido.' });
   }
 
+  if (requestedStatus === 'rechazado') {
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Debes indicar el motivo del rechazo.' });
+    }
+    if (rejectionReason.length > 500) {
+      return res.status(400).json({ error: 'El motivo del rechazo no puede superar los 500 caracteres.' });
+    }
+  }
+
   try {
     const existing = db
-      .prepare('SELECT status FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
+      .prepare('SELECT status, scheduled_for FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
       .get(requestId, req.session.userId);
 
     if (!existing) {
       return res.status(404).json({ error: 'Solicitud no encontrada.' });
     }
 
-    if (existing.status !== 'pendiente' && existing.status !== requestedStatus) {
-      return res.status(400).json({ error: 'Solo puedes actualizar solicitudes pendientes.' });
+    const normalizedExisting = existing.status ? existing.status.toLowerCase() : '';
+
+    const isSameStatus = normalizedExisting === requestedStatus;
+    let canTransition = false;
+    if (requestedStatus === 'completado') {
+      canTransition = normalizedExisting === 'confirmado';
+    } else if (requestedStatus === 'confirmado' || requestedStatus === 'rechazado') {
+      canTransition = normalizedExisting === 'pendiente';
     }
 
-    if (existing.status !== requestedStatus) {
-      db.prepare('UPDATE appointments SET status = ? WHERE id = ? AND mechanic_id = ?')
-        .run(requestedStatus, requestId, req.session.userId);
+    if (!isSameStatus && !canTransition) {
+      return res
+        .status(400)
+        .json({ error: 'Solo puedes actualizar solicitudes pendientes o confirmadas.' });
+    }
+
+    if (requestedStatus === 'completado') {
+      const scheduledDate = existing?.scheduled_for ? new Date(existing.scheduled_for) : null;
+      if (scheduledDate && !Number.isNaN(scheduledDate.getTime())) {
+        const now = new Date();
+        if (scheduledDate > now) {
+          return res
+            .status(400)
+            .json({ error: 'No puedes finalizar una cita antes de la fecha programada.' });
+        }
+      }
+    }
+
+    if (!isSameStatus) {
+      const fields = ['status = ?'];
+      const params = [requestedStatus];
+
+      if (requestedStatus === 'rechazado') {
+        fields.push('rejection_reason = ?');
+        params.push(rejectionReason);
+      } else if (normalizedExisting === 'rechazado') {
+        fields.push('rejection_reason = NULL');
+      }
+
+      db.prepare(`UPDATE appointments SET ${fields.join(', ')} WHERE id = ? AND mechanic_id = ?`)
+        .run(...params, requestId, req.session.userId);
     }
 
     const updated = db

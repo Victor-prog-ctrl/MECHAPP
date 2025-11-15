@@ -62,6 +62,28 @@ function getStatusClass(status) {
     }
 }
 
+function canRequestBeCompleted(request) {
+    if (!request) {
+        return false;
+    }
+
+    const normalized = typeof request.status === "string" ? request.status.toLowerCase() : "";
+    if (normalized !== "confirmado") {
+        return false;
+    }
+
+    if (!request.scheduledFor) {
+        return true;
+    }
+
+    const scheduledDate = new Date(request.scheduledFor);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return true;
+    }
+
+    return scheduledDate.getTime() <= Date.now();
+}
+
 function formatDateTime(dateString) {
     if (!dateString) {
         return "";
@@ -110,6 +132,44 @@ function getInitials(name) {
 
 function pluralize(count, singular, plural) {
     return count === 1 ? singular : plural;
+}
+
+function readPersistedIds(storageKey) {
+    if (typeof window === "undefined" || !window.localStorage) {
+        return [];
+    }
+
+    try {
+        const storedValue = window.localStorage.getItem(storageKey);
+        if (!storedValue) {
+            return [];
+        }
+
+        const parsed = JSON.parse(storedValue);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .map((value) => (value == null ? "" : String(value)))
+            .filter((value) => value.length > 0);
+    } catch (error) {
+        console.error("No se pudieron recuperar los elementos ocultos almacenados.", error);
+        return [];
+    }
+}
+
+function persistIds(storageKey, values) {
+    if (typeof window === "undefined" || !window.localStorage) {
+        return;
+    }
+
+    try {
+        const serialized = JSON.stringify(Array.from(values));
+        window.localStorage.setItem(storageKey, serialized);
+    } catch (error) {
+        console.error("No se pudieron guardar los elementos ocultos.", error);
+    }
 }
 
 function parseTextList(value) {
@@ -178,6 +238,294 @@ const workshopState = {
 };
 
 let currentProfile = null;
+const DISMISSED_HISTORY_STORAGE_KEY = "profile.dismissedHistory";
+const dismissedHistoryIds = new Set(readPersistedIds(DISMISSED_HISTORY_STORAGE_KEY));
+const DEFAULT_MECHANIC_EMPTY_MESSAGE =
+    "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+
+let clientHistoryRecords = [];
+let mechanicRequestRecords = [];
+const completionDialogState = {
+    container: null,
+    confirmButton: null,
+    cancelButton: null,
+    detailsElement: null,
+    feedbackElement: null,
+    requestId: null,
+    triggerButton: null,
+    busy: false,
+};
+
+function setCompletionDialogFeedback(message, type = "info") {
+    const { feedbackElement } = completionDialogState;
+    if (!feedbackElement) {
+        return;
+    }
+
+    if (!message) {
+        feedbackElement.textContent = "";
+        feedbackElement.hidden = true;
+        feedbackElement.dataset.state = "";
+        return;
+    }
+
+    feedbackElement.textContent = message;
+    feedbackElement.hidden = false;
+    feedbackElement.dataset.state = type;
+}
+
+function setCompletionDialogBusy(busy) {
+    completionDialogState.busy = busy;
+
+    const { confirmButton, cancelButton, container } = completionDialogState;
+
+    if (confirmButton) {
+        confirmButton.disabled = busy;
+    }
+
+    if (cancelButton) {
+        cancelButton.disabled = busy;
+    }
+
+    if (container) {
+        if (busy) {
+            container.dataset.state = "busy";
+        } else {
+            container.removeAttribute("data-state");
+        }
+    }
+}
+
+function closeCompletionDialog() {
+    const { container } = completionDialogState;
+    if (!container) {
+        return;
+    }
+
+    container.hidden = true;
+    container.setAttribute("aria-hidden", "true");
+    setCompletionDialogBusy(false);
+    setCompletionDialogFeedback("");
+
+    if (completionDialogState.detailsElement) {
+        completionDialogState.detailsElement.textContent = "";
+        completionDialogState.detailsElement.hidden = true;
+    }
+
+    const trigger = completionDialogState.triggerButton;
+    completionDialogState.requestId = null;
+    completionDialogState.triggerButton = null;
+
+    if (trigger && typeof trigger.focus === "function") {
+        trigger.focus();
+    }
+}
+
+function openCompletionDialog(request, triggerButton) {
+    const { container, confirmButton, detailsElement } = completionDialogState;
+
+    if (!container || !request) {
+        return;
+    }
+
+    completionDialogState.requestId = request.id != null ? String(request.id) : null;
+    completionDialogState.triggerButton = triggerButton || null;
+    setCompletionDialogBusy(false);
+    setCompletionDialogFeedback("");
+
+    if (detailsElement) {
+        const details = [];
+        if (request.service) {
+            details.push(`Servicio: ${request.service}`);
+        }
+
+        const formattedDate = formatDateTime(request.scheduledFor);
+        if (formattedDate) {
+            details.push(`Fecha: ${formattedDate}`);
+        }
+
+        if (details.length) {
+            detailsElement.textContent = details.join(" · ");
+            detailsElement.hidden = false;
+        } else {
+            detailsElement.textContent = "";
+            detailsElement.hidden = true;
+        }
+    }
+
+    container.hidden = false;
+    container.setAttribute("aria-hidden", "false");
+
+    if (typeof container.focus === "function") {
+        container.focus();
+    }
+
+    if (confirmButton && typeof confirmButton.focus === "function") {
+        confirmButton.focus();
+    }
+}
+
+async function updateMechanicRequestStatus(requestId, status) {
+    if (!requestId) {
+        throw new Error("Identificador de solicitud no válido.");
+    }
+
+    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(requestId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ status }),
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return null;
+    }
+
+    if (response.status === 403) {
+        throw new Error("No tienes permisos para actualizar esta solicitud.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("No encontramos la solicitud que intentas actualizar.");
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudo actualizar la solicitud.");
+    }
+
+    const data = await response.json();
+    return data?.request || null;
+}
+
+async function refreshMechanicMetrics() {
+    if (!currentProfile || currentProfile.accountType !== "mecanico") {
+        return;
+    }
+
+    try {
+        const updatedProfile = await fetchProfile();
+        if (!updatedProfile) {
+            return;
+        }
+
+        currentProfile = {
+            ...currentProfile,
+            ...updatedProfile,
+        };
+
+        renderCompletedAppointmentsMetric(true, updatedProfile.mechanicMetrics || null);
+    } catch (error) {
+        console.error("No se pudieron actualizar las métricas del mecánico", error);
+    }
+}
+
+async function handleCompleteRequestConfirmation() {
+    if (!completionDialogState.requestId || completionDialogState.busy) {
+        return;
+    }
+
+    setCompletionDialogBusy(true);
+    setCompletionDialogFeedback("Finalizando cita...", "info");
+
+    try {
+        const updatedRequest = await updateMechanicRequestStatus(
+            completionDialogState.requestId,
+            "completado",
+        );
+
+        if (!updatedRequest) {
+            throw new Error("No se pudo completar la cita.");
+        }
+
+        let refreshedRequests = null;
+        try {
+            refreshedRequests = await fetchMechanicRequests();
+        } catch (requestsError) {
+            console.error(requestsError);
+            refreshedRequests = mechanicRequestRecords.map((item) => {
+                if (!item || item.id !== updatedRequest.id) {
+                    return item;
+                }
+
+                return {
+                    ...item,
+                    ...updatedRequest,
+                };
+            });
+        }
+
+        if (refreshedRequests) {
+            renderMechanicRequests(refreshedRequests);
+        }
+
+        await refreshMechanicMetrics();
+
+        setCompletionDialogFeedback("La cita se marcó como completada.", "success");
+
+        window.setTimeout(() => {
+            closeCompletionDialog();
+        }, 900);
+    } catch (error) {
+        console.error(error);
+        setCompletionDialogFeedback(
+            error instanceof Error
+                ? error.message
+                : "No se pudo completar la cita. Inténtalo nuevamente más tarde.",
+            "error",
+        );
+        setCompletionDialogBusy(false);
+    }
+}
+
+function setupCompletionDialog() {
+    const container = document.querySelector("[data-complete-dialog]");
+    if (!container) {
+        return;
+    }
+
+    const confirmButton = container.querySelector("[data-complete-confirm]");
+    const cancelButton = container.querySelector("[data-complete-cancel]");
+    const detailsElement = container.querySelector("[data-complete-details]");
+    const feedbackElement = container.querySelector("[data-complete-feedback]");
+
+    completionDialogState.container = container;
+    completionDialogState.confirmButton = confirmButton;
+    completionDialogState.cancelButton = cancelButton;
+    completionDialogState.detailsElement = detailsElement;
+    completionDialogState.feedbackElement = feedbackElement;
+
+    if (detailsElement) {
+        detailsElement.hidden = true;
+    }
+
+    container.hidden = true;
+    container.setAttribute("aria-hidden", "true");
+
+    if (confirmButton) {
+        confirmButton.addEventListener("click", handleCompleteRequestConfirmation);
+    }
+
+    if (cancelButton) {
+        cancelButton.addEventListener("click", () => {
+            if (!completionDialogState.busy) {
+                closeCompletionDialog();
+            }
+        });
+    }
+
+    container.addEventListener("click", (event) => {
+        if (event.target === container && !completionDialogState.busy) {
+            closeCompletionDialog();
+        }
+    });
+
+    container.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !completionDialogState.busy) {
+            closeCompletionDialog();
+        }
+    });
+}
 
 async function fetchProfile() {
     const response = await fetch("/api/profile");
@@ -250,12 +598,14 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
     }
 
     const normalizedRequests = Array.isArray(requests) ? requests : [];
+    mechanicRequestRecords = normalizedRequests;
 
-    if (!normalizedRequests.length) {
+    const visibleRequests = normalizedRequests;
+
+    if (!visibleRequests.length) {
         container.innerHTML = "";
         if (emptyState) {
-            emptyState.textContent = errorMessage ||
-                "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+            emptyState.textContent = errorMessage || DEFAULT_MECHANIC_EMPTY_MESSAGE;
             emptyState.hidden = false;
         }
         return;
@@ -267,7 +617,7 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
 
     const fragment = document.createDocumentFragment();
 
-    normalizedRequests.forEach((request) => {
+    visibleRequests.forEach((request) => {
         const article = document.createElement("article");
         article.className = "request-card";
 
@@ -278,6 +628,9 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         title.textContent = request.service || "Servicio solicitado";
         header.appendChild(title);
 
+        const headerActions = document.createElement("div");
+        headerActions.className = "request-header-actions";
+
         const status = document.createElement("span");
         status.className = "request-status";
         status.textContent = getStatusLabel(request.status);
@@ -285,7 +638,47 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         if (statusClass) {
             status.classList.add(statusClass);
         }
-        header.appendChild(status);
+        headerActions.appendChild(status);
+
+        const dismissButton = document.createElement("button");
+        dismissButton.type = "button";
+        dismissButton.className = "request-dismiss";
+        dismissButton.innerHTML = "<span aria-hidden=\"true\">×</span>";
+        dismissButton.setAttribute("aria-label", "Ocultar solicitud de la lista");
+
+        dismissButton.addEventListener("click", async () => {
+            const requestId = request?.id != null ? String(request.id) : "";
+            if (!requestId || dismissButton.disabled) {
+                return;
+            }
+
+            dismissButton.disabled = true;
+
+            try {
+                await dismissMechanicRequest(requestId);
+                mechanicRequestRecords = mechanicRequestRecords.filter((item) => {
+                    return item?.id != null ? String(item.id) !== requestId : true;
+                });
+                article.remove();
+
+                if (emptyState) {
+                    const hasVisibleRequests = container.querySelector(".request-card");
+                    emptyState.textContent = DEFAULT_MECHANIC_EMPTY_MESSAGE;
+                    emptyState.hidden = Boolean(hasVisibleRequests);
+                }
+            } catch (error) {
+                console.error(error);
+                window.alert(
+                    error instanceof Error
+                        ? error.message
+                        : "No se pudo ocultar la solicitud. Intenta nuevamente.",
+                );
+                dismissButton.disabled = false;
+            }
+        });
+
+        headerActions.appendChild(dismissButton);
+        header.appendChild(headerActions);
 
         article.appendChild(header);
 
@@ -331,7 +724,21 @@ function renderMechanicRequests(requests, { errorMessage } = {}) {
         viewButton.className = "button ghost";
         viewButton.textContent = "Ver más";
         viewButton.href = `./solicitud.html?id=${encodeURIComponent(request.id)}`;
-        viewButton.setAttribute("aria-label", `Ver detalles de la solicitud ${request.service || "de servicio"}`);
+        viewButton.setAttribute(
+            "aria-label",
+            `Ver detalles de la solicitud ${request.service || "de servicio"}`,
+        );
+
+        if (canRequestBeCompleted(request)) {
+            const completeButton = document.createElement("button");
+            completeButton.type = "button";
+            completeButton.className = "button button--primary";
+            completeButton.textContent = "Cita finalizada";
+            completeButton.addEventListener("click", () => {
+                openCompletionDialog(request, completeButton);
+            });
+            actions.appendChild(completeButton);
+        }
 
         actions.appendChild(viewButton);
         article.appendChild(actions);
@@ -351,14 +758,45 @@ function renderClientHistory(history, { errorMessage } = {}) {
         return;
     }
 
-    const records = Array.isArray(history) ? history : [];
+    clientHistoryRecords = Array.isArray(history) ? history : [];
+
+    const availableHistoryIds = new Set(
+        clientHistoryRecords
+            .map((record) => (record?.id !== null && record?.id !== undefined ? String(record.id) : ""))
+            .filter((recordId) => recordId.length > 0),
+    );
+
+    let removedStoredHistory = false;
+    dismissedHistoryIds.forEach((storedId) => {
+        if (!availableHistoryIds.has(storedId)) {
+            dismissedHistoryIds.delete(storedId);
+            removedStoredHistory = true;
+        }
+    });
+
+    if (removedStoredHistory) {
+        persistIds(DISMISSED_HISTORY_STORAGE_KEY, dismissedHistoryIds);
+    }
+
+    const records = clientHistoryRecords.filter((record) => {
+        const recordId = record?.id;
+        if (recordId === null || recordId === undefined) {
+            return true;
+        }
+
+        const normalizedId = String(recordId);
+        return !dismissedHistoryIds.has(normalizedId);
+    });
 
     if (!records.length) {
         container.innerHTML = "";
         if (emptyState) {
+            const hasOriginalRecords = clientHistoryRecords.length > 0;
             emptyState.textContent =
                 errorMessage ||
-                "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.";
+                (hasOriginalRecords
+                    ? "Has ocultado todas las visitas de tu historial en esta sesión."
+                    : "Aún no tienes visitas registradas. Agenda una cita para ver tu historial.");
             emptyState.hidden = false;
         }
         return;
@@ -409,13 +847,58 @@ function renderClientHistory(history, { errorMessage } = {}) {
             info.appendChild(meta);
         }
 
+        const normalizedStatus = typeof record?.status === "string" ? record.status.toLowerCase() : "";
+        const rawReason =
+            typeof record?.rejectionReason === "string"
+                ? record.rejectionReason
+                : typeof record?.rejection_reason === "string"
+                  ? record.rejection_reason
+                  : typeof record?.reason === "string"
+                      ? record.reason
+                      : "";
+        const reasonText = rawReason.trim();
+
+        if (reasonText) {
+            const reasonDetail = document.createElement("p");
+            reasonDetail.className = "history-rejection-reason";
+            const prefix = normalizedStatus === "rechazado" ? "Motivo del rechazo" : "Mensaje del taller";
+            reasonDetail.textContent = `${prefix}: ${reasonText}`;
+            info.appendChild(reasonDetail);
+        }
+
         article.appendChild(info);
+
+        const actions = document.createElement("div");
+        actions.className = "history-actions";
+
+        const statusWrapper = document.createElement("div");
+        statusWrapper.className = "history-status";
 
         const statusBadge = document.createElement("span");
         const statusClass = getStatusClass(record?.status);
         statusBadge.className = `status ${statusClass}`;
         statusBadge.textContent = getStatusLabel(record?.status);
-        article.appendChild(statusBadge);
+        statusWrapper.appendChild(statusBadge);
+
+        actions.appendChild(statusWrapper);
+
+        const recordId = record?.id;
+        if (recordId !== null && recordId !== undefined) {
+            const normalizedId = String(recordId);
+            const dismissButton = document.createElement("button");
+            dismissButton.type = "button";
+            dismissButton.className = "history-dismiss";
+            dismissButton.innerHTML = '<span aria-hidden="true">×</span>';
+            dismissButton.setAttribute("aria-label", "Ocultar visita del historial");
+            dismissButton.addEventListener("click", () => {
+                dismissedHistoryIds.add(normalizedId);
+                persistIds(DISMISSED_HISTORY_STORAGE_KEY, dismissedHistoryIds);
+                renderClientHistory(clientHistoryRecords);
+            });
+            actions.appendChild(dismissButton);
+        }
+
+        article.appendChild(actions);
 
         fragment.appendChild(article);
     });
@@ -994,6 +1477,37 @@ async function fetchMechanicRequests() {
     return Array.isArray(data?.requests) ? data.requests : [];
 }
 
+async function dismissMechanicRequest(requestId) {
+    if (!requestId) {
+        throw new Error("Identificador de solicitud no válido.");
+    }
+
+    const response = await fetch(`/api/appointments/requests/${encodeURIComponent(requestId)}/dismiss`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return false;
+    }
+
+    if (response.status === 403) {
+        throw new Error("No tienes permisos para ocultar esta solicitud.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("No encontramos la solicitud que intentas ocultar.");
+    }
+
+    if (!response.ok) {
+        throw new Error("No se pudo ocultar la solicitud. Intenta nuevamente.");
+    }
+
+    return true;
+}
+
 async function fetchClientHistory() {
     const response = await fetch("/api/profile/history", {
         credentials: "same-origin",
@@ -1166,6 +1680,7 @@ function setupSubscriptionForm() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    setupCompletionDialog();
     setupProfilePage();
     setupSubscriptionForm();
 
