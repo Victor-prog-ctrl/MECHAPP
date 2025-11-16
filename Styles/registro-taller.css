@@ -1,12 +1,12 @@
 :root {
-    --bg: #0f172a;
-    --surface: #ffffff;
-    --surface-muted: #f8fafc;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: rgba(15, 23, 42, 0.08);
+    --bg: #005187;
+    --surface: #f3f8ff;
+    --surface-muted: #dbe9ff;
+    --accent: #00c2ff;
+    --accent-dark: #0086c9;
+    --text: #0b1f33;
+    --text-muted: #4d6784;
+    --border: rgba(0, 53, 106, 0.15);
     --radius-lg: 32px;
     --radius-md: 18px;
     --radius-sm: 12px;
@@ -21,8 +21,8 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: var(--bg);
-    color: var(--surface);
+    background: #dfdfdf;
+    color: var(--text);
     min-height: 100vh;
     padding: 32px 16px 64px;
 }
@@ -33,10 +33,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(15, 23, 42, 0.72);
+    background: linear-gradient(135deg, #f3f8ff, #cfe3ff);
     border-radius: var(--radius-lg);
     padding: 18px 28px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 82, 135, 0.18);
+    box-shadow: 0 18px 48px rgba(0, 28, 61, 0.25);
 }
 
 .brand-link {
@@ -44,7 +45,7 @@ body {
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    color: #fff;
+    color: var(--text);
     font-weight: 700;
     font-size: 1.35rem;
 }
@@ -54,7 +55,7 @@ body {
     height: 44px;
     display: inline-block;
     border-radius: 14px;
-    background: rgba(15, 23, 42, 0.85) url("../assets/logo.svg") no-repeat center/contain;
+    background: rgba(0, 96, 168, 0.12) url("../assets/logo.svg") no-repeat center/contain;
 }
 
 .brand-name {
@@ -62,7 +63,7 @@ body {
 }
 
 .back-link {
-    color: rgba(248, 250, 252, 0.78);
+    color: var(--accent-dark);
     text-decoration: none;
     font-weight: 600;
 }
@@ -92,7 +93,7 @@ main {
 
 .tag {
     align-self: flex-start;
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     color: var(--accent);
     font-weight: 600;
     border-radius: 999px;
@@ -207,7 +208,7 @@ label {
 
 .service-nav:hover,
 .service-nav:focus-visible {
-    background: rgba(249, 115, 22, 0.18);
+    background: rgba(0, 162, 255, 0.28);
     color: var(--accent);
     outline: none;
     transform: translateY(-1px);
@@ -258,8 +259,8 @@ label {
 
 .service-option:hover,
 .service-option:focus-within {
-    border-color: rgba(249, 115, 22, 0.6);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+    border-color: rgba(0, 162, 255, 0.82);
+    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.18);
     background: #fff;
 }
 
@@ -306,7 +307,7 @@ label {
     gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     color: var(--accent);
     font-size: 0.9rem;
     font-weight: 600;
@@ -393,8 +394,8 @@ textarea {
 input:focus,
 textarea:focus {
     outline: none;
-    border-color: rgba(249, 115, 22, 0.6);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
+    border-color: rgba(0, 162, 255, 0.82);
+    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.28);
 }
 
 .checkbox-field {
@@ -433,7 +434,7 @@ textarea:focus {
 
 .form-feedback[data-state="error"] {
     background: rgba(239, 68, 68, 0.12);
-    color: #b91c1c;
+    color: #0086c9;
     border: 1px solid rgba(220, 38, 38, 0.35);
 }
 
@@ -483,15 +484,15 @@ textarea:focus {
 }
 
 .button.ghost {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     color: var(--accent);
-    border: 1px solid rgba(249, 115, 22, 0.35);
+    border: 1px solid rgba(0, 162, 255, 0.52);
 }
 
 .button.ghost:hover,
 .button.ghost:focus {
-    border-color: rgba(249, 115, 22, 0.45);
-    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2);
+    border-color: rgba(0, 162, 255, 0.66);
+    box-shadow: 0 8px 20px rgba(0, 162, 255, 0.32);
 }
 
 @media (max-width: 600px) {
