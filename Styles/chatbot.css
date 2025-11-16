@@ -102,44 +102,6 @@
   background: var(--chatbot-surface-alt);
 }
 
-.mecha-chatbot__shortcuts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.6rem;
-  padding: 0.75rem 1.25rem 0;
-  background: var(--chatbot-surface-alt);
-}
-
-.mecha-chatbot__shortcut {
-  border: 1px solid rgba(22, 43, 110, 0.15);
-  border-radius: 0.75rem;
-  padding: 0.6rem 0.75rem;
-  background: rgba(22, 43, 110, 0.04);
-  text-align: left;
-  cursor: pointer;
-  transition: border 0.2s ease, transform 0.2s ease, background 0.2s ease;
-}
-
-.mecha-chatbot__shortcut:hover,
-.mecha-chatbot__shortcut:focus-visible {
-  border-color: var(--chatbot-brand);
-  background: rgba(31, 60, 136, 0.1);
-  transform: translateY(-1px);
-}
-
-.mecha-chatbot__shortcut-title {
-  display: block;
-  font-weight: 600;
-  color: #132560;
-  margin-bottom: 0.15rem;
-}
-
-.mecha-chatbot__shortcut-desc {
-  display: block;
-  font-size: 0.75rem;
-  color: #4f5c7f;
-}
-
 .mecha-chatbot__message {
   max-width: 90%;
   padding: 0.75rem 1rem;
