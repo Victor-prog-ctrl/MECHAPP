@@ -41,7 +41,7 @@ main {
 
 .site-header {
     width: min(1120px, 100%);
-    background: var(--bg-secondary);
+    background: linear-gradient(178deg, #ffffff, #d3c8c8);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 18px 32px;
@@ -347,7 +347,7 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 32px;
-    background: linear-gradient(120deg, #101828, #1d2939);
+    background: linear-gradient(163deg, #ffffff, #000000);
     color: #fff;
     border-radius: var(--radius-lg);
     padding: 48px;
@@ -1113,8 +1113,8 @@ main {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 24px;
     margin-top: 48px;
-    color: #fff;
-    background: #0f172a;
+    color: #000000;
+    background: #ffffff;
     border-radius: var(--radius-lg);
     padding: 32px;
     box-shadow: 0 20px 36px rgba(15, 23, 42, 0.25);
@@ -1127,7 +1127,7 @@ main {
 
 .site-footer p,
 .site-footer li {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(0, 0, 0, 0.72);
     font-size: 0.95rem;
     line-height: 1.6;
     list-style: none;

@@ -1,5 +1,4 @@
 body {
-  --bg: linear-gradient(100deg, #ffffff, #000000);
   color: var(--text);
 }
 
