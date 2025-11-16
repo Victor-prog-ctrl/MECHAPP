@@ -1,5 +1,5 @@
 body {
-  background: linear-gradient(180deg, #f3f4f6 0%, #ffffff 52%, #f7f9fc 100%);
+  --bg: linear-gradient(100deg, #ffffff, #000000);
   color: var(--text);
 }
 

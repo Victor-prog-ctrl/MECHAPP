@@ -1,7 +1,7 @@
 :root {
     color-scheme: dark light;
     font-size: 16px;
-    --bg: #0f172a;
+    --bg: linear-gradient(100deg, #ffffff, #000000);
     --bg-alt: #1e293b;
     --surface: #ffffff;
     --surface-alt: #f8fafc;
