@@ -54,37 +54,7 @@
       keywords: ["ubicacion", "comuna", "mapa", "cobertura"],
       response:
         "Actualmente operamos en la Región Metropolitana. Usa el buscador de comunas o tu ubicación actual en la página de inicio para encontrar mecánicos cercanos."
-    },
-    {
-      keywords: ["pagos", "tarjeta", "metodo", "cobro", "precio", "costos"],
-      response:
-        "Cada taller define sus precios, pero todos los cobros se pueden hacer por transferencia o presencialmente. " +
-        "Cuando agendes una cita recibirás un resumen con el valor estimado y podrás coordinar pagos seguros desde tu perfil."
-    },
-    {
-      keywords: ["garantia", "seguro", "postventa", "responsabilidad"],
-      response:
-        "Mechapp solicita certificados y reseñas verificadas para asegurar la calidad. " +
-        "Si tienes un problema posterior al servicio abre un ticket desde <strong>Soporte</strong> con tu número de orden para acompañarte."
-    },
-    {
-      keywords: ["internet", "google", "investigar", "web", "noticia"],
-      response:
-        "Si necesitas información externa puedo ayudarte a buscarla. " +
-        "Cuéntame la duda y te enviaré un enlace directo para investigarla en la web." 
     }
-  ];
-
-  const generalQuestionTriggers = [
-    "que es",
-    "quien es",
-    "que significa",
-    "como funciona",
-    "por que",
-    "cuando empezo",
-    "noticia",
-    "investiga",
-    "busca"
   ];
 
   const suggestedPrompts = [
@@ -92,33 +62,6 @@
     "Quiero registrarme como mecánico",
     "Necesito cambiar mi contraseña",
     "¿Qué zonas cubre Mechapp?"
-  ];
-
-  const quickActions = [
-    {
-      label: "Agendar cita",
-      description: "Reserva visitas presenciales o a domicilio.",
-      href: "/pages/agendar-cita.html",
-      message: "Necesito agendar una cita"
-    },
-    {
-      label: "Ver talleres",
-      description: "Explora mecánicos certificados y reseñas.",
-      href: "/pages/resenas-taller.html",
-      message: "Quiero ver talleres disponibles"
-    },
-    {
-      label: "Actualizar perfil",
-      description: "Edita datos personales o sube certificados.",
-      href: "/pages/perfil.html",
-      message: "¿Cómo actualizo mi perfil?"
-    },
-    {
-      label: "Soporte",
-      description: "Reporta inconvenientes o solicita ayuda.",
-      href: "mailto:soporte@mechapp.cl",
-      message: "Necesito hablar con soporte"
-    }
   ];
 
   const container = document.createElement("div");
@@ -135,7 +78,6 @@
           <p class="mecha-chatbot__status">Disponible · uso gratuito</p>
         </div>
       </header>
-      <div class="mecha-chatbot__shortcuts" data-chatbot-shortcuts></div>
       <div class="mecha-chatbot__messages" data-chatbot-messages></div>
       <footer class="mecha-chatbot__footer">
         <label class="sr-only" for="mecha-chatbot-input">Escribe tu mensaje</label>
@@ -157,7 +99,6 @@
   const messagesEl = container.querySelector("[data-chatbot-messages]");
   const inputEl = container.querySelector("#mecha-chatbot-input");
   const sendButton = container.querySelector(".mecha-chatbot__send");
-  const shortcutsEl = container.querySelector("[data-chatbot-shortcuts]");
 
   const storageKey = "mechapp-chatbot-history";
 
@@ -217,18 +158,6 @@
 
   const sanitize = (input) => input.trim();
 
-  const createSearchLink = (query) => {
-    const encoded = encodeURIComponent(query);
-    return `https://duckduckgo.com/?q=${encoded}`;
-  };
-
-  const openExternal = (url) => {
-    const newWindow = window.open(url, "_blank");
-    if (newWindow) {
-      newWindow.opener = null;
-    }
-  };
-
   const findResponse = (text) => {
     const normalized = text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
     const entry = knowledgeBase.find((item) =>
@@ -237,19 +166,6 @@
 
     if (entry) {
       return entry.response;
-    }
-
-    if (
-      generalQuestionTriggers.some((trigger) => normalized.includes(trigger)) ||
-      normalized.split(/\s+/).length >= 6
-    ) {
-      const searchLink = createSearchLink(text);
-      const linkMarkup = `<a href="${searchLink}" target="_blank" rel="noopener">Buscar en la web</a>`;
-      return (
-        "Esa pregunta parece requerir información externa. " +
-        `Te dejo un acceso directo para investigarla en internet: ${linkMarkup}. ` +
-        "Mientras tanto puedo ayudarte con todo lo relacionado a Mechapp."
-      );
     }
 
     return (
@@ -317,36 +233,6 @@
     }
   };
 
-  const renderShortcuts = () => {
-    if (!shortcutsEl) {
-      return;
-    }
-    shortcutsEl.innerHTML = "";
-    quickActions.forEach((action) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "mecha-chatbot__shortcut";
-      button.innerHTML = `
-        <span class="mecha-chatbot__shortcut-title">${action.label}</span>
-        <span class="mecha-chatbot__shortcut-desc">${action.description}</span>
-      `;
-      button.addEventListener("click", () => {
-        if (action.href) {
-          if (action.href.startsWith("mailto:")) {
-            window.location.href = action.href;
-          } else {
-            openExternal(action.href);
-          }
-        }
-        if (action.message) {
-          inputEl.value = action.message;
-          handleSend();
-        }
-      });
-      shortcutsEl.appendChild(button);
-    });
-  };
-
   const startConversation = () => {
     const restored = restoreHistory();
     if (restored) {
@@ -361,7 +247,6 @@
     renderSuggestions();
   };
 
-  renderShortcuts();
   startConversation();
 
   document.addEventListener("keydown", (event) => {
