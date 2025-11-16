@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mechapp · Perfil del Taller</title>
+    <meta
+      name="description"
+      content="Consulta la información de los talleres mecánicos registrados en Mechapp y agenda tus servicios."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../Styles/perfil-taller.css" />
+    <link rel="stylesheet" href="../Styles/chatbot.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./paginainicio.html" aria-label="Volver al inicio">
+        <img src="../assets/logo.png" alt="Logo de Mechapp" />
+        <span>Mechapp</span>
+      </a>
+      <nav class="header-actions" aria-label="Acciones rápidas">
+        <a class="button ghost" href="./paginainicio.html">Inicio</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="workshop-hero" aria-labelledby="workshop-name">
+        <div class="workshop-hero__media">
+          <img data-workshop-photo alt="" loading="lazy" />
+        </div>
+        <div class="workshop-hero__details">
+          <span class="tag" data-workshop-specialties></span>
+          <h1 id="workshop-name" data-workshop-name></h1>
+          <p data-workshop-description></p>
+          <dl class="workshop-metrics">
+            <div>
+              <dt>Experiencia</dt>
+              <dd data-workshop-experience></dd>
+            </div>
+            <div>
+              <dt>Calificación</dt>
+              <dd>
+                <span data-workshop-rating></span>
+                <small data-workshop-rating-count></small>
+              </dd>
+            </div>
+            <div>
+              <dt>Horario</dt>
+              <dd data-workshop-schedule></dd>
+            </div>
+          </dl>
+          <div class="workshop-hero__actions">
+            <a class="button button-primary" data-review-button href="#">Redactar reseña</a>
+            <a class="button ghost" data-view-reviews href="./resenas-mecanicos.html">Ver reseñas</a>
+            <a class="button ghost" href="./agendar-cita.html">Agendar cita</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="workshop-info" aria-label="Información de contacto">
+        <div>
+          <h2>Ubicación y contacto</h2>
+          <ul class="info-list">
+            <li>
+              <span class="label">Dirección</span>
+              <p data-workshop-address></p>
+            </li>
+            <li>
+              <span class="label">Teléfono</span>
+              <a data-workshop-phone href="#"></a>
+            </li>
+            <li>
+              <span class="label">Correo</span>
+              <a data-workshop-email href="#"></a>
+            </li>
+          </ul>
+        </div>
+        <aside class="workshop-highlight" aria-label="Especialidades del taller">
+          <h3>Especialidades destacadas</h3>
+          <ul data-workshop-specialties-list></ul>
+        </aside>
+      </section>
+
+      <section class="workshop-services" aria-labelledby="services-title">
+        <div class="section-header">
+          <div>
+            <h2 id="services-title">Servicios que ofrece</h2>
+            <p>Todos los servicios declarados por el taller al registrarse en Mechapp.</p>
+          </div>
+        </div>
+        <ul class="service-list" data-workshop-services></ul>
+      </section>
+
+      <section class="workshop-certifications" aria-labelledby="certifications-title">
+        <h2 id="certifications-title">Certificaciones y garantías</h2>
+        <ul data-workshop-certifications></ul>
+      </section>
+
+      <section class="workshop-empty" data-workshop-empty hidden>
+        <div class="empty-card">
+          <h2>No encontramos este taller</h2>
+          <p>
+            El enlace al perfil no es válido o el taller fue dado de baja. Vuelve al inicio para explorar otros servicios
+            disponibles en Mechapp.
+          </p>
+          <a class="button" href="./paginainicio.html">Volver al inicio</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../src/workshop-profile.js" defer></script>
+    <script src="../src/chatbot.js" defer></script>
+  </body>
+</html>

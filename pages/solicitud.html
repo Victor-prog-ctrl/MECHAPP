@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Mechapp · Detalle de solicitud</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="icon" type="image/png" href="/assets/logo.png" />
+        <meta
+            name="description"
+            content="Revisa toda la información de la solicitud del cliente y decide si la aceptas o rechazas."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../Styles/solicitud.css" />
+    </head>
+    <body>
+        <main class="request-page">
+            <nav class="request-page__toolbar" aria-label="Navegación de la solicitud">
+                <button type="button" class="button ghost" data-action="go-back">Volver</button>
+            </nav>
+            <section class="request-detail" data-request-container hidden>
+                <header class="request-detail__header">
+                    <span class="request-detail__label">Solicitud del cliente</span>
+                    <span class="status-badge" data-request-status>Estado</span>
+                </header>
+
+                <h1 class="request-detail__service" data-request-service></h1>
+
+                <p class="request-detail__created">
+                    Recibida el <span data-request-created>—</span>
+                </p>
+
+                <dl class="request-detail__meta">
+                    <div>
+                        <dt>Fecha y hora solicitadas</dt>
+                        <dd data-request-scheduled>—</dd>
+                    </div>
+                    <div>
+                        <dt>Tipo de visita</dt>
+                        <dd data-request-type>—</dd>
+                    </div>
+                    <div>
+                        <dt>Dirección indicada</dt>
+                        <dd data-request-address>—</dd>
+                    </div>
+                    <div>
+                        <dt>Cliente</dt>
+                        <dd data-request-client>—</dd>
+                    </div>
+                    <div data-request-location-wrapper hidden>
+                        <dt>Ubicación aproximada</dt>
+                        <dd data-request-location>—</dd>
+                    </div>
+                </dl>
+
+                <section class="request-detail__notes" data-request-notes-wrapper hidden>
+                    <h2>Notas adicionales del cliente</h2>
+                    <p data-request-notes></p>
+                </section>
+
+                <section class="request-detail__actions" aria-label="Acciones disponibles">
+                    <button type="button" class="button" data-action="accept">Aceptar solicitud</button>
+                    <button type="button" class="button ghost danger" data-action="reject">Rechazar solicitud</button>
+                </section>
+
+                <p class="request-detail__feedback" data-request-feedback hidden aria-live="polite"></p>
+            </section>
+        </main>
+
+        <div class="rejection-panel-backdrop" data-rejection-panel hidden tabindex="-1">
+            <section
+                class="rejection-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="rejection-panel-title"
+                data-rejection-panel-content
+            >
+                <h2 id="rejection-panel-title">Motivo del rechazo</h2>
+                <p>El cliente verá este mensaje debajo de su solicitud rechazada.</p>
+                <form data-rejection-form>
+                    <label for="rejection-reason" class="sr-only">Describe el motivo del rechazo</label>
+                    <textarea
+                        id="rejection-reason"
+                        name="rejection-reason"
+                        rows="4"
+                        maxlength="500"
+                        data-rejection-input
+                        placeholder="Ej. Tengo la agenda llena para esa fecha. Podemos reagendar para la próxima semana."
+                        required
+                    ></textarea>
+                    <p class="rejection-panel__feedback" data-rejection-feedback hidden></p>
+                    <div class="rejection-panel__actions">
+                        <button type="button" class="button ghost" data-rejection-cancel>Cancelar</button>
+                        <button type="submit" class="button danger" data-rejection-confirm>Rechazar cita</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <script src="../src/request-detail.js" defer></script>
+    </body>
+</html>

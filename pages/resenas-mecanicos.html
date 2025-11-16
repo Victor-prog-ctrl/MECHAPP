@@ -7,6 +7,8 @@
     <meta name="description" content="Conoce las reseñas y calificaciones de los mejores mecánicos en Mechapp." />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -18,7 +20,7 @@
   <body>
     <header class="site-header">
       <div class="brand">
-        <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+        <img src="../assets/logo-oscuro.png" alt="Mechapp" class="brand-logo">
         <span class="brand-name">Mechapp</span>
       </div>
       <nav class="main-nav" aria-label="Principal">
@@ -28,8 +30,8 @@
         <a href="./registro-taller.html" class="nav-link" data-visible-for="mecanico" hidden>Registrar Taller</a>
       </nav>
       <div class="header-actions">
-        <a href="./login.html" class="button button-secondary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
-        <a href="./registro.html" class="button ghost">Crear Cuenta</a>
+        <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
+        <a href="./registro.html" class="button button-primary">Crear Cuenta</a>
       </div>
     </header>
 
@@ -46,140 +48,29 @@
       <section class="review-toolbar" aria-label="Resumen de reseñas">
         <div class="stats">
           <div>
-            <strong>4.8</strong>
+            <strong data-reviews-average>–</strong>
             <span>Calificación global</span>
           </div>
           <div>
-            <strong>+320</strong>
+            <strong data-reviews-count>0</strong>
+            <span>Reseñas publicadas</span>
+          </div>
+          <div>
+            <strong data-verified-clients>0</strong>
             <span>Clientes verificados</span>
           </div>
           <div>
-            <strong>12</strong>
+            <strong data-specialties-count>0</strong>
             <span>Especialidades disponibles</span>
           </div>
         </div>
-        <div class="filter-group" role="presentation">
-          <label class="visually-hidden" for="filter-servicio">Filtrar por servicio</label>
-          <select id="filter-servicio" name="servicio" aria-label="Filtrar por servicio" disabled>
-            <option>Servicios destacados</option>
-          </select>
-          <label class="visually-hidden" for="filter-valoracion">Ordenar por valoración</label>
-          <select id="filter-valoracion" name="valoracion" aria-label="Ordenar por valoración" disabled>
-            <option>Mejor valoración</option>
-          </select>
-        </div>
       </section>
 
-      <section class="review-grid" aria-label="Listado de reseñas de mecánicos">
-        <article class="review-card">
-          <header class="review-header">
-            <img src="https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=facearea&w=200&h=200&q=80" alt="Foto de Alejandro Torres" />
-            <div class="identity">
-              <h3>Alejandro Torres</h3>
-              <div class="rating" aria-label="Calificación 4.9 de 5">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86-5-4.87 7.1-1.01L12 2z" /></svg>
-                <span>4.9</span>
-                <span aria-hidden="true">(128 reseñas)</span>
-              </div>
-            </div>
-          </header>
-          <div class="service-tags" aria-label="Servicios ofrecidos">
-            <span>Mantenimiento preventivo</span>
-            <span>Diagnóstico eléctrico</span>
-            <span>Sistema de frenos</span>
-          </div>
-          <p class="review-comment">
-            “Servicio impecable, explica cada paso de la reparación y entrega el vehículo
-            a tiempo. Excelente atención al cliente y seguimiento post-servicio.”
-          </p>
-          <footer class="review-footer">
-            <span>Cliente destacado: <strong>Laura Gómez</strong></span>
-            <time datetime="2024-08">Ago 2024</time>
-          </footer>
-        </article>
-
-        <article class="review-card">
-          <header class="review-header">
-            <img src="https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=facearea&w=200&h=200&q=80" alt="Foto de Valentina Rivas" />
-            <div class="identity">
-              <h3>Valentina Rivas</h3>
-              <div class="rating" aria-label="Calificación 4.7 de 5">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86-5-4.87 7.1-1.01L12 2z" /></svg>
-                <span>4.7</span>
-                <span aria-hidden="true">(96 reseñas)</span>
-              </div>
-            </div>
-          </header>
-          <div class="service-tags" aria-label="Servicios ofrecidos">
-            <span>Alineación y balanceo</span>
-            <span>Suspensión</span>
-            <span>Diagnóstico computarizado</span>
-          </div>
-          <p class="review-comment">
-            “Su taller está muy bien equipado. Me ayudó a detectar un problema complejo
-            en la suspensión y lo resolvió en el mismo día. Altamente recomendada.”
-          </p>
-          <footer class="review-footer">
-            <span>Cliente destacado: <strong>Marcelo Díaz</strong></span>
-            <time datetime="2024-06">Jun 2024</time>
-          </footer>
-        </article>
-
-        <article class="review-card">
-          <header class="review-header">
-            <img src="assets/camila.jpg" alt="Foto de Camila Herrera" />
-            <div class="identity">
-              <h3>Camila Herrera</h3>
-              <div class="rating" aria-label="Calificación 4.8 de 5">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86-5-4.87 7.1-1.01L12 2z" /></svg>
-                <span>4.8</span>
-                <span aria-hidden="true">(104 reseñas)</span>
-              </div>
-            </div>
-          </header>
-          <div class="service-tags" aria-label="Servicios ofrecidos">
-            <span>Motor y afinación</span>
-            <span>Inyección electrónica</span>
-            <span>Servicio express</span>
-          </div>
-          <p class="review-comment">
-            “Camila siempre tiene soluciones rápidas y efectivas. Me orientó sobre el
-            mantenimiento preventivo y ahora mi auto funciona como nuevo.”
-          </p>
-          <footer class="review-footer">
-            <span>Cliente destacado: <strong>Pedro Martínez</strong></span>
-            <time datetime="2024-05">May 2024</time>
-          </footer>
-        </article>
-
-        <article class="review-card">
-          <header class="review-header">
-            <img src="assets/Ford-Mustang-1967.jpg" alt="Foto de Ricardo Álvarez" />
-            <div class="identity">
-              <h3>Ricardo Álvarez</h3>
-              <div class="rating" aria-label="Calificación 4.6 de 5">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.2 21 12 17.77 5.8 21l1-6.86-5-4.87 7.1-1.01L12 2z" /></svg>
-                <span>4.6</span>
-                <span aria-hidden="true">(88 reseñas)</span>
-              </div>
-            </div>
-          </header>
-          <div class="service-tags" aria-label="Servicios ofrecidos">
-            <span>Climatización</span>
-            <span>Transmisión automática</span>
-            <span>Servicio a domicilio</span>
-          </div>
-          <p class="review-comment">
-            “Muy puntual y prolijo en cada reparación. Su servicio a domicilio es perfecto
-            para quienes no pueden movilizar el vehículo. ¡Totalmente confiable!”
-          </p>
-          <footer class="review-footer">
-            <span>Cliente destacado: <strong>Francisca León</strong></span>
-            <time datetime="2024-04">Abr 2024</time>
-          </footer>
-        </article>
+      <section class="review-grid" aria-label="Listado de reseñas de mecánicos" data-review-grid aria-live="polite">
+        <p class="review-empty" data-review-empty hidden>Aún no hay reseñas publicadas. Sé la primera persona en compartir tu experiencia.</p>
       </section>
     </main>
+    <script src="../src/workshop-reviews-list.js" defer></script>
     <script src="../src/chatbot.js" defer></script>
   </body>
 </html>

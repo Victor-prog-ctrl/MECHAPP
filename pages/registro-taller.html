@@ -6,6 +6,8 @@
         <title>Mechapp · Registrar Taller</title>
         <meta name="description" content="Formulario para registrar talleres mecánicos en Mechapp." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="icon" type="image/png" href="/assets/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -59,13 +61,41 @@
                             ></textarea>
                         </div>
                         <div class="field">
-                            <label for="services">Servicios destacados</label>
-                            <textarea
-                                id="services"
-                                name="services"
-                                rows="3"
-                                placeholder="Mantenimiento preventivo, reparación de motor, diagnósticos eléctricos, etc."
-                            ></textarea>
+                            <span class="field-label" id="services-label">Servicios que ofrece</span>
+                            <p class="help-text">Selecciona los servicios que ofreces en tu taller.</p>
+                            <div class="service-options" data-service-options>
+                                <button
+                                    class="service-nav service-nav--prev"
+                                    type="button"
+                                    aria-label="Ver servicios anteriores"
+                                    data-service-prev
+                                >
+                                    <span aria-hidden="true">&#10094;</span>
+                                </button>
+                                <div class="service-track-wrapper" data-service-wrapper>
+                                    <div
+                                        class="service-track"
+                                        data-service-track
+                                        role="group"
+                                        aria-labelledby="services-label"
+                                    ></div>
+                                </div>
+                                <button
+                                    class="service-nav service-nav--next"
+                                    type="button"
+                                    aria-label="Ver servicios siguientes"
+                                    data-service-next
+                                >
+                                    <span aria-hidden="true">&#10095;</span>
+                                </button>
+                            </div>
+                            <div class="selected-services" data-selected-services hidden>
+                                <p class="selected-services__title">Servicios seleccionados</p>
+                                <p class="selected-services__empty" data-selected-services-empty>
+                                    Aún no has seleccionado servicios.
+                                </p>
+                                <div class="selected-services__list" data-selected-services-list></div>
+                            </div>
                         </div>
                         <div class="field">
                             <label for="experience-years">Años de experiencia</label>
@@ -141,6 +171,7 @@
                             <label for="privacy">Acepto compartir la información de mi taller en Mechapp.</label>
                         </div>
                     </fieldset>
+                    <p class="form-feedback" role="status" aria-live="polite" data-workshop-feedback hidden></p>
                     <div class="form-actions">
                         <button type="submit" class="button button-primary">Guardar taller</button>
                         <a class="button ghost" href="./paginainicio.html">Cancelar</a>
@@ -149,6 +180,7 @@
             </section>
         </main>
 
+        <script src="../src/workshop-registration.js" defer></script>
         <script src="../src/chatbot.js" defer></script>
     </body>
 </html>

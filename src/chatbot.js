@@ -57,59 +57,11 @@
     }
   ];
 
-  const guidedOptions = [
-    {
-      id: "agendar",
-      label: "Agendar una cita",
-      prompt: "Quiero agendar una cita paso a paso",
-      summary: "Escoge servicio, tipo de visita y fecha",
-      steps: [
-        "Ingresa a la sección <strong>Agendar cita</strong> desde el menú superior.",
-        "Elige el servicio que necesitas y selecciona si la visita será presencial o a domicilio.",
-        "Selecciona la fecha y hora disponibles que mejor te acomoden.",
-        "Agrega comentarios para el mecánico (por ejemplo, síntomas del vehículo o referencias).",
-        "Confirma los datos y envía la solicitud. Recibirás la confirmación en tu correo."
-      ]
-    },
-    {
-      id: "registro-cliente",
-      label: "Crear cuenta de cliente",
-      prompt: "Necesito registrarme como cliente",
-      summary: "Completa tus datos básicos",
-      steps: [
-        "Haz clic en <strong>Crear cuenta</strong> y selecciona la opción Cliente.",
-        "Ingresa tu nombre y apellido tal como quieres que aparezcan en tu perfil.",
-        "Añade tu correo electrónico y define una contraseña segura (mínimo 8 caracteres).",
-        "Acepta los términos y condiciones y envía el formulario.",
-        "Verifica tu bandeja de entrada para activar la cuenta si se solicita."
-      ]
-    },
-    {
-      id: "registro-mecanico",
-      label: "Registro de mecánico",
-      prompt: "Quiero registrarme como mecánico",
-      summary: "Incluye tu certificación",
-      steps: [
-        "En <strong>Crear cuenta</strong> selecciona la opción Mecánico.",
-        "Completa tus datos personales y de contacto.",
-        "Configura una contraseña segura y acepta los términos.",
-        "Una vez dentro de la plataforma, dirígete a tu perfil y sube el certificado que avala tu especialidad.",
-        "Espera la validación del equipo; te avisaremos por correo cuando esté aprobada."
-      ]
-    },
-    {
-      id: "soporte",
-      label: "Solicitar soporte",
-      prompt: "Necesito ayuda del equipo",
-      summary: "Contacta a soporte",
-      steps: [
-        "Describe el problema o consulta en el chat para que intentemos resolverlo al instante.",
-        "Si necesitas seguimiento humano, escribe a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>.",
-        "Incluye capturas o datos relevantes (correo de registro, patente, hora del incidente).",
-        "El equipo responderá a tu correo con los pasos siguientes.",
-        "Puedes complementar la solicitud desde tu perfil si es necesario."
-      ]
-    }
+  const suggestedPrompts = [
+    "¿Cómo agendo una visita a domicilio?",
+    "Quiero registrarme como mecánico",
+    "Necesito cambiar mi contraseña",
+    "¿Qué zonas cubre Mechapp?"
   ];
 
   const container = document.createElement("div");
@@ -202,7 +154,6 @@
     messagesEl.appendChild(el);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     saveHistory();
-    return el;
   };
 
   const sanitize = (input) => input.trim();
@@ -217,124 +168,27 @@
       return entry.response;
     }
 
-    return null;
+    return (
+      "No tengo una respuesta exacta para eso todavía. " +
+      "Puedo ayudarte con agendamientos, registro, validaciones y soporte general. " +
+      "Si quieres que te contacte una persona, escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>."
+    );
   };
 
-  const botReply = (text, { onRender } = {}) => {
+  const botReply = (text) => {
     setTimeout(() => {
-      const messageElement = appendMessage("bot", text);
-      if (typeof onRender === "function") {
-        onRender(messageElement);
-      }
+      appendMessage("bot", text);
     }, 400);
   };
 
-  const showBotLoading = (text = "Buscando información en internet...") => {
-    const loadingMessage = createMessageEl("bot", text, new Date());
-    loadingMessage.dataset.loading = "true";
-    messagesEl.appendChild(loadingMessage);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return loadingMessage;
-  };
-
-  const removeBotLoading = (element) => {
-    if (element && messagesEl.contains(element)) {
-      messagesEl.removeChild(element);
-    }
-  };
-
-  const fallbackMessage =
-    "No encontré una respuesta exacta todavía. " +
-    "Puedo ayudarte con agendamientos, registro, validaciones y soporte general. " +
-    "Si quieres que te contacte una persona, escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>.";
-
-  const fetchInternetKnowledge = async (question) => {
-    const trimmed = question.trim().replace(/\s+/g, " ");
-    if (!trimmed) {
-      return null;
-    }
-
-    const query = encodeURIComponent(trimmed.slice(0, 80));
-    const url =
-      `https://es.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&limit=1&namespace=0&search=${query}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = await response.json();
-      const titles = Array.isArray(data?.[1]) ? data[1] : [];
-      const descriptions = Array.isArray(data?.[2]) ? data[2] : [];
-      const links = Array.isArray(data?.[3]) ? data[3] : [];
-
-      if (!titles.length || !descriptions.length) {
-        return null;
-      }
-
-      const [title] = titles;
-      const [description] = descriptions;
-      const [link] = links;
-
-      if (!description) {
-        return null;
-      }
-
-      const safeTitle = title || "Más información";
-      const safeDescription = description;
-      const safeLink = link ? `<br><a href="${link}" target="_blank" rel="noopener">Leer más en Wikipedia</a>` : "";
-
-      return (
-        `Encontré esto en internet sobre <strong>${safeTitle}</strong>:<br>` +
-        `${safeDescription}${safeLink}`
-      );
-    } catch (error) {
-      console.warn("No fue posible obtener información externa", error);
-      return null;
-    }
-  };
-
-  let isProcessing = false;
-
-  const handleSend = async () => {
+  const handleSend = () => {
     const raw = sanitize(inputEl.value);
-    if (!raw || isProcessing) return;
-
-    isProcessing = true;
-    sendButton.disabled = true;
+    if (!raw) return;
 
     appendMessage("user", raw);
     inputEl.value = "";
-
     const response = findResponse(raw);
-    if (response) {
-      botReply(response, { onRender: showGuidedOptions });
-      isProcessing = false;
-      sendButton.disabled = false;
-      inputEl.focus();
-      return;
-    }
-
-    const loadingMessage = showBotLoading();
-    try {
-      const internetResponse = await fetchInternetKnowledge(raw);
-      removeBotLoading(loadingMessage);
-      botReply(internetResponse || fallbackMessage, { onRender: showGuidedOptions });
-    } catch (error) {
-      console.warn("No fue posible completar la búsqueda externa", error);
-      removeBotLoading(loadingMessage);
-      botReply(fallbackMessage, { onRender: showGuidedOptions });
-    } finally {
-      isProcessing = false;
-      sendButton.disabled = false;
-      inputEl.focus();
-    }
+    botReply(response);
   };
 
   toggleButton.addEventListener("click", () => {
@@ -353,65 +207,44 @@
     }
   });
 
-  const buildStepsMarkup = (steps) => {
-    if (!Array.isArray(steps) || !steps.length) {
-      return "";
+  const renderSuggestions = () => {
+    if (!suggestedPrompts.length) {
+      return;
     }
-    const items = steps.map((step) => `<li>${step}</li>`).join("");
-    return `<ol class="mecha-chatbot__steps">${items}</ol>`;
-  };
-
-  const createClickboxes = () => {
     const wrapper = document.createElement("div");
-    wrapper.className = "mecha-chatbot__clickboxes";
-    guidedOptions.forEach((option) => {
+    wrapper.className = "mecha-chatbot__suggestions";
+    suggestedPrompts.forEach((prompt) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "mecha-chatbot__clickbox";
-      button.innerHTML = `<strong>${option.label}</strong><span>${option.summary}</span>`;
+      button.className = "mecha-chatbot__suggestion";
+      button.textContent = prompt;
       button.addEventListener("click", () => {
-        if (isProcessing) return;
-        appendMessage("user", option.prompt);
-        const response =
-          `<p><strong>${option.label}</strong></p>` +
-          buildStepsMarkup(option.steps) +
-          `<p>¿Necesitas otra guía? Elige nuevamente una opción.</p>`;
-        botReply(response, { onRender: showGuidedOptions });
+        inputEl.value = prompt;
+        handleSend();
       });
       wrapper.appendChild(button);
     });
-    return wrapper;
-  };
-
-  const showGuidedOptions = (messageEl) => {
-    const target =
-      messageEl || messagesEl.querySelector(".mecha-chatbot__message--bot:last-of-type");
-    if (!target) {
-      return;
+    const lastBotMessage = messagesEl.querySelector(
+      ".mecha-chatbot__message--bot:last-of-type"
+    );
+    if (lastBotMessage) {
+      lastBotMessage.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
-    const existing = target.querySelector(".mecha-chatbot__clickboxes");
-    if (existing) {
-      existing.remove();
-    }
-    target.appendChild(createClickboxes());
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    saveHistory();
   };
 
   const startConversation = () => {
     const restored = restoreHistory();
     if (restored) {
-      showGuidedOptions();
       return;
     }
 
     const greeting =
       "¡Hola! Soy <strong>Mechapp Assist</strong>. " +
       "Estoy aquí para resolver tus dudas sobre servicios, registro, mecánicos y soporte en la plataforma. " +
-      "Cuéntame qué necesitas y te guiaré paso a paso. " +
-      "Si lo requieres, también puedo buscar datos públicos en internet para complementar la respuesta.";
-    const greetingMessage = appendMessage("bot", greeting);
-    showGuidedOptions(greetingMessage);
+      "Cuéntame qué necesitas y te guiaré paso a paso.";
+    appendMessage("bot", greeting);
+    renderSuggestions();
   };
 
   startConversation();

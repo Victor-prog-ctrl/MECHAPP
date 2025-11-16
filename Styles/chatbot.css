@@ -13,7 +13,6 @@
   bottom: 1.5rem;
   z-index: 2000;
   font-family: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: var(--chatbot-text);
 }
 
 .mecha-chatbot__toggle {
@@ -122,6 +121,11 @@
   color: var(--chatbot-text);
 }
 
+.mecha-chatbot__message--bot a {
+  color: var(--chatbot-brand);
+  font-weight: 600;
+}
+
 .mecha-chatbot__message--user {
   align-self: flex-end;
   background: var(--chatbot-brand);
@@ -184,65 +188,28 @@
   box-shadow: 0 10px 20px rgba(31, 60, 136, 0.18);
 }
 
-.mecha-chatbot__send[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.mecha-chatbot__clickboxes {
-  display: grid;
+.mecha-chatbot__suggestions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
-.mecha-chatbot__clickbox {
-  border: 1px solid rgba(31, 60, 136, 0.15);
-  border-radius: 0.9rem;
-  text-align: left;
-  padding: 0.65rem 0.85rem;
-  background: rgba(31, 60, 136, 0.04);
-  color: var(--chatbot-text);
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-}
-
-.mecha-chatbot__clickbox strong {
-  font-size: 0.85rem;
-}
-
-.mecha-chatbot__clickbox span {
-  font-size: 0.75rem;
-  color: var(--chatbot-muted);
-}
-
-.mecha-chatbot__clickbox:hover,
-.mecha-chatbot__clickbox:focus-visible {
-  border-color: var(--chatbot-brand);
+.mecha-chatbot__suggestion {
+  border: none;
   background: rgba(31, 60, 136, 0.08);
-  transform: translateY(-1px);
+  color: var(--chatbot-brand);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.mecha-chatbot__message[data-loading="true"] span:first-child {
-  color: var(--chatbot-muted);
-  font-style: italic;
-}
-
-.mecha-chatbot__steps {
-  margin: 0.75rem 0 0.25rem;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.mecha-chatbot__steps li {
-  font-size: 0.85rem;
-  color: var(--chatbot-text);
+.mecha-chatbot__suggestion:hover,
+.mecha-chatbot__suggestion:focus-visible {
+  background: var(--chatbot-brand);
+  color: #fff;
 }
 
 @media (max-width: 600px) {

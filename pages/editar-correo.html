@@ -1,56 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <title>Mechapp · Cambiar correo</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Actualiza el correo electrónico asociado a tu cuenta de Mechapp." />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="stylesheet" href="../Styles/auth.css" />
-        <link rel="stylesheet" href="../Styles/chatbot.css" />
-    </head>
-    <body>
-        <main>
-            <section class="auth-card" aria-labelledby="update-email-title">
-                <div class="brand" aria-label="Mechapp">
-                    <a class="brand-link" href="./paginainicio.html">
-                        <div class="brand-icon" aria-hidden="true"></div>
-                        <span>Mechapp</span>
-                    </a>
-                    <a class="back-home" href="./perfil.html">Volver al perfil</a>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mechapp · Cambiar correo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+    <meta name="description" content="Actualiza el correo electrónico asociado a tu cuenta de Mechapp." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../Styles/auth.css" />
+    <link rel="stylesheet" href="../Styles/chatbot.css" />
+</head>
+
+<body>
+    <main>
+        <section class="auth-card" aria-labelledby="update-email-title">
+            <div class="brand" aria-label="Mechapp">
+                <a class="brand-link" href="./paginainicio.html">
+                    <img src="../assets/logo-oscuro.png" alt="Logo Mechapp" width="90" height="90">
+
+                    <span>Mechapp</span>
+                </a>
+                <a class="back-home" href="./perfil.html">Volver al perfil</a>
+            </div>
+
+            <header class="auth-header">
+                <h1 id="update-email-title">Actualiza tu correo electrónico</h1>
+                <p>Usaremos este correo para enviarte notificaciones y confirmar tus solicitudes.</p>
+            </header>
+
+            <form data-update-form data-update-type="email">
+                <div class="field">
+                    <label for="email">Nuevo correo electrónico</label>
+                    <input type="email" id="email" name="email" placeholder="nombre@correo.com" autocomplete="email"
+                        required />
                 </div>
 
-                <header class="auth-header">
-                    <h1 id="update-email-title">Actualiza tu correo electrónico</h1>
-                    <p>Usaremos este correo para enviarte notificaciones y confirmar tus solicitudes.</p>
-                </header>
+                <button type="submit" class="button">Guardar cambios</button>
+                <p class="form-feedback info" data-feedback aria-live="polite" hidden></p>
+            </form>
+        </section>
+    </main>
 
-                <form data-update-form data-update-type="email">
-                    <div class="field">
-                        <label for="email">Nuevo correo electrónico</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="nombre@correo.com"
-                            autocomplete="email"
-                            required
-                        />
-                    </div>
+    <script src="../src/chatbot.js" defer></script>
+    <script src="../src/profile-update.js" defer></script>
+</body>
 
-                    <button type="submit" class="button">Guardar cambios</button>
-                    <p class="form-feedback info" data-feedback aria-live="polite" hidden></p>
-                </form>
-            </section>
-        </main>
-
-        <script src="../src/chatbot.js" defer></script>
-        <script src="../src/profile-update.js" defer></script>
-    </body>
 </html>

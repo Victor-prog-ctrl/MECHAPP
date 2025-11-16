@@ -8,6 +8,8 @@
   <meta name="description" content="Servicio automotriz profesional." />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,30 +24,54 @@
 <body>
   <header class="site-header">
     <div class="brand">
-      <img src="../assets/logo.png" alt="Mechapp" class="brand-logo" />
+      <img src="../assets/logo-oscuro.png" alt="Mechapp" class="brand-logo" />
       <span class="brand-name">Mechapp</span>
     </div>
     <nav class="main-nav" aria-label="Principal">
       <a href="#inicio" class="nav-link active">Inicio</a>
       <a href="./sobre-nosotros.html" class="nav-link">Sobre nosotros</a>
       <a href="./resenas-mecanicos.html" class="nav-link">Reseñas</a>
-      <a href="./agendar-cita.html" class="nav-link">Agendar cita</a>
+      <a href="./agendar-cita.html" class="nav-link" data-visible-for="usuario" hidden>Agendar cita</a>
       <a href="#ubicacion" class="nav-link">Ubicación</a>
-      <a href="./perfil.html" class="nav-link" data-auth-visibility="authenticated" hidden>
-        Perfil
-      </a>
       <a href="./registro-taller.html" class="nav-link" data-auth-visibility="authenticated" data-visible-for="mecanico"
         hidden>
         Registrar Taller
       </a>
     </nav>
     <div class="header-actions">
+      <div class="notification-center" data-auth-visibility="authenticated" data-notification-center hidden>
+        <button
+          type="button"
+          class="notification-bell"
+          aria-label="Abrir notificaciones"
+          aria-expanded="false"
+          aria-haspopup="true"
+          data-notification-toggle
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="notification-bell__icon">
+            <path
+              d="M12 2a6 6 0 0 0-6 6v3.382l-.894 2.236A1 1 0 0 0 6.03 15h11.94a1 1 0 0 0 .924-1.382L18 11.382V8a6 6 0 0 0-6-6Z"
+            />
+            <path d="M9 18a3 3 0 0 0 6 0H9Z" />
+          </svg>
+          <span class="notification-count" data-notification-count hidden>0</span>
+        </button>
+        <div class="notification-panel" data-notification-panel hidden role="region" aria-live="polite">
+          <div class="notification-panel__header">
+            <div>
+              <p class="notification-panel__label">Centro de notificaciones</p>
+              <p class="notification-panel__title">Tus avisos</p>
+            </div>
+            <button type="button" class="notification-panel__close" aria-label="Cerrar" data-notification-close>
+              &times;
+            </button>
+          </div>
+          <ul class="notification-list" data-notification-list aria-label="Notificaciones"></ul>
+          <p class="notification-empty" data-notification-empty hidden>No tienes notificaciones nuevas.</p>
+        </div>
+      </div>
       <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
       <a href="./perfil.html" class="button ghost" data-auth-visibility="authenticated" hidden>Mi Perfil</a>
-      <a href="./registro-taller.html" class="button ghost" data-auth-visibility="authenticated"
-        data-visible-for="mecanico" hidden>
-        Registrar Taller
-      </a>
     </div>
   </header>
 
@@ -63,51 +89,55 @@
     <section class="search-section" aria-labelledby="buscador">
       <div class="section-header">
         <div>
-          <h2 id="buscador">Encuentra tu taller o servicio</h2>
-          <p>Escribe el nombre de un especialista o servicio y descubre más detalles.</p>
+          <h2 id="buscador">Encuentra tu taller de confianza</h2>
+          <p>Escribe el nombre de un taller para ver sus detalles y reseñas.</p>
         </div>
       </div>
       <div class="search-control">
-        <label class="visually-hidden" for="search-input">Buscar talleres o servicios</label>
-        <input type="search" id="search-input" placeholder="Ej. frenos, eléctrico, mantenimiento" autocomplete="off" />
+        <label class="visually-hidden" for="search-input">Buscar talleres por nombre</label>
+        <input type="search" id="search-input" placeholder="Ej. Taller Los Andes" autocomplete="off" />
       </div>
-      <div class="search-results" id="search-results" aria-live="polite"></div>
+      <div class="search-results" id="search-results" aria-live="polite" hidden></div>
+
     </section>
 
-    <section class="services" id="citas" aria-labelledby="servicios">
+    <section class="featured-services" aria-labelledby="featured-services-title">
       <div class="section-header">
         <div>
-          <h2 id="servicios">Servicios Populares</h2>
-          <p>Agenda los servicios más solicitados por nuestros clientes.</p>
+          <h2 id="featured-services-title">Servicios destacados en Mechapp</h2>
+          <p>Descubre las especialidades más solicitadas por los talleres registrados y navega por ellas.</p>
         </div>
-        <a class="button" href="#citas">Explorar</a>
       </div>
-      <div class="grid">
-        <article class="service-card">
-          <img src="assets/mantenimiento-generalf-Photoroom.png" width="60" height="60">
+      <div class="featured-services-carousel" data-featured-services aria-live="polite">
+        <button class="featured-services-nav featured-services-nav--prev" type="button" aria-label="Ver servicios anteriores" data-featured-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="featured-services-track-wrapper">
+          <div class="featured-services-track" data-featured-track></div>
+        </div>
+        <button class="featured-services-nav featured-services-nav--next" type="button" aria-label="Ver servicios siguientes" data-featured-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+      </div>
+    </section>
 
-          <div>
-            <h3>Mantenimiento General</h3>
-            <p>Incluye revisión completa de fluidos y ajustes básicos.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
-        <article class="service-card">
-          <img src="assets/transparent-Photoroom.png" width="60" height="60">
-          <div>
-            <h3>Diagnóstico Eléctrico</h3>
-            <p>Soluciones precisas para problemas eléctricos del vehículo.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
-        <article class="service-card">
-          <img src="assets/aliniacion-Photoroom.png" width="60" height="60">
-          <div>
-            <h3>Alineación y Balanceo</h3>
-            <p>Mejora el rendimiento y la seguridad en carretera.</p>
-          </div>
-          <a class="button ghost" href="#">Próximas Citas</a>
-        </article>
+    <section class="workshops" aria-labelledby="workshops-title">
+      <div class="section-header">
+        <div>
+          <h2 id="workshops-title">Talleres verificados en Mechapp</h2>
+          <p>Conoce a los especialistas inscritos y accede a su perfil para solicitar servicios o dejar una reseña.</p>
+        </div>
+      </div>
+      <div class="workshops-carousel">
+        <button class="workshops-nav workshops-nav--prev" type="button" aria-label="Ver talleres anteriores" data-carousel-prev>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <div class="workshops-track-wrapper">
+          <div class="workshops-grid" data-home-workshops aria-live="polite"></div>
+        </div>
+        <button class="workshops-nav workshops-nav--next" type="button" aria-label="Ver talleres siguientes" data-carousel-next>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
       </div>
     </section>
 
@@ -172,7 +202,10 @@
     </div>
   </footer>
 
-  <!-- Tu lógica general (búsqueda) la dejé intacta -->
+  <script src="../src/home-workshops.js" defer></script>
+  <script src="../src/home-services.js" defer></script>
+
+  <!-- Lógica de búsqueda de talleres y exploración de servicios -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const searchInput = document.getElementById("search-input");
@@ -188,8 +221,18 @@
         isMechanic: false,
       };
 
-      const normalizeText = (t = "") =>
-        t.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ñ/g, "n");
+      const normalizeText = (value = "") => {
+        if (typeof value !== "string") {
+          return "";
+        }
+
+        return value
+          .trim()
+          .toLocaleLowerCase("es-CL")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/ñ/g, "n");
+      };
 
       const setElementVisibility = (el, shouldShow) => {
         if (shouldShow) {
@@ -234,6 +277,7 @@
               visibilityState.isAuthenticated = false;
               visibilityState.isMechanic = false;
               applyVisibilityState();
+              clearNotifications();
               return;
             }
             throw new Error("No se pudo obtener el perfil del usuario");
@@ -242,59 +286,339 @@
           visibilityState.isAuthenticated = true;
           visibilityState.isMechanic = profile?.accountType === "mecanico";
           applyVisibilityState();
+          fetchNotifications();
         } catch (e) {
           console.error(e);
           visibilityState.isAuthenticated = false;
           visibilityState.isMechanic = false;
           applyVisibilityState();
+          clearNotifications();
         }
       };
       verifyMechanicProfile();
 
       applyVisibilityState();
 
-      const servicios = [
-        { nombre: "Mantenimiento General", descripcion: "Incluye revisión completa de fluidos y ajustes básicos.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Diagnóstico Eléctrico", descripcion: "Soluciones precisas para problemas eléctricos del vehículo.", enlace: "#", tipo: "Servicio" },
-        { nombre: "Alineación y Balanceo", descripcion: "Mejora el rendimiento y la seguridad en carretera.", enlace: "#", tipo: "Servicio" }
-      ];
+      const SEARCH_LOADING_MESSAGE = '<p class="empty-results">Estamos cargando los talleres…</p>';
+      const SEARCH_ERROR_MESSAGE = '<p class="empty-results">No se pudieron cargar los talleres. Intenta nuevamente más tarde.</p>';
+      const SEARCH_EMPTY_MESSAGE = '<p class="empty-results">No encontramos talleres que coincidan con tu búsqueda.</p>';
 
-      const marcasVehiculos = [
-        "Abarth", "Acura", "Alfa Romeo", "Audi", "BMW", "BYD", "Chevrolet", "Citroën", "Ford", "Honda",
-        "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Peugeot", "Renault",
-        "Subaru", "Suzuki", "Toyota", "Volkswagen", "Volvo"
-      ].map((m) => ({ nombre: m, descripcion: "Marca disponible para servicios especializados.", enlace: "#", tipo: "Marca" }));
+      const notificationCenter = document.querySelector('[data-notification-center]');
+      const notificationPanel = document.querySelector('[data-notification-panel]');
+      const notificationToggle = document.querySelector('[data-notification-toggle]');
+      const notificationList = document.querySelector('[data-notification-list]');
+      const notificationEmpty = document.querySelector('[data-notification-empty]');
+      const notificationCount = document.querySelector('[data-notification-count]');
+      const notificationCloseButton = document.querySelector('[data-notification-close]');
 
-      const datosBusqueda = [...servicios, ...marcasVehiculos];
+      let workshops = [];
+      let workshopsReady = false;
+      let workshopsLoadError = false;
+      let notifications = [];
+      const DISMISSED_NOTIFICATIONS_KEY = "mechapp.dismissedNotifications";
+      const isStorageAvailable =
+        typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+      const dismissedNotifications = (() => {
+        if (!isStorageAvailable) {
+          return new Set();
+        }
+        try {
+          const stored = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+          const parsed = stored ? JSON.parse(stored) : [];
+          if (!Array.isArray(parsed)) {
+            return new Set();
+          }
+          return new Set(parsed.filter((value) => typeof value === "string"));
+        } catch (error) {
+          console.error("No se pudo leer el estado de notificaciones descartadas", error);
+          return new Set();
+        }
+      })();
 
-      const renderResultados = (items) => {
-        const el = document.getElementById("search-results");
-        if (!items.length) { el.innerHTML = '<p class="empty-results">No encontramos resultados que coincidan con tu búsqueda.</p>'; return; }
-        const frag = document.createDocumentFragment();
-        items.forEach((item) => {
-          const article = document.createElement("article");
-          article.className = "result-item";
-          article.innerHTML = `
-              <div class="result-type" aria-hidden="true">${item.tipo}</div>
-              <div class="result-content">
-                <h3>${item.nombre}</h3>
-                <p>${item.especialidad || item.descripcion}</p>
-              </div>
-              <a class="button ghost" href="${item.enlace}">Ver más</a>
-            `;
-          frag.appendChild(article);
-        });
-        el.innerHTML = ""; el.appendChild(frag);
+      const persistDismissedNotifications = () => {
+        if (!isStorageAvailable) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(
+            DISMISSED_NOTIFICATIONS_KEY,
+            JSON.stringify([...dismissedNotifications])
+          );
+        } catch (error) {
+          console.error("No se pudo guardar el estado de notificaciones descartadas", error);
+        }
       };
-      renderResultados(datosBusqueda.slice(0, 3));
-      searchInput?.addEventListener("input", (e) => {
-        const termino = normalizeText(e.target.value);
-        if (!termino) { renderResultados(datosBusqueda.slice(0, 3)); return; }
-        const filtrados = datosBusqueda.filter((it) =>
-          normalizeText(`${it.nombre} ${it.especialidad || ""} ${it.descripcion || ""}`).includes(termino)
-        );
-        renderResultados(filtrados);
+
+      const renderNotifications = () => {
+        if (!notificationList || !notificationEmpty || !notificationCount) {
+          return;
+        }
+
+        notificationList.innerHTML = "";
+
+        if (!notifications.length) {
+          notificationEmpty.removeAttribute("hidden");
+          notificationCount.setAttribute("hidden", "");
+          notificationCount.textContent = "0";
+          return;
+        }
+
+        notificationEmpty.setAttribute("hidden", "");
+        notificationCount.textContent = notifications.length.toString();
+        notificationCount.removeAttribute("hidden");
+
+        const fragment = document.createDocumentFragment();
+        notifications.forEach((item) => {
+          const entry = document.createElement("li");
+          entry.className = `notification-item notification-item--${item.type ?? "info"}`;
+
+          const content = document.createElement("div");
+          content.className = "notification-item__content";
+
+          const text = document.createElement("p");
+          text.textContent = item.message;
+          content.appendChild(text);
+
+          if (item.action?.href && item.action?.label) {
+            const actionLink = document.createElement("a");
+            actionLink.href = item.action.href;
+            actionLink.textContent = item.action.label;
+            actionLink.className = "notification-item__action";
+            content.appendChild(actionLink);
+          }
+
+          entry.appendChild(content);
+
+          const closeButton = document.createElement("button");
+          closeButton.type = "button";
+          closeButton.className = "notification-item__dismiss";
+          closeButton.setAttribute("aria-label", "Descartar notificación");
+          closeButton.dataset.notificationId = item.id;
+          closeButton.textContent = "×";
+          entry.appendChild(closeButton);
+
+          fragment.appendChild(entry);
+        });
+
+        notificationList.appendChild(fragment);
+      };
+
+      const setNotifications = (items = []) => {
+        const incoming = Array.isArray(items) ? [...items] : [];
+        notifications = incoming.filter((item) => !dismissedNotifications.has(item.id));
+        renderNotifications();
+      };
+
+      const closeNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        notificationPanel.setAttribute("hidden", "");
+        notificationToggle.setAttribute("aria-expanded", "false");
+      };
+
+      const openNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        notificationPanel.removeAttribute("hidden");
+        notificationToggle.setAttribute("aria-expanded", "true");
+      };
+
+      const toggleNotificationPanel = () => {
+        if (!notificationPanel || !notificationToggle) {
+          return;
+        }
+        const isHidden = notificationPanel.hasAttribute("hidden");
+        if (isHidden) {
+          openNotificationPanel();
+        } else {
+          closeNotificationPanel();
+        }
+      };
+
+      const clearNotifications = () => {
+        notifications = [];
+        renderNotifications();
+        closeNotificationPanel();
+      };
+
+      const fetchNotifications = async () => {
+        if (!visibilityState.isAuthenticated) {
+          clearNotifications();
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/notifications", {
+            credentials: "same-origin",
+          });
+
+          if (response.status === 401) {
+            clearNotifications();
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("No se pudieron obtener las notificaciones.");
+          }
+
+          const data = await response.json();
+          const serverNotifications = Array.isArray(data?.notifications)
+            ? data.notifications
+            : [];
+          setNotifications(serverNotifications);
+        } catch (error) {
+          console.error("No se pudieron obtener las notificaciones", error);
+          clearNotifications();
+        }
+      };
+
+      notificationToggle?.addEventListener("click", () => {
+        toggleNotificationPanel();
       });
+
+      notificationCloseButton?.addEventListener("click", () => {
+        closeNotificationPanel();
+      });
+
+      notificationList?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-notification-id]");
+        if (!button) {
+          return;
+        }
+        event.stopPropagation();
+        const { notificationId } = button.dataset;
+        if (!notificationId) {
+          return;
+        }
+        notifications = notifications.filter((item) => item.id !== notificationId);
+        renderNotifications();
+        if (notificationId) {
+          dismissedNotifications.add(notificationId);
+          persistDismissedNotifications();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!notificationCenter || !notificationPanel || notificationPanel.hasAttribute("hidden")) {
+          return;
+        }
+        if (notificationCenter.contains(event.target)) {
+          return;
+        }
+        closeNotificationPanel();
+      });
+
+      function createWorkshopResult(workshop) {
+        const article = document.createElement("article");
+        article.className = "result-item";
+
+        const type = document.createElement("div");
+        type.className = "result-type";
+        type.textContent = "Taller";
+        type.setAttribute("aria-hidden", "true");
+        article.appendChild(type);
+
+        const content = document.createElement("div");
+        content.className = "result-content";
+
+        const title = document.createElement("h3");
+        title.textContent = workshop.name;
+        content.appendChild(title);
+
+        const description = document.createElement("p");
+        description.textContent = workshop.shortDescription || "Sin descripción disponible.";
+        content.appendChild(description);
+
+        article.appendChild(content);
+
+        const link = document.createElement("a");
+        link.className = "button ghost";
+        link.href = `./perfil-taller.html?id=${encodeURIComponent(workshop.id)}`;
+        link.textContent = "Ver más";
+        link.setAttribute("aria-label", `Ver perfil del taller ${workshop.name}`);
+        article.appendChild(link);
+
+        return article;
+      }
+
+      function renderSearchResults(items) {
+        if (!searchResults) {
+          return;
+        }
+
+        if (!items.length) {
+          searchResults.innerHTML = SEARCH_EMPTY_MESSAGE;
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        items.forEach((workshop) => {
+          fragment.appendChild(createWorkshopResult(workshop));
+        });
+        searchResults.innerHTML = "";
+        searchResults.appendChild(fragment);
+      }
+
+      async function loadWorkshops() {
+        workshopsReady = false;
+        workshopsLoadError = false;
+        try {
+          const response = await fetch("/api/workshops");
+          if (!response.ok) {
+            throw new Error("No se pudieron cargar los talleres");
+          }
+          const data = await response.json();
+          workshops = Array.isArray(data?.workshops) ? data.workshops : [];
+          workshopsReady = true;
+          if (searchInput && searchInput.value.trim()) {
+            searchInput.dispatchEvent(new Event("input"));
+          }
+        } catch (error) {
+          console.error(error);
+          workshops = [];
+          workshopsReady = false;
+          workshopsLoadError = true;
+        }
+      }
+
+      searchInput?.addEventListener("input", (event) => {
+        const term = normalizeText(event.target.value);
+        if (!searchResults) {
+          return;
+        }
+
+        if (!term) {
+          searchResults.innerHTML = "";
+          searchResults.setAttribute("hidden", "");
+          return;
+        }
+
+        searchResults.removeAttribute("hidden");
+
+        if (workshopsLoadError) {
+          searchResults.innerHTML = SEARCH_ERROR_MESSAGE;
+          return;
+        }
+
+        if (!workshopsReady) {
+          searchResults.innerHTML = SEARCH_LOADING_MESSAGE;
+          return;
+        }
+
+        const filtered = workshops.filter((workshop) => {
+          const normalizedName = normalizeText(workshop?.name);
+          if (!normalizedName) {
+            return false;
+          }
+
+          return normalizedName.includes(term);
+        });
+        renderSearchResults(filtered);
+      });
+
+      loadWorkshops();
     });
   </script>
 
