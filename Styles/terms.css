@@ -1,16 +1,16 @@
 :root {
-    color-scheme: dark light;
+    color-scheme: light;
     font-size: 16px;
-    --bg: #0f172a;
-    --bg-alt: #1e293b;
-    --surface: #ffffff;
-    --surface-alt: #f8fafc;
-    --surface-dark: rgba(15, 23, 42, 0.8);
-    --text: #0f172a;
-    --text-muted: #475569;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --border: rgba(15, 23, 42, 0.08);
+    --bg: #005187;
+    --bg-alt: #0b6fbf;
+    --surface: #f3f8ff;
+    --surface-alt: #dbe9ff;
+    --surface-dark: rgba(0, 81, 135, 0.08);
+    --text: #0b1f33;
+    --text-muted: #4d6784;
+    --accent: #00c2ff;
+    --accent-dark: #0086c9;
+    --border: rgba(0, 53, 106, 0.15);
 }
 
 * {
@@ -20,9 +20,9 @@
 body {
     margin: 0;
     font-family: "Manrope", sans-serif;
-    background: var(--bg);
+    background: #dfdfdf;
     min-height: 100vh;
-    color: var(--surface);
+    color: var(--text);
     display: flex;
     flex-direction: column;
 }
@@ -37,7 +37,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    color: #fff;
+    color: var(--surface);
     text-decoration: none;
     font-weight: 700;
     font-size: 1.25rem;
@@ -86,7 +86,7 @@ body {
     align-self: flex-start;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     color: var(--accent);
     font-weight: 600;
     font-size: 0.85rem;

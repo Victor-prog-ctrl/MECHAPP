@@ -1,12 +1,12 @@
 :root {
-    --bg: #0f172a;
-    --surface: #ffffff;
-    --surface-alt: #f8fafc;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --border: rgba(15, 23, 42, 0.08);
+    --bg: #005187;
+    --surface: #f3f8ff;
+    --surface-alt: #dbe9ff;
+    --text: #0b1f33;
+    --text-muted: #4d6784;
+    --accent: #00c2ff;
+    --accent-dark: #0086c9;
+    --border: rgba(0, 53, 106, 0.15);
     --radius-lg: 28px;
     --radius-md: 18px;
     --radius-sm: 12px;
@@ -20,8 +20,8 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.85)), url("../assets/autoinicio.jpg") no-repeat center/cover;
-    color: var(--surface);
+    background: #dfdfdf;
+    color: var(--text);
     min-height: 100vh;
     padding: 40px 24px 64px;
 }
@@ -42,10 +42,10 @@ main {
     justify-content: space-between;
     padding: 18px 28px;
     border-radius: var(--radius-lg);
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, #f3f8ff, #cfe3ff);
+    border: 1px solid rgba(0, 82, 135, 0.18);
     gap: 16px;
+    box-shadow: 0 18px 48px rgba(0, 28, 61, 0.25);
 }
 
 .brand {
@@ -53,7 +53,7 @@ main {
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    color: inherit;
+    color: var(--text);
     font-weight: 700;
     font-size: 1.25rem;
 }
@@ -102,9 +102,9 @@ main {
 }
 
 .button.ghost {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     color: var(--accent);
-    border-color: rgba(249, 115, 22, 0.24);
+    border-color: rgba(0, 162, 255, 0.36);
     box-shadow: none;
 }
 
@@ -155,7 +155,7 @@ main {
     justify-content: center;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(249, 115, 22, 0.14);
+    background: rgba(0, 162, 255, 0.22);
     color: var(--accent);
     font-weight: 600;
     width: fit-content;
@@ -203,9 +203,9 @@ main {
 }
 
 .workshop-info {
-    background: rgba(15, 23, 42, 0.72);
+    background: var(--surface);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     padding: 32px;
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -226,27 +226,27 @@ main {
 .info-list .label {
     font-size: 0.9rem;
     font-weight: 600;
-    color: rgba(248, 250, 252, 0.72);
+    color: var(--text-muted);
 }
 
 .info-list p,
 .info-list a {
-    color: #fff;
+    color: var(--text);
     font-size: 1.05rem;
     text-decoration: none;
 }
 
 .info-list a.disabled {
-    color: rgba(248, 250, 252, 0.45);
+    color: rgba(11, 31, 51, 0.35);
     pointer-events: none;
     cursor: default;
 }
 
 .workshop-highlight {
-    background: rgba(15, 23, 42, 0.55);
+    background: var(--surface-alt);
     border-radius: var(--radius-md);
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
 }
 
 .workshop-highlight ul {
@@ -258,7 +258,7 @@ main {
 .workshop-highlight li {
     padding: 10px 14px;
     border-radius: var(--radius-sm);
-    background: rgba(249, 115, 22, 0.14);
+    background: rgba(0, 162, 255, 0.22);
     color: var(--accent);
     font-weight: 600;
 }

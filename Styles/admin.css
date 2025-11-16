@@ -1,16 +1,17 @@
 :root {
   --surface-glass: var(--surface);
   --surface-card: var(--surface);
-  --accent-soft: rgba(249, 115, 22, 0.12);
+  --accent-soft: rgba(0, 162, 255, 0.18);
   --muted: var(--text-muted);
   --admin-text-muted: var(--text-muted);
   --shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
   --success: #16a34a;
-  --warning: #f97316;
+  --warning: #00c2ff;
   --danger: #ef4444;
 }
 
 body {
+  background: #dfdfdf;
   gap: 2rem;
   padding-bottom: 72px;
 }
@@ -127,8 +128,8 @@ body {
 
   .stat-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(249, 115, 22, 0.4);
-    box-shadow: 0 16px 32px rgba(249, 115, 22, 0.2);
+    border-color: rgba(0, 162, 255, 0.6);
+    box-shadow: 0 16px 32px rgba(0, 162, 255, 0.32);
   }
 
 .stat-title {
@@ -175,7 +176,7 @@ body {
   }
 
 .filter select:focus-visible {
-  outline: 2px solid rgba(249, 115, 22, 0.45);
+  outline: 2px solid rgba(0, 162, 255, 0.66);
   outline-offset: 2px;
 }
 
@@ -220,7 +221,7 @@ body {
   }
 
 .inline-select:focus-visible {
-  outline: 2px solid rgba(249, 115, 22, 0.45);
+  outline: 2px solid rgba(0, 162, 255, 0.66);
   outline-offset: 2px;
 }
 
@@ -266,7 +267,7 @@ body {
 
   .ghost-button {
     border-radius: 999px;
-    border: 1px solid rgba(249, 115, 22, 0.3);
+    border: 1px solid rgba(0, 162, 255, 0.46);
     background: transparent;
     color: var(--accent);
     padding: 0.5rem 1rem;
@@ -277,10 +278,10 @@ body {
 
   .ghost-button:hover,
   .ghost-button:focus-visible {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(0, 162, 255, 0.18);
     outline: none;
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.18);
+    box-shadow: 0 8px 18px rgba(0, 162, 255, 0.28);
   }
 
 .feedback {
