@@ -1,13 +1,13 @@
 :root {
-    --bg: #005187;
-    --bg-secondary: #0b6fbf;
-    --surface: #f3f8ff;
-    --surface-alt: #dbe9ff;
-    --accent: #00c2ff;
-    --accent-dark: #0086c9;
-    --text: #0b1f33;
-    --text-muted: #4d6784;
-    --border: rgba(0, 53, 106, 0.15);
+    --bg: #f5f6fa;
+    --bg-secondary: #ffffff;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --accent: #d62828;
+    --accent-dark: #b91c1c;
+    --text: #101828;
+    --text-muted: #667085;
+    --border: #e4e7ec;
     --radius-lg: 24px;
     --radius-md: 18px;
     --radius-sm: 12px;
@@ -26,7 +26,7 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: #dfdfdf;
+    background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     padding: 40px 24px 64px;
@@ -41,10 +41,10 @@ main {
 
 .site-header {
     width: min(1120px, 100%);
-    background: linear-gradient(135deg, var(--surface), #cfe3ff);
-    border: 1px solid rgba(0, 82, 135, 0.18);
-    border-radius: 999px;
-    padding: 16px 28px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -52,8 +52,7 @@ main {
     margin-bottom: 36px;
     position: relative;
     z-index: 20;
-    box-shadow: 0 18px 48px rgba(0, 28, 61, 0.25);
-    flex-wrap: wrap;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
 }
 
 .brand {
@@ -128,7 +127,7 @@ main {
 
 .notification-bell:hover,
 .notification-bell:focus-visible {
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
     transform: translateY(-1px);
 }
 
@@ -263,8 +262,8 @@ main {
 }
 
 .notification-item--warning {
-    border-color: rgba(0, 162, 255, 0.4);
-    background: rgba(0, 162, 255, 0.12);
+    border-color: rgba(214, 40, 40, 0.25);
+    background: rgba(214, 40, 40, 0.08);
 }
 
 .notification-item--info {
@@ -291,13 +290,12 @@ main {
 .nav-link:hover,
 .nav-link:focus {
     color: var(--text);
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
 }
 
 .nav-link.active {
     color: var(--accent);
-    background: rgba(0, 162, 255, 0.18);
-    box-shadow: inset 0 0 0 1px rgba(0, 162, 255, 0.26);
+    background: rgba(214, 40, 40, 0.12);
 }
 
 .button {
@@ -319,7 +317,7 @@ main {
 .button:hover,
 .button:focus {
     transform: translateY(-1px);
-    box-shadow: 0 12px 20px rgba(0, 162, 255, 0.4);
+    box-shadow: 0 12px 20px rgba(214, 40, 40, 0.25);
     background: var(--accent-dark);
 }
 
@@ -336,28 +334,27 @@ main {
 
 .button-secondary {
     background: #fff;
-    color: var(--accent);
-    border-color: rgba(0, 162, 255, 0.6);
-    box-shadow: inset 0 0 0 1px rgba(0, 162, 255, 0.3);
+    color: var(--text);
+    border-color: var(--border);
+    box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .button-secondary:hover,
 .button-secondary:focus {
     color: var(--accent);
     border-color: var(--accent);
-    background: rgba(0, 162, 255, 0.12);
 }
 
 .button.ghost {
     background: transparent;
     color: var(--accent);
-    border-color: rgba(0, 162, 255, 0.78);
+    border-color: rgba(214, 40, 40, 0.6);
     box-shadow: none;
 }
 
 .button.ghost:hover,
 .button.ghost:focus {
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
 }
 
 .header-actions .button {
@@ -497,8 +494,8 @@ main {
     min-width: 0;
     padding: 24px;
     border-radius: 16px;
-    background: linear-gradient(160deg, rgba(0, 162, 255, 0.12), rgba(0, 162, 255, 0.04));
-    border: 1px solid rgba(0, 162, 255, 0.3);
+    background: linear-gradient(160deg, rgba(214, 40, 40, 0.08), rgba(214, 40, 40, 0.01));
+    border: 1px solid rgba(214, 40, 40, 0.2);
     box-shadow: 0 24px 36px rgba(15, 23, 42, 0.06);
     display: grid;
     gap: 12px;
@@ -527,7 +524,7 @@ main {
 }
 
 .featured-service-card:focus-visible {
-    border-color: rgba(0, 162, 255, 0.78);
+    border-color: rgba(214, 40, 40, 0.6);
 }
 
 .featured-services-nav {
@@ -560,7 +557,7 @@ main {
 
 .featured-services-nav:hover,
 .featured-services-nav:focus-visible {
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
     color: var(--accent);
     outline: none;
 }
@@ -645,8 +642,8 @@ main {
 
 .search-control input:focus {
     outline: none;
-    border-color: rgba(0, 162, 255, 0.78);
-    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.18);
+    border-color: rgba(214, 40, 40, 0.6);
+    box-shadow: 0 0 0 4px rgba(214, 40, 40, 0.12);
 }
 
 .search-results {
@@ -668,7 +665,7 @@ main {
 .result-type {
     padding: 6px 12px;
     border-radius: 999px;
-    background: rgba(0, 162, 255, 0.18);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
     font-weight: 600;
     font-size: 0.85rem;
@@ -736,8 +733,8 @@ main {
 .map-controls input:focus,
 .map-controls select:focus {
     outline: none;
-    border-color: rgba(0, 162, 255, 0.78);
-    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.18);
+    border-color: rgba(214, 40, 40, 0.6);
+    box-shadow: 0 0 0 4px rgba(214, 40, 40, 0.12);
 }
 
 .map-controls button {
@@ -808,8 +805,8 @@ main {
 .comuna-form select:focus,
 .comuna-form button:focus-visible {
     outline: none;
-    border-color: rgba(0, 162, 255, 0.78);
-    box-shadow: 0 0 0 4px rgba(0, 162, 255, 0.18);
+    border-color: rgba(214, 40, 40, 0.6);
+    box-shadow: 0 0 0 4px rgba(214, 40, 40, 0.12);
 }
 
 .comuna-form select {
@@ -899,7 +896,7 @@ main {
 
 .workshops-nav:hover,
 .workshops-nav:focus-visible {
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
     color: var(--accent);
 }
 
@@ -967,7 +964,7 @@ main {
 }
 
 .workshop-card__specialties li {
-    background: rgba(0, 162, 255, 0.18);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
     font-weight: 600;
     border-radius: 999px;
@@ -1074,7 +1071,7 @@ main {
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background: linear-gradient(135deg, #7edaff, #00c2ff);
+    background: linear-gradient(135deg, #f87171, #d62828);
     display: grid;
     place-items: center;
     font-weight: 700;
@@ -1115,7 +1112,7 @@ main {
     width: 48px;
     height: 48px;
     border-radius: 16px;
-    background: linear-gradient(135deg, #7edaff, #00c2ff);
+    background: linear-gradient(135deg, #f87171, #d62828);
 }
 
 .service-card h3 {
@@ -1135,10 +1132,10 @@ main {
     gap: 24px;
     margin-top: 48px;
     color: #fff;
-    background: linear-gradient(145deg, #0b6fbf, #005187);
+    background: #0f172a;
     border-radius: var(--radius-lg);
     padding: 32px;
-    box-shadow: 0 20px 36px rgba(0, 28, 61, 0.35);
+    box-shadow: 0 20px 36px rgba(15, 23, 42, 0.25);
 }
 
 .site-footer h4 {
@@ -1210,7 +1207,7 @@ body.service-modal-open {
 
 .service-modal__close:hover,
 .service-modal__close:focus-visible {
-    background: rgba(0, 162, 255, 0.12);
+    background: rgba(214, 40, 40, 0.08);
     color: var(--accent);
     outline: none;
 }

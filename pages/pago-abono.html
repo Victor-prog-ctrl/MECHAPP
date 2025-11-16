@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Mechapp · Pagar abono</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- PayPal SDK -->
+    <script
+        src="https://www.paypal.com/sdk/js?client-id=ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg&currency=USD&intent=capture&components=buttons,marks">
+        </script>
+
+    <style>
+        /* ==========================
+       ESTILO EXACTO DE CONFIRMACIÓN
+       ========================== */
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Manrope", sans-serif;
+            background-color: #0f172a;
+            /* <- FONDO EXACTO SIN DEGRADADO */
+            color: #e5e7eb;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .header-inline img {
+            width: 90px;
+            height: 90px;
+        }
+
+        .header-inline span {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* PILLS */
+        .pill {
+            display: inline-flex;
+            padding: 6px 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #9ca3af;
+            font-size: 0.8rem;
+            margin-left: auto;
+        }
+
+        /* CARD PRINCIPAL */
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            /* <- MISMA TRANSPARENCIA */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .card h1 {
+            margin: 0 0 6px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card p.subtitle {
+            margin: 0 0 20px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        /* LAYOUT 2 COLUMNAS */
+        .grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 22px;
+            margin-top: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 16px 20px;
+        }
+
+        .panel h2 {
+            margin: 0 0 14px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .panel table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        .panel table td {
+            padding: 8px 0;
+        }
+
+        .panel table tr+tr td {
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .amount {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* MARCO PAYPAL */
+        .paypal-box {
+            border: 1px dashed rgba(255, 255, 255, 0.20);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 14px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .paypal-box p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 850px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header igual -->
+        <div class="header-inline">
+            <img src="../assets/logo.png" alt="Mechapp" width="90px" height="90px">
+            <span>Mechapp</span>
+            <div class="pill">Abono de cita</div>
+        </div>
+
+        <!-- CARD -->
+        <div class="card">
+            <h1>Pagar abono de tu cita</h1>
+            <p class="subtitle">Revisa los datos y realiza el pago del abono para reconfirmar tu visita.</p>
+
+            <div class="grid">
+
+                <!-- IZQUIERDA -->
+                <div class="panel">
+                    <h2>Resumen de la cita</h2>
+
+                    <table>
+                        <tr>
+                            <td>Servicio</td>
+                            <td class="text-right" id="service-cell">---</td>
+                        </tr>
+
+                        <tr>
+                            <td>Fecha / Hora</td>
+                            <td class="text-right" id="datetime-cell">Ver detalles en historial</td>
+                        </tr>
+
+                        <tr>
+                            <td>N.º de cita</td>
+                            <td class="text-right" id="appointment-cell">---</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- DERECHA -->
+                <div class="panel">
+                    <h2>Pago</h2>
+
+                    <table>
+                        <tr>
+                            <td>Abono</td>
+                            <td class="text-right amount" id="amount-cell">$0.00</td>
+                        </tr>
+
+                        <tr>
+                            <td>Método</td>
+                            <td class="text-right">PayPal</td>
+                        </tr>
+                    </table>
+
+                    <div class="paypal-box">
+                        <p>Al completar el pago, tu cita quedará reconfirmada automáticamente.</p>
+                        <div id="paypal-button-container"></div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JS para cargar datos y PayPal -->
+    <script>
+        const params = new URLSearchParams(location.search);
+        const service = params.get("service") || "Servicio MechApp";
+        const appointmentId = params.get("appointmentId") || "---";
+        const scheduled = params.get("scheduled") || "";
+
+        // Actualizar UI
+        document.getElementById("service-cell").textContent = service;
+        document.getElementById("appointment-cell").textContent = appointmentId;
+        document.getElementById("datetime-cell").textContent = scheduled || "Ver detalles en historial";
+
+        // Mapeo de precios
+        const PRICE_MAP = [
+            { re: /diagn[oó]stico/i, usd: 20 },
+            { re: /aceite/i, usd: 15 },
+            { re: /(frenos|suspensi[oó]n)/i, usd: 35 },
+            { re: /(alineaci[oó]n|balanceo)/i, usd: 18 },
+            { re: /mantenimiento/i, usd: 25 },
+            { re: /revisi[oó]n/i, usd: 22 }
+        ];
+
+        function priceOf(service) {
+            for (const p of PRICE_MAP) if (p.re.test(service)) return p.usd;
+            return 25;
+        }
+
+        const amount = priceOf(service);
+        document.getElementById("amount-cell").textContent = `$${amount.toFixed(2)}`;
+
+        // PayPal
+        paypal.Buttons({
+            style: {
+                layout: "vertical",
+                color: "gold",
+                shape: "rect",
+                label: "pay",
+            },
+
+            createOrder(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        description: "Abono Mechapp - " + service,
+                        amount: { value: amount.toFixed(2) }
+                    }]
+                });
+            },
+
+            async onApprove(data, actions) {
+                const r = await fetch("/api/paypal/capture", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orderID: data.orderID })
+                });
+
+                const res = await r.json();
+
+                const qs = new URLSearchParams({
+                    order: res.orderId,
+                    status: res.status,
+                    amount: res.amount,
+                    currency: res.currency || "USD",
+                    service,
+                    appointmentId
+                });
+
+                location.href = "/confirmacion.html?" + qs.toString();
+            }
+
+        }).render("#paypal-button-container");
+    </script>
+</body>
+
+</html>
