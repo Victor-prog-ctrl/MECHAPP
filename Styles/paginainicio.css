@@ -347,7 +347,7 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 32px;
-    background: linear-gradient(163deg, #ffffff, #000000);
+    background: linear-gradient(163deg, #ffffff);
     color: #fff;
     border-radius: var(--radius-lg);
     padding: 48px;
@@ -380,12 +380,13 @@ main {
 }
 
 .hero h1 {
+    color: black;
     font-size: clamp(2rem, 3vw, 2.75rem);
     font-weight: 700;
 }
 
 .hero p {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 1.05rem;
 }
 
