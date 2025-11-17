@@ -13,17 +13,17 @@
 
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #161a22;
-            --muted: #94a3b8;
-            --text: #e6e9ef;
+            --bg: #5e5e5e;
+            --card: #ffffff;
+            --muted: #000000;
+            --text: #000000;
             --ok: #22c55e;
             --warn: #f59e0b;
             --err: #ef4444;
-            --brand: #f97316;
+            --brand: #f91616;
             ;
             /* acento turquesa suave */
-            --ring: rgba(249, 115, 22, .25);
+            --ring: rgba(249, 22, 22, 0.25);
             --shadow: 0 10px 30px rgba(0, 0, 0, .35);
             --radius: 18px;
         }
@@ -77,6 +77,7 @@
             font-weight: 700;
             letter-spacing: .3px;
             font-size: 1.8rem;
+            color: black;
             /* antes era ~1.2rem, ahora será más visible */
         }
 
@@ -94,8 +95,12 @@
             align-items: center;
             justify-content: space-between;
             padding: 22px 24px;
-            border-bottom: 1px dashed rgba(148, 163, 184, .18);
-            background: linear-gradient(180deg, rgba(45, 212, 191, .06), transparent);
+            border-bottom: 1px dashed rgb(0, 0, 0);
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.95) 0%,
+                    rgba(0, 200, 83, 0.10) 100%);
+
+            color: black;
         }
 
         .status-pill {
@@ -129,6 +134,7 @@
             grid-template-columns: 1.2fr .8fr;
             gap: 22px;
             padding: 22px;
+            background-color: #ffffff;
         }
 
         @media (max-width: 840px) {
@@ -139,15 +145,17 @@
 
         .panel {
             background: linear-gradient(180deg, rgba(148, 163, 184, .04), transparent);
-            border: 1px solid rgba(148, 163, 184, .14);
+            border: 1px solid rgb(0, 0, 0);
             border-radius: 14px;
             padding: 18px;
+            color: black;
         }
 
         .panel h3 {
             margin: 0 0 10px;
             font-size: 16px;
-            letter-spacing: .2px
+            letter-spacing: .2px;
+            color: black;
         }
 
         .kv {
@@ -155,7 +163,7 @@
             justify-content: space-between;
             gap: 12px;
             padding: 10px 0;
-            border-bottom: 1px dashed rgba(148, 163, 184, .15);
+            border-bottom: 1px dashed rgb(0, 0, 0);
         }
 
         .kv:last-child {
@@ -177,7 +185,7 @@
             gap: 8px;
             padding: 8px 10px;
             border-radius: 10px;
-            border: 1px solid rgba(148, 163, 184, .16);
+            border: 1px solid rgb(255, 255, 255);
             background: linear-gradient(180deg, rgba(148, 163, 184, .06), transparent);
             font-size: 13px;
             color: var(--muted);
@@ -189,12 +197,13 @@
             gap: 10px;
             padding: 0 22px 22px;
             margin-top: 12px;
+            background-color: white
         }
 
 
         .button {
             appearance: none;
-            border: 1px solid rgba(148, 163, 184, .18);
+            border: 1px solid rgba(0, 0, 0, 0.452);
             background: transparent;
             color: var(--text);
             padding: 10px 14px;
@@ -210,9 +219,9 @@
         }
 
         .button.primary {
-            background: linear-gradient(180deg, #f97316, #ea580c);
+            background: linear-gradient(180deg, #f91616, #ea0c0c);
             /* naranja → naranja oscuro */
-            color: #fff;
+            color: #ffffff;
             border-color: transparent;
         }
 
@@ -232,7 +241,7 @@
 
         .divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, .18), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.685), transparent);
             margin: 0 22px;
         }
     </style>
@@ -242,7 +251,7 @@
     <div class="container">
         <header class="site-header">
             <a class="brand" href="./paginainicio.html">
-                <img src="../assets/logo.png" class="brand-logo" alt="Mechapp" />
+                <img src="../assets/logo-rojo.png" class="brand-logo" alt="Mechapp" />
                 <span class="brand-name">Mechapp</span>
             </a>
             <span class="pay-badge">

@@ -1,17 +1,18 @@
 :root {
-    --bg: linear-gradient(100deg, #ffffff, #000000);
-    --bg-secondary: #1e293b;
+    --bg: linear-gradient(100deg, #5e5e5e);
+    --bg-secondary: #ffffff;
     --surface: #ffffff;
     --surface-alt: #f8fafc;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: rgba(15, 23, 42, 0.08);
+    --accent: #d62828;
+    --accent-dark: #b91c1c;
+    --text: #101828;
+    --text-muted: #667085;
+    --border: #e4e7ec;
     --radius-lg: 24px;
     --radius-md: 18px;
     --radius-sm: 12px;
     font-size: 16px;
+
 }
 
 * {
@@ -43,7 +44,7 @@ main {
 
 .site-header {
     width: min(1120px, 100%);
-    background: rgba(15, 23, 42, 0.72);
+    background: linear-gradient(178deg, #ffffff, #d3c8c8);
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
     border-radius: var(--radius-lg);
@@ -53,6 +54,10 @@ main {
     justify-content: space-between;
     gap: 24px;
     margin-bottom: 32px;
+}
+
+.brand-name {
+    color: black;
 }
 
 .brand {
@@ -90,7 +95,7 @@ main {
 }
 
 .nav-link {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(0, 0, 0, 0.72);
     text-decoration: none;
     font-weight: 500;
     padding: 6px 12px;
@@ -131,8 +136,9 @@ main {
 
 .button.ghost {
     background: transparent;
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.28);
+    color: var(--accent);
+    border-color: rgba(214, 40, 40, 0.6);
+    box-shadow: none;
 }
 
 .button.ghost:hover,
@@ -165,7 +171,7 @@ main {
 .hero {
     display: grid;
     gap: 16px;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(17, 94, 89, 0.92));
+    background: linear-gradient(135deg, rgba(54, 56, 59, 0.92), rgba(39, 39, 39, 0.92));
     border-radius: var(--radius-lg);
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -182,7 +188,9 @@ main {
     font-weight: 600;
     letter-spacing: 0.02em;
 }
-
+.parrafo {
+    color: black;
+}
 .hero h1 {
     font-size: clamp(2rem, 3vw, 2.75rem);
     font-weight: 700;
@@ -203,7 +211,7 @@ main {
 
 .form-card,
 .info-card {
-    background: rgba(15, 23, 42, 0.82);
+    background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(148, 163, 184, 0.16);
     border-radius: var(--radius-lg);
     padding: 32px;
@@ -213,6 +221,7 @@ main {
 
 .form-card h2 {
     font-size: 1.75rem;
+    color: black;
 }
 
 .form-section {
@@ -220,9 +229,9 @@ main {
     gap: 20px;
 }
 
-.field { 
-    display: grid; 
-    gap: 8px; 
+.field {
+    display: grid;
+    gap: 8px;
 }
 
 .field-helper {
@@ -522,74 +531,133 @@ main {
 }
 
 /* ——— Pago / PayPal ——— */
-.pay-box{
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+.pay-box {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
 }
-.pay-box h4{
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 700;
+
+.pay-box h4 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
 }
-.pay-row{
-  display:flex; align-items:center; justify-content:space-between;
-  gap: 10px; margin: 10px 0 14px;
+
+.pay-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0 14px;
 }
-.pay-amount{
-  font-size: 18px; font-weight: 800;
+
+.pay-amount {
+    font-size: 18px;
+    font-weight: 800;
 }
-.badge-soft{
-  display:inline-block; padding:4px 10px; border-radius:999px;
-  font-size:12px; background: #f2f7ff; color:#1b5cff; border:1px solid #dfe9ff;
+
+.badge-soft {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #f2f7ff;
+    color: #1b5cff;
+    border: 1px solid #dfe9ff;
 }
-.pay-hint{ font-size: 12px; color:#666; margin-top: 6px; }
-.pay-error{ color:#b00020; font-size: 13px; margin-top: 6px; display:none; }
-#paypal-button-container{
-  margin-top: 10px;
+
+.pay-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 6px;
+}
+
+.pay-error {
+    color: #b00020;
+    font-size: 13px;
+    margin-top: 6px;
+    display: none;
+}
+
+#paypal-button-container {
+    margin-top: 10px;
 }
 
 /* —— Paleta base (ajústala a tu tema) —— */
-:root{
-  --card-bg: #101827;         /* fondo tarjeta oscuro */
-  --card-border: #23324a;     /* borde sutil */
-  --text-main: #e6edf7;       /* texto claro */
-  --text-muted: #93a4c1;      /* texto secundario */
-  --accent: #1b5cff;          /* azul MechApp */
-  --accent-ghost: rgba(27,92,255,.18);
-  --accent-border: rgba(27,92,255,.35);
-  --danger: #ff6b6b;
+:root {
+    --card-bg: #101827;
+    /* fondo tarjeta oscuro */
+    --card-border: #23324a;
+    /* borde sutil */
+    --text-main: #e6edf7;
+    /* texto claro */
+    --text-muted: #93a4c1;
+    /* texto secundario */
+    --accent: #1b5cff;
+    /* azul MechApp */
+    --accent-ghost: rgba(27, 92, 255, .18);
+    --accent-border: rgba(27, 92, 255, .35);
+    --danger: #ff6b6b;
 }
 
 /* —— Caja de pago —— */
-.pay-box{
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  background: var(--card-bg);
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
-  color: var(--text-main);
+.pay-box {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--card-bg);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+    color: var(--text-main);
 }
-.pay-box h4{
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-main);
+
+.pay-box h4 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-main);
 }
-.pay-row{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:10px; margin:10px 0 14px;
+
+.pay-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0 14px;
 }
-.pay-amount{ font-size:18px; font-weight:800; color: var(--text-main); }
-.badge-soft{
-  display:inline-block; padding:4px 10px; border-radius:999px;
-  font-size:12px; background: var(--accent-ghost); color:#cfe0ff;
-  border:1px solid var(--accent-border);
+
+.pay-amount {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
 }
-.pay-hint{ font-size:12px; color: var(--text-muted); margin-top:6px; }
-.pay-error{ color: var(--danger); font-size:13px; margin-top:6px; display:none; }
-#paypal-button-container{ margin-top: 10px; }
+
+.badge-soft {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: var(--accent-ghost);
+    color: #cfe0ff;
+    border: 1px solid var(--accent-border);
+}
+
+.pay-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.pay-error {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 6px;
+    display: none;
+}
+
+#paypal-button-container {
+    margin-top: 10px;
+}
