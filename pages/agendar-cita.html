@@ -72,20 +72,6 @@
           </div>
 
           <div class="field">
-            <label for="visit-date">Día de la visita</label>
-            <div class="calendar" id="visit-calendar" aria-live="polite"></div>
-            <input type="hidden" id="visit-date" name="visit-date" />
-            <p class="field-helper" id="calendar-helper">Selecciona un mecánico para ver la disponibilidad.</p>
-          </div>
-
-          <div class="field">
-            <label for="visit-time">Hora preferida</label>
-            <input type="time" id="visit-time" name="visit-time" min="09:00" max="18:00" required />
-          </div>
-
-          <input type="hidden" id="scheduled-for" name="scheduled-for" />
-
-          <div class="field">
             <span>Tipo de visita</span>
             <div class="radio-group" role="radiogroup" aria-label="Tipo de visita">
               <label class="radio-chip">
@@ -97,6 +83,14 @@
                 Visita a domicilio
               </label>
             </div>
+          </div>
+
+          <div class="field" id="workshop-select-field" hidden>
+            <label for="workshop-select">Seleccionar taller</label>
+            <select id="workshop-select" name="workshop">
+              <option value="">Selecciona un taller registrado</option>
+            </select>
+            <small id="workshop-helper">Elige un taller para ver los mecánicos disponibles.</small>
           </div>
 
           <div class="field">
@@ -118,6 +112,20 @@
             <label for="domicile-address">Dirección para la visita</label>
             <textarea id="domicile-address" name="domicile-address" placeholder="Calle, número, comuna"></textarea>
           </div>
+
+          <div class="field">
+            <label for="visit-date">Día de la visita</label>
+            <div class="calendar" id="visit-calendar" aria-live="polite"></div>
+            <input type="hidden" id="visit-date" name="visit-date" />
+            <p class="field-helper" id="calendar-helper">Selecciona un mecánico para ver la disponibilidad.</p>
+          </div>
+
+          <div class="field">
+            <label for="visit-time">Hora preferida</label>
+            <input type="time" id="visit-time" name="visit-time" min="09:00" max="18:00" required />
+          </div>
+
+          <input type="hidden" id="scheduled-for" name="scheduled-for" />
 
           <div class="field">
             <label for="notes">Comentarios adicionales</label>
