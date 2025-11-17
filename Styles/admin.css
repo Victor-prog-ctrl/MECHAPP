@@ -1,5 +1,6 @@
 :root {
   --surface-glass: var(--surface);
+  --bg: linear-gradient(100deg, #ffffff, #000000);
   --surface-card: var(--surface);
   --accent-soft: rgba(249, 115, 22, 0.12);
   --muted: var(--text-muted);
