@@ -41,7 +41,7 @@ const formConfigurations = {
         fields: {
             name: [
                 (value) => (!value ? "Ingresa tu nombre completo." : null),
-                (value) => (value && value.length >= 3 ? null : "Tu nombre debe tener al menos 3 caracteres."),
+                (value) => (value && value.length >= 6 ? null : "Tu nombre debe tener al menos 6 caracteres."),
             ],
             email: [
                 (value) => (!value ? "Ingresa tu correo electrónico." : null),
