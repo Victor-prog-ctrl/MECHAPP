@@ -5,6 +5,16 @@ const UPDATE_ENDPOINTS = {
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_RULES = [
+    {
+        key: "length",
+        test: (value) => value.length >= 8,
+    },
+    {
+        key: "complexity",
+        test: (value) => /[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(value) && /(\d|[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s])/.test(value),
+    },
+];
 
 function showFeedback(element, message, type = "info") {
     if (!element) {
@@ -114,6 +124,42 @@ function getPasswordPayload(form, feedbackElement) {
     };
 }
 
+function updatePasswordRuleStates(form, passwordValue) {
+    if (!form) {
+        return;
+    }
+
+    const value = String(passwordValue || "").trim();
+    const hasValue = value.length > 0;
+
+    PASSWORD_RULES.forEach((rule) => {
+        const item = form.querySelector(`[data-password-rule="${rule.key}"]`);
+        if (!item) {
+            return;
+        }
+
+        const isValid = rule.test(value);
+        item.classList.toggle("valid", isValid);
+        item.classList.toggle("invalid", !isValid && hasValue);
+        item.classList.toggle("pending", !hasValue);
+    });
+}
+
+function setupPasswordRuleValidation(form) {
+    const newPasswordInput = form?.querySelector('input[name="newPassword"]');
+
+    if (!newPasswordInput) {
+        return;
+    }
+
+    const updateRules = () => updatePasswordRuleStates(form, newPasswordInput.value || "");
+
+    newPasswordInput.addEventListener("input", updateRules);
+    newPasswordInput.addEventListener("blur", updateRules);
+
+    updateRules();
+}
+
 function getRequestData(form, updateType, feedbackElement) {
     switch (updateType) {
         case "name":
@@ -177,6 +223,7 @@ async function handleSubmit(event, options) {
 
         if (updateType === "password") {
             form.reset();
+            updatePasswordRuleStates(form, "");
         }
 
         redirect();
@@ -244,6 +291,10 @@ async function initializeForm() {
             showFeedback(feedbackElement, "No se pudo cargar la información del perfil.", "error");
             return;
         }
+    }
+
+    if (updateType === "password") {
+        setupPasswordRuleValidation(form);
     }
 
     const redirect = setupRedirect();
