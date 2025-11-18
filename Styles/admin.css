@@ -1,6 +1,6 @@
 :root {
   --surface-glass: var(--surface);
-  --bg: linear-gradient(100deg, #ffffff, #000000);
+   --bg: linear-gradient(100deg, #5e5e5e);
   --surface-card: var(--surface);
   --accent-soft: rgba(249, 115, 22, 0.12);
   --muted: var(--text-muted);
@@ -30,13 +30,13 @@ body {
 }
 
 .admin-brand .brand-logo {
-  width: clamp(60px, 8vw, 80px);
-  height: clamp(60px, 8vw, 80px);
+  width: clamp(90px, 8vw, 90px);
+  height: clamp(90px, 8vw, 90px);
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0);
+  background: rgba(235, 235, 235, 0);
   padding: 10px;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.4);
+  box-shadow: 0 16px 30px rgba(42, 15, 15, 0.4);
 }
 
 .admin-brand__copy {
@@ -52,7 +52,7 @@ body {
 
 .admin-brand__subtitle {
   margin: 0;
-  color: rgba(248, 250, 252, 0.75);
+  color: rgba(0, 0, 0, 0.75);
   font-weight: 500;
   font-size: clamp(0.95rem, 2.5vw, 1rem);
 }

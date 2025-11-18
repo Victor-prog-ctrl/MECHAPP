@@ -1,13 +1,24 @@
 :root {
-  --bg: linear-gradient(100deg, #ffffff, #000000);
+  /* Fondo general como el resto del sitio */
+  --bg: #4f4f4f;
+
+  /* Superficies claras */
   --surface: #ffffff;
   --surface-alt: #f8fafc;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --accent: #f97316;
-  --accent-dark: #ea580c;
-  --accent-soft: rgba(249, 115, 22, 0.12);
-  --border: rgba(15, 23, 42, 0.08);
+
+  /* Texto oscuro */
+  --text: #111827;
+  --text-muted: #6b7280;
+
+  /* Acentos rojos MechApp */
+  --accent: #d62828;
+  --accent-dark: #b91c1c;
+  --accent-soft: rgba(214, 40, 40, 0.10);
+
+  /* Borde suave */
+  --border: #e5e7eb;
+
+  /* Radios */
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -21,7 +32,7 @@
 
 body {
   font-family: "Manrope", sans-serif;
-  --bg: linear-gradient(100deg, #ffffff, #000000);
+  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   padding: 36px 24px 64px;
@@ -34,11 +45,12 @@ main {
   width: min(1120px, 100%);
 }
 
+/* ===== HEADER (alineado con el resto del sitio) ===== */
+
 .site-header {
   width: min(1120px, 100%);
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
+  background: linear-gradient(178deg, #ffffff, #efe1e1);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px 32px;
   display: flex;
@@ -46,7 +58,7 @@ main {
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 32px;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
 }
 
 .brand {
@@ -55,7 +67,7 @@ main {
   gap: 12px;
   font-weight: 700;
   font-size: 1.25rem;
-  color: #fff;
+  color: #000;
   text-decoration: none;
 }
 
@@ -63,7 +75,7 @@ main {
   width: 64px;
   height: 64px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.4));
+  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.25));
 }
 
 .header-actions {
@@ -71,6 +83,8 @@ main {
   align-items: center;
   gap: 12px;
 }
+
+/* ===== BOTONES ===== */
 
 .button {
   display: inline-flex;
@@ -80,32 +94,42 @@ main {
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.95rem;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
+/* primario rojo */
 .button.button-primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.28);
+  box-shadow: 0 12px 28px rgba(214, 40, 40, 0.28);
 }
 
 .button.button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 18px 40px rgba(214, 40, 40, 0.32);
 }
 
+/* ghost rojo (tipo "Mi Perfil") */
 .button.ghost {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .button.ghost:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px rgba(214, 40, 40, 0.4);
 }
+
+/* ===== RESUMEN DEL TALLER ===== */
 
 .workshop-summary {
   background: var(--surface);
@@ -115,6 +139,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  border: 1px solid var(--border);
 }
 
 .summary-hero {
@@ -202,6 +227,8 @@ main {
   flex: 1 1 200px;
 }
 
+/* ===== RESEÑAS ===== */
+
 .reviews-section {
   margin-top: 32px;
   background: var(--surface);
@@ -211,6 +238,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  border: 1px solid var(--border);
 }
 
 .section-header {
@@ -311,27 +339,33 @@ main {
   border: 1px dashed var(--border);
 }
 
+/* ===== ESTADO VACÍO ===== */
+
 .empty-state {
   margin-top: 32px;
 }
 
 .empty-card {
-  background: rgba(15, 23, 42, 0.75);
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
   padding: 36px;
   border-radius: var(--radius-lg);
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--border);
 }
 
 .empty-card .button {
   align-self: center;
-  background: #fff;
-  color: var(--text);
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
 }
+
+/* ===== RESPONSIVE ===== */
 
 @media (max-width: 900px) {
   body {

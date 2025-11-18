@@ -1,16 +1,28 @@
 :root {
-    --bg: linear-gradient(100deg, #ffffff, #000000);
+    font-size: 16px;
+
+    /* Fondo gris MechApp */
+    --bg: #4f4f4f;
+
+    /* Superficies */
     --surface: #ffffff;
-    --surface-muted: #f8fafc;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: rgba(15, 23, 42, 0.08);
+    --surface-muted: #f3f4f6;
+
+    /* Acentos rojos */
+    --accent: #d62828;
+    --accent-dark: #b91c1c;
+
+    /* Textos */
+    --text: #111827;
+    --text-muted: #6b7280;
+
+    /* Bordes */
+    --border: #e5e7eb;
+
+    /* Radios */
     --radius-lg: 32px;
     --radius-md: 18px;
     --radius-sm: 12px;
-    font-size: 16px;
 }
 
 * {
@@ -19,24 +31,26 @@
     padding: 0;
 }
 
+/* ===== BODY ===== */
 body {
     font-family: "Manrope", sans-serif;
     background: var(--bg);
-    color: var(--surface);
+    color: var(--text);
     min-height: 100vh;
     padding: 32px 16px 64px;
 }
 
+/* ===== HEADER ===== */
 .site-header {
     max-width: 960px;
     margin: 0 auto 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(15, 23, 42, 0.72);
+    background: linear-gradient(178deg, #ffffff, #d3c8c8);
     border-radius: var(--radius-lg);
     padding: 18px 28px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #555;
 }
 
 .brand-link {
@@ -50,19 +64,20 @@ body {
 }
 
 .brand-icon {
-    width: 44px;
-    height: 44px;
+    width: 80px;
+    height: 80px;
     display: inline-block;
     border-radius: 14px;
-    background: rgba(15, 23, 42, 0.85) url("../assets/logo.svg") no-repeat center/contain;
+    background: #ffffff00 url("../assets/logo-rojo.png") no-repeat center/contain;
 }
 
 .brand-name {
     letter-spacing: 0.02em;
+    color: black;
 }
 
 .back-link {
-    color: rgba(248, 250, 252, 0.78);
+    color: #000000;
     text-decoration: none;
     font-weight: 600;
 }
@@ -72,18 +87,20 @@ body {
     text-decoration: underline;
 }
 
+/* ===== MAIN CARD ===== */
 main {
     max-width: 960px;
     margin: 0 auto;
     background: var(--surface);
     border-radius: var(--radius-lg);
     padding: 48px clamp(24px, 5vw, 72px);
-    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.35);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     gap: 48px;
 }
 
+/* ===== INTRO ===== */
 .intro {
     display: flex;
     flex-direction: column;
@@ -92,7 +109,7 @@ main {
 
 .tag {
     align-self: flex-start;
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
     font-weight: 600;
     border-radius: 999px;
@@ -115,10 +132,11 @@ main {
     max-width: 640px;
 }
 
+/* ===== FORM SECTION ===== */
 .form-section {
     background: var(--surface);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--border);
     padding: clamp(24px, 5vw, 48px);
     display: flex;
     flex-direction: column;
@@ -161,7 +179,7 @@ legend {
     gap: 20px;
 }
 
-.field-group > .field {
+.field-group>.field {
     flex: 1;
 }
 
@@ -171,15 +189,15 @@ legend {
     }
 }
 
-label {
-    font-weight: 600;
-    color: var(--text);
-}
-
+label,
 .field-label {
     font-weight: 600;
     color: var(--text);
 }
+
+/* ===================================================== */
+/* ============ CARRUSEL DE SERVICIOS ================== */
+/* ===================================================== */
 
 .service-options {
     display: flex;
@@ -190,12 +208,13 @@ label {
     min-width: 0;
 }
 
+/* Flechas izquierda / derecha */
 .service-nav {
     width: 42px;
     height: 42px;
     border-radius: 50%;
     border: none;
-    background: rgba(15, 23, 42, 0.08);
+    background: #f3f4f6;
     color: var(--text);
     font-size: 1.4rem;
     display: inline-flex;
@@ -207,7 +226,7 @@ label {
 
 .service-nav:hover,
 .service-nav:focus-visible {
-    background: rgba(249, 115, 22, 0.18);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
     outline: none;
     transform: translateY(-1px);
@@ -219,6 +238,7 @@ label {
     transform: none;
 }
 
+/* Contenedor deslizable */
 .service-track-wrapper {
     flex: 1;
     min-width: 0;
@@ -240,6 +260,7 @@ label {
     scroll-snap-type: x mandatory;
 }
 
+/* Cada tarjeta de servicio */
 .service-option {
     flex: 0 0 calc((100% - (2 * var(--service-gap))) / 3);
     max-width: 320px;
@@ -258,9 +279,9 @@ label {
 
 .service-option:hover,
 .service-option:focus-within {
-    border-color: rgba(249, 115, 22, 0.6);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
-    background: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(214, 40, 40, 0.16);
+    background: #ffffff;
 }
 
 .service-option input[type="checkbox"] {
@@ -272,6 +293,7 @@ label {
     color: var(--text);
 }
 
+/* Servicios seleccionados */
 .selected-services {
     margin-top: 16px;
     background: var(--surface-muted);
@@ -306,7 +328,7 @@ label {
     gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
     font-size: 0.9rem;
     font-weight: 600;
@@ -328,6 +350,7 @@ label {
     text-decoration: underline;
 }
 
+/* Responsive del carrusel */
 @media (max-width: 767px) {
     .service-nav {
         display: none;
@@ -368,6 +391,7 @@ label {
     }
 }
 
+/* ===== INPUTS GENERALES ===== */
 input[type="text"],
 input[type="number"],
 input[type="email"],
@@ -393,9 +417,11 @@ textarea {
 input:focus,
 textarea:focus {
     outline: none;
-    border-color: rgba(249, 115, 22, 0.6);
-    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(214, 40, 40, 0.18);
 }
+
+/* ===== CHECKBOX FIELD ===== */
 
 .checkbox-field {
     flex-direction: row;
@@ -407,11 +433,13 @@ textarea:focus {
     margin-top: 4px;
 }
 
+/* ===== HELP TEXT ===== */
 .help-text {
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
+/* ===== FORM FEEDBACK ===== */
 .form-feedback {
     border-radius: var(--radius-sm);
     padding: 14px 16px;
@@ -426,7 +454,7 @@ textarea:focus {
 }
 
 .form-feedback[data-state="success"] {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(22, 163, 74, 0.12);
     color: #047857;
     border: 1px solid rgba(5, 150, 105, 0.4);
 }
@@ -437,6 +465,7 @@ textarea:focus {
     border: 1px solid rgba(220, 38, 38, 0.35);
 }
 
+/* ===== ACCIONES ===== */
 .form-actions {
     display: flex;
     flex-direction: column;
@@ -451,6 +480,7 @@ textarea:focus {
     }
 }
 
+/* ===== BOTONES ===== */
 .button {
     display: inline-flex;
     align-items: center;
@@ -474,26 +504,27 @@ textarea:focus {
 .button-primary {
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     color: #fff;
-    box-shadow: 0 12px 30px rgba(234, 88, 12, 0.35);
+    box-shadow: 0 12px 30px rgba(214, 40, 40, 0.35);
 }
 
 .button-primary:hover,
 .button-primary:focus {
-    box-shadow: 0 20px 36px rgba(234, 88, 12, 0.45);
+    box-shadow: 0 20px 36px rgba(214, 40, 40, 0.45);
 }
 
 .button.ghost {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(214, 40, 40, 0.12);
     color: var(--accent);
-    border: 1px solid rgba(249, 115, 22, 0.35);
+    border: 1px solid rgba(214, 40, 40, 0.35);
 }
 
 .button.ghost:hover,
 .button.ghost:focus {
-    border-color: rgba(249, 115, 22, 0.45);
-    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2);
+    border-color: rgba(214, 40, 40, 0.45);
+    box-shadow: 0 8px 20px rgba(214, 40, 40, 0.2);
 }
 
+/* ===== RESPONSIVE GENERAL ===== */
 @media (max-width: 600px) {
     body {
         padding: 24px 12px 48px;

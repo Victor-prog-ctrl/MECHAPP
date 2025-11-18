@@ -1,12 +1,23 @@
 :root {
-    --bg: linear-gradient(100deg, #ffffff, #000000);
+    /* Fondo general MechApp */
+    --bg: #4f4f4f;
+
+    /* Superficies claras */
     --surface: #ffffff;
     --surface-alt: #f8fafc;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --border: rgba(15, 23, 42, 0.08);
+
+    /* Texto oscuro */
+    --text: #111827;
+    --text-muted: #6b7280;
+
+    /* Acentos rojos */
+    --accent: #d62828;
+    --accent-dark: #b91c1c;
+
+    /* Bordes suaves */
+    --border: #e5e7eb;
+
+    /* Radios */
     --radius-lg: 28px;
     --radius-md: 18px;
     --radius-sm: 12px;
@@ -20,8 +31,8 @@
 
 body {
     font-family: "Manrope", sans-serif;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.85)), url("../assets/autoinicio.jpg") no-repeat center/cover;
-    color: var(--surface);
+    background: var(--bg);
+    color: var(--text);
     min-height: 100vh;
     padding: 40px 24px 64px;
 }
@@ -34,6 +45,8 @@ main {
     gap: 32px;
 }
 
+/* ========== HEADER (igual al resto del sitio) ========== */
+
 .site-header {
     width: min(1080px, 100%);
     margin: 0 auto 32px;
@@ -42,9 +55,10 @@ main {
     justify-content: space-between;
     padding: 18px 28px;
     border-radius: var(--radius-lg);
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    background: linear-gradient(178deg, #ffffff, #f2e5e5);
+    border: 1px solid var(--border);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
     gap: 16px;
 }
 
@@ -53,7 +67,7 @@ main {
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    color: inherit;
+    color: #000;
     font-weight: 700;
     font-size: 1.25rem;
 }
@@ -70,6 +84,8 @@ main {
     gap: 12px;
 }
 
+/* ========== BOTONES ========== */
+
 .button {
     display: inline-flex;
     align-items: center;
@@ -82,7 +98,7 @@ main {
     background: var(--surface);
     color: var(--text);
     text-decoration: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .button:hover,
@@ -102,11 +118,18 @@ main {
 }
 
 .button.ghost {
-    background: rgba(249, 115, 22, 0.12);
+    background: transparent;
     color: var(--accent);
-    border-color: rgba(249, 115, 22, 0.24);
+    border-color: var(--accent);
     box-shadow: none;
 }
+
+.button.ghost:hover,
+.button.ghost:focus {
+    background: rgba(214, 40, 40, 0.10);
+}
+
+/* ========== HERO TALLER ========== */
 
 .workshop-hero {
     display: grid;
@@ -117,7 +140,8 @@ main {
     border-radius: var(--radius-lg);
     padding: 32px;
     position: relative;
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.26);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.20);
+    border: 1px solid var(--border);
 }
 
 .workshop-hero::after {
@@ -155,7 +179,7 @@ main {
     justify-content: center;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(249, 115, 22, 0.14);
+    background: rgba(214, 40, 40, 0.10);
     color: var(--accent);
     font-weight: 600;
     width: fit-content;
@@ -169,6 +193,8 @@ main {
     color: var(--text-muted);
     line-height: 1.7;
 }
+
+/* ========== MÉTRICAS ========== */
 
 .workshop-metrics {
     display: grid;
@@ -196,25 +222,31 @@ main {
     font-size: 1.1rem;
 }
 
+/* ========== ACCIONES HERO ========== */
+
 .workshop-hero__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
 }
 
+/* ========== INFO DEL TALLER ========== */
+
 .workshop-info {
-    background: rgba(15, 23, 42, 0.72);
+    background: var(--surface);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     padding: 32px;
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 24px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
 }
 
 .workshop-info h2,
 .workshop-info h3 {
     margin-bottom: 16px;
+    color: var(--text);
 }
 
 .info-list {
@@ -226,27 +258,29 @@ main {
 .info-list .label {
     font-size: 0.9rem;
     font-weight: 600;
-    color: rgba(248, 250, 252, 0.72);
+    color: var(--text-muted);
 }
 
 .info-list p,
 .info-list a {
-    color: #fff;
+    color: var(--text);
     font-size: 1.05rem;
     text-decoration: none;
 }
 
 .info-list a.disabled {
-    color: rgba(248, 250, 252, 0.45);
+    color: rgba(148, 163, 184, 0.8);
     pointer-events: none;
     cursor: default;
 }
 
+/* Bloque de destacados */
+
 .workshop-highlight {
-    background: rgba(15, 23, 42, 0.55);
+    background: var(--surface-alt);
     border-radius: var(--radius-md);
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
 }
 
 .workshop-highlight ul {
@@ -258,10 +292,12 @@ main {
 .workshop-highlight li {
     padding: 10px 14px;
     border-radius: var(--radius-sm);
-    background: rgba(249, 115, 22, 0.14);
+    background: rgba(214, 40, 40, 0.10);
     color: var(--accent);
     font-weight: 600;
 }
+
+/* ========== SERVICIOS Y CERTIFICACIONES ========== */
 
 .workshop-services,
 .workshop-certifications {
@@ -269,7 +305,8 @@ main {
     color: var(--text);
     border-radius: var(--radius-lg);
     padding: 32px;
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.26);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.20);
+    border: 1px solid var(--border);
 }
 
 .section-header p {
@@ -316,6 +353,8 @@ main {
     font-weight: 600;
 }
 
+/* ========== ESTADO VACÍO ========== */
+
 .workshop-empty {
     display: flex;
     justify-content: center;
@@ -331,11 +370,14 @@ main {
     display: grid;
     gap: 16px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.3);
+    border: 1px solid var(--border);
 }
 
 .empty-card p {
     color: var(--text-muted);
 }
+
+/* ========== RESPONSIVE ========== */
 
 @media (max-width: 900px) {
     body {
