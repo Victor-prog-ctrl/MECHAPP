@@ -1,5 +1,5 @@
 :root {
-  --chatbot-brand: #1f3c88;
+  --chatbot-brand: #881f1f;
   --chatbot-brand-accent: #f4b400;
   --chatbot-surface: #ffffff;
   --chatbot-surface-alt: #f4f6fb;
@@ -24,7 +24,7 @@
   border: none;
   display: grid;
   place-items: center;
-  box-shadow: 0 12px 30px rgba(31, 60, 136, 0.25);
+  box-shadow: 0 12px 30px rgba(136, 31, 31, 0.274);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -32,8 +32,8 @@
 .mecha-chatbot__toggle:hover,
 .mecha-chatbot__toggle:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 16px 34px rgba(31, 60, 136, 0.3);
-  background: #2646a4;
+  box-shadow: 0 16px 34px rgba(136, 31, 31, 0.3);
+  background: #a42626;
 }
 
 .mecha-chatbot__panel {
@@ -46,7 +46,7 @@
   flex-direction: column;
   background: var(--chatbot-surface);
   border-radius: 1.25rem;
-  box-shadow: 0 32px 56px rgba(20, 41, 90, 0.22);
+  box-shadow: 0 32px 56px rgba(90, 20, 20, 0.22);
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
@@ -153,7 +153,7 @@
 
 .mecha-chatbot__input {
   flex: 1 1 auto;
-  border: 1px solid rgba(31, 60, 136, 0.2);
+  border: 1px solid rgba(136, 31, 31, 0.2);
   border-radius: 0.85rem;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
@@ -163,7 +163,7 @@
 
 .mecha-chatbot__input:focus {
   border-color: var(--chatbot-brand);
-  box-shadow: 0 0 0 3px rgba(31, 60, 136, 0.2);
+  box-shadow: 0 0 0 3px rgba(136, 31, 31, 0.2);
 }
 
 .mecha-chatbot__send {
@@ -183,7 +183,7 @@
 
 .mecha-chatbot__send:hover,
 .mecha-chatbot__send:focus-visible {
-  background: #2646a4;
+  background: #a42626;
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(31, 60, 136, 0.18);
 }

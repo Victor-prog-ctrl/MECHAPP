@@ -1,18 +1,41 @@
 :root {
-    --bg: linear-gradient(100deg, #5e5e5e);
+    /* Fondo general oscuro como la home */
+    --bg: #4f4f4f;
+
+    /* Superficies claras */
     --bg-secondary: #ffffff;
     --surface: #ffffff;
     --surface-alt: #f8fafc;
+
+    /* Acentos rojos tipo MechApp */
     --accent: #d62828;
     --accent-dark: #b91c1c;
-    --text: #101828;
-    --text-muted: #667085;
-    --border: #e4e7ec;
+    --accent-soft: rgba(214, 40, 40, 0.08);
+    --accent-border: rgba(214, 40, 40, 0.45);
+
+    /* Texto oscuro */
+    --text: #111827;
+    --text-muted: #6b7280;
+
+    /* Bordes suaves */
+    --border: #e5e7eb;
+
+    /* Radios */
     --radius-lg: 24px;
     --radius-md: 18px;
     --radius-sm: 12px;
+
     font-size: 16px;
 
+    /* vars para la caja de pago */
+    --card-bg: #101827;
+    --card-border: #23324a;
+    --text-main: #e6edf7;
+    --card-text-muted: #93a4c1;
+    --accent-blue: #1b5cff;
+    --accent-ghost: rgba(27, 92, 255, .18);
+    --accent-blue-border: rgba(27, 92, 255, .35);
+    --danger: #ff6b6b;
 }
 
 * {
@@ -28,7 +51,7 @@
 body {
     font-family: "Manrope", sans-serif;
     background: var(--bg);
-    color: var(--surface);
+    color: var(--text);
     min-height: 100vh;
     padding: 40px 24px 64px;
     display: flex;
@@ -42,11 +65,12 @@ main {
     gap: 32px;
 }
 
+/* ===== HEADER / NAV BAR (igual que home) ===== */
+
 .site-header {
     width: min(1120px, 100%);
-    background: linear-gradient(178deg, #ffffff, #d3c8c8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(178deg, #ffffff, #efe1e1);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 18px 32px;
     display: flex;
@@ -54,10 +78,13 @@ main {
     justify-content: space-between;
     gap: 24px;
     margin-bottom: 32px;
+    position: relative;
+    z-index: 20;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
 }
 
 .brand-name {
-    color: black;
+    color: #000;
 }
 
 .brand {
@@ -66,7 +93,7 @@ main {
     gap: 12px;
     font-weight: 700;
     font-size: 1.25rem;
-    color: #fff;
+    color: #000;
     text-decoration: none;
 }
 
@@ -94,25 +121,34 @@ main {
     white-space: nowrap;
 }
 
+/* enlaces del menú */
 .nav-link {
-    color: rgba(0, 0, 0, 0.72);
+    color: var(--text-muted);
     text-decoration: none;
     font-weight: 500;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .nav-link:hover,
 .nav-link:focus {
-    color: #fff;
-    background: rgba(248, 250, 252, 0.12);
+    color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
 }
 
+/* pestaña activa (Inicio / Reseñas / Agendar cita, etc.) */
 .nav-link.active {
-    color: #fff;
-    background: rgba(249, 115, 22, 0.28);
+    color: var(--accent);
+    background: rgba(214, 40, 40, 0.16);
+    box-shadow: 0 0 0 1px var(--accent-border);
 }
+
+/* ===== BOTONES GENERALES ===== */
 
 .button {
     display: inline-flex;
@@ -125,7 +161,12 @@ main {
     color: var(--text);
     background: var(--surface);
     text-decoration: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .button:hover,
@@ -134,16 +175,18 @@ main {
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
 }
 
+/* Mi Perfil = boton ghost rojo */
 .button.ghost {
     background: transparent;
     color: var(--accent);
-    border-color: rgba(214, 40, 40, 0.6);
+    border-color: var(--accent);
     box-shadow: none;
 }
 
 .button.ghost:hover,
 .button.ghost:focus-visible {
-    background: rgba(248, 250, 252, 0.08);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
 }
 
 .button-primary {
@@ -159,14 +202,16 @@ main {
 
 .button-secondary {
     background: rgba(148, 163, 184, 0.16);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.24);
+    color: var(--text);
+    border-color: rgba(148, 163, 184, 0.5);
 }
 
 .button-secondary:hover,
 .button-secondary:focus-visible {
     background: rgba(148, 163, 184, 0.24);
 }
+
+/* ===== HERO (oscuro, texto blanco) ===== */
 
 .hero {
     display: grid;
@@ -175,6 +220,7 @@ main {
     border-radius: var(--radius-lg);
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
 .hero-tag {
@@ -187,21 +233,27 @@ main {
     font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
+    color: #e5e7eb;
 }
+
 .parrafo {
     color: black;
 }
+
 .hero h1 {
     font-size: clamp(2rem, 3vw, 2.75rem);
     font-weight: 700;
     line-height: 1.2;
+    color: #fff;
 }
 
 .hero p {
-    color: rgba(226, 232, 240, 0.88);
+    color: rgba(255, 255, 255, 0.88);
     font-size: 1.05rem;
     max-width: 48ch;
 }
+
+/* ===== LAYOUT Y TARJETAS ===== */
 
 .layout {
     display: grid;
@@ -209,19 +261,21 @@ main {
     gap: 24px;
 }
 
+/* cartas blancas, texto negro */
 .form-card,
 .info-card {
-    background: rgba(255, 255, 255, 0.82);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: #ffffff;
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 32px;
     display: grid;
     gap: 24px;
+    color: var(--text);
 }
 
 .form-card h2 {
     font-size: 1.75rem;
-    color: black;
+    color: var(--text);
 }
 
 .form-section {
@@ -236,16 +290,18 @@ main {
 
 .field-helper {
     font-size: 0.9rem;
-    color: rgba(226, 232, 240, 0.78);
+    color: var(--text-muted);
 }
+
+/* ===== CALENDARIO (claro) ===== */
 
 .calendar {
     display: grid;
     gap: 10px;
     padding: 14px;
     border-radius: var(--radius-sm);
-    background: rgba(15, 23, 42, 0.48);
-    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
     max-width: 320px;
 }
 
@@ -258,7 +314,7 @@ main {
 
 .calendar-month {
     font-weight: 600;
-    color: #fff;
+    color: var(--text);
     font-size: 0.95rem;
 }
 
@@ -269,11 +325,11 @@ main {
     width: 28px;
     height: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    background: transparent;
-    color: #fff;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: var(--text);
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .calendar-nav:disabled {
@@ -283,7 +339,8 @@ main {
 
 .calendar-nav:not(:disabled):hover,
 .calendar-nav:not(:disabled):focus-visible {
-    background: rgba(249, 115, 22, 0.18);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
     transform: translateY(-1px);
     outline: none;
 }
@@ -298,7 +355,7 @@ main {
 .calendar-weekday {
     text-align: center;
     font-size: 0.8rem;
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--text-muted);
     font-weight: 600;
 }
 
@@ -306,45 +363,47 @@ main {
     width: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 10px;
-    border: 1px solid transparent;
-    background: rgba(15, 23, 42, 0.58);
-    color: #fff;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: var(--text);
     font: inherit;
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: border 0.2s ease, background 0.2s ease, color 0.2s ease;
+    transition: border 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .calendar-day:hover,
 .calendar-day:focus-visible {
-    border-color: rgba(249, 115, 22, 0.48);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-border);
     outline: none;
 }
 
 .calendar-day.is-outside {
-    color: rgba(148, 163, 184, 0.52);
-    background: rgba(15, 23, 42, 0.32);
+    color: #9ca3af;
+    background: #f3f4f6;
 }
 
 .calendar-day.is-unavailable {
-    background: rgba(148, 163, 184, 0.16);
-    color: rgba(148, 163, 184, 0.6);
+    background: #f3f4f6;
+    color: #9ca3af;
     cursor: not-allowed;
 }
 
 .calendar-day.is-unavailable:hover,
 .calendar-day.is-unavailable:focus-visible {
-    border-color: transparent;
+    border-color: #e5e7eb;
+    box-shadow: none;
 }
 
 .calendar-day.is-today {
-    border-color: rgba(249, 115, 22, 0.4);
+    border-color: var(--accent);
 }
 
 .calendar-day.is-selected {
     background: var(--accent);
-    color: #0f172a;
+    color: #ffffff;
     border-color: transparent;
 }
 
@@ -353,35 +412,40 @@ main {
     cursor: not-allowed;
 }
 
+/* ===== CAMPOS DE FORMULARIO ===== */
+
 .field label {
     font-weight: 600;
-    color: rgba(226, 232, 240, 0.88);
+    color: var(--text);
 }
 
 .field input,
 .field select,
 .field textarea {
-    background: rgba(15, 23, 42, 0.48);
-    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
     border-radius: var(--radius-sm);
     padding: 12px 14px;
-    color: #fff;
+    color: var(--text);
     font: inherit;
-    transition: border 0.2s ease, box-shadow 0.2s ease;
+    transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.18);
     outline: none;
+    background: #ffffff;
 }
 
 .field textarea {
     min-height: 120px;
     resize: vertical;
 }
+
+/* ===== RADIO CHIPS ===== */
 
 .radio-group {
     display: flex;
@@ -395,10 +459,10 @@ main {
     gap: 10px;
     padding: 10px 16px;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    background: rgba(15, 23, 42, 0.48);
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
     cursor: pointer;
-    transition: border 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    transition: border 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .radio-chip input {
@@ -408,23 +472,27 @@ main {
 .radio-chip:hover,
 .radio-chip:focus-within {
     border-color: var(--accent);
-    background: rgba(249, 115, 22, 0.12);
+    background: var(--accent-soft);
     transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
 }
+
+/* ===== TEXTOS DE ESTADO / INFO ===== */
 
 .location-status {
     font-size: 0.95rem;
-    color: rgba(226, 232, 240, 0.88);
+    color: var(--text-muted);
 }
 
 .location-status.error {
-    color: #fca5a5;
+    color: #b91c1c;
 }
 
 .location-status.success {
-    color: #86efac;
+    color: #15803d;
 }
 
+/* sugerencias de taller */
 .workshop-suggestions {
     display: grid;
     gap: 12px;
@@ -435,8 +503,9 @@ main {
     gap: 6px;
     padding: 14px 16px;
     border-radius: var(--radius-sm);
-    background: rgba(15, 23, 42, 0.58);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: var(--text);
 }
 
 .workshop-option strong {
@@ -460,15 +529,17 @@ main {
 }
 
 .feedback.success {
-    color: #86efac;
+    color: #15803d;
 }
 
 .feedback.error {
-    color: #fca5a5;
+    color: #b91c1c;
 }
 
+/* info lateral */
 .info-card h3 {
     font-size: 1.25rem;
+    color: var(--text);
 }
 
 .info-list {
@@ -481,13 +552,16 @@ main {
     gap: 6px;
     padding: 16px;
     border-radius: var(--radius-sm);
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: var(--text);
 }
 
 .info-item span {
-    color: rgba(226, 232, 240, 0.82);
+    color: var(--text-muted);
 }
+
+/* ===== RESPONSIVE ===== */
 
 @media (max-width: 900px) {
     body {
@@ -530,80 +604,8 @@ main {
     }
 }
 
-/* ——— Pago / PayPal ——— */
-.pay-box {
-    margin-top: 18px;
-    padding: 16px;
-    border: 1px solid rgba(0, 0, 0, .08);
-    border-radius: 14px;
-    background: #fff;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
-}
+/* ===== Caja de pago / PayPal (la dejo oscura como la tenías) ===== */
 
-.pay-box h4 {
-    margin: 0 0 8px;
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.pay-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 10px 0 14px;
-}
-
-.pay-amount {
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.badge-soft {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    background: #f2f7ff;
-    color: #1b5cff;
-    border: 1px solid #dfe9ff;
-}
-
-.pay-hint {
-    font-size: 12px;
-    color: #666;
-    margin-top: 6px;
-}
-
-.pay-error {
-    color: #b00020;
-    font-size: 13px;
-    margin-top: 6px;
-    display: none;
-}
-
-#paypal-button-container {
-    margin-top: 10px;
-}
-
-/* —— Paleta base (ajústala a tu tema) —— */
-:root {
-    --card-bg: #101827;
-    /* fondo tarjeta oscuro */
-    --card-border: #23324a;
-    /* borde sutil */
-    --text-main: #e6edf7;
-    /* texto claro */
-    --text-muted: #93a4c1;
-    /* texto secundario */
-    --accent: #1b5cff;
-    /* azul MechApp */
-    --accent-ghost: rgba(27, 92, 255, .18);
-    --accent-border: rgba(27, 92, 255, .35);
-    --danger: #ff6b6b;
-}
-
-/* —— Caja de pago —— */
 .pay-box {
     margin-top: 18px;
     padding: 16px;
@@ -642,12 +644,12 @@ main {
     font-size: 12px;
     background: var(--accent-ghost);
     color: #cfe0ff;
-    border: 1px solid var(--accent-border);
+    border: 1px solid var(--accent-blue-border);
 }
 
 .pay-hint {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--card-text-muted);
     margin-top: 6px;
 }
 

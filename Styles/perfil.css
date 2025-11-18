@@ -1,16 +1,30 @@
 :root {
-    --bg: linear-gradient(100deg, #ffffff, #000000);
-    --bg-secondary: #1e293b;
+    /* Fondo general como la home */
+    --bg: #4f4f4f;
+
+    /* Superficies claras */
+    --bg-secondary: #ffffff;
     --surface: #ffffff;
     --surface-alt: #f8fafc;
-    --accent: #f97316;
-    --accent-dark: #ea580c;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: rgba(15, 23, 42, 0.08);
+
+    /* Acentos rojos MechApp */
+    --accent: #d62828;
+    --accent-dark: #b91c1c;
+    --accent-soft: rgba(214, 40, 40, 0.08);
+    --accent-border: rgba(214, 40, 40, 0.45);
+
+    /* Texto oscuro */
+    --text: #111827;
+    --text-muted: #6b7280;
+
+    /* Bordes suaves */
+    --border: #e5e7eb;
+
+    /* Radios */
     --radius-lg: 24px;
     --radius-md: 18px;
     --radius-sm: 12px;
+
     font-size: 16px;
 }
 
@@ -27,7 +41,7 @@
 body {
     font-family: "Manrope", sans-serif;
     background: var(--bg);
-    color: var(--surface);
+    color: var(--text);
     min-height: 100vh;
     padding: 40px 24px 64px;
     display: flex;
@@ -43,17 +57,19 @@ main {
     gap: 32px;
 }
 
+/* ===== HEADER / NAV ===== */
+
 .site-header {
     width: min(1120px, 100%);
-    background: rgba(15, 23, 42, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(178deg, #ffffff, #efe1e1);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 18px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
 }
 
 .brand {
@@ -62,7 +78,7 @@ main {
     gap: 12px;
     font-weight: 700;
     font-size: 1.25rem;
-    color: #fff;
+    color: #000;
     text-decoration: none;
 }
 
@@ -71,7 +87,15 @@ main {
     height: 66px;
     display: inline-block;
     border-radius: 10px;
-    background: #00000000 url("../assets/logo.png") no-repeat center/contain;
+    background: #0000 url("../assets/logo-rojo.png") no-repeat center/contain;
+}
+
+/* nav centrado como en la home */
+.main-nav {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    justify-content: center;
 }
 
 .header-actions {
@@ -79,6 +103,34 @@ main {
     align-items: center;
     gap: 12px;
 }
+
+/* enlaces del menú */
+.nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 999px;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+.nav-link.active {
+    color: var(--accent);
+    background: rgba(214, 40, 40, 0.16);
+    box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+/* ===== BOTONES ===== */
 
 .button {
     display: inline-flex;
@@ -91,7 +143,12 @@ main {
     color: var(--text);
     background: var(--surface);
     text-decoration: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .button:hover,
@@ -100,28 +157,46 @@ main {
     box-shadow: 0 12px 20px rgba(15, 23, 42, 0.18);
 }
 
+/* Mi Perfil (ghost rojo) */
 .button.ghost {
-    background: rgba(249, 115, 22, 0.12);
+    background: transparent;
     color: var(--accent);
-    border-color: rgba(249, 115, 22, 0.35);
+    border-color: var(--accent);
     box-shadow: none;
 }
 
 .button.ghost:hover,
 .button.ghost:focus {
-    background: rgba(249, 115, 22, 0.2);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
 }
 
+/* por si en el header usas .button.ghost */
 .site-header .button.ghost {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.24);
+    background: transparent;
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 .site-header .button.ghost:hover,
 .site-header .button.ghost:focus {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
 }
+
+.button.button--primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.button.button--primary:hover,
+.button.button--primary:focus {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    box-shadow: 0 18px 32px rgba(214, 40, 40, 0.35);
+}
+
+/* ===== PROFILE SUMMARY / CARDS ===== */
 
 .profile-summary {
     background: var(--surface);
@@ -156,7 +231,7 @@ main {
     width: 84px;
     height: 84px;
     border-radius: 24px;
-    background: linear-gradient(135deg, #fb923c, #f97316);
+    background: linear-gradient(135deg, #fca5a5, #dc2626);
     display: grid;
     place-items: center;
     font-size: 1.75rem;
@@ -178,15 +253,15 @@ main {
 }
 
 .profile-actions .button {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgba(214, 40, 40, 0.08);
     color: var(--accent);
-    border: 1px solid rgba(249, 115, 22, 0.35);
+    border: 1px solid var(--accent-border);
 }
 
 .profile-actions .button:hover,
 .profile-actions .button:focus {
-    background: rgba(249, 115, 22, 0.18);
-    box-shadow: 0 12px 24px rgba(249, 115, 22, 0.25);
+    background: rgba(214, 40, 40, 0.14);
+    box-shadow: 0 12px 24px rgba(214, 40, 40, 0.25);
 }
 
 .label {
@@ -229,7 +304,7 @@ main {
     background: var(--surface-alt);
     border-radius: var(--radius-md);
     padding: 50px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 30px;
@@ -276,7 +351,7 @@ main {
 .subscription-input-group input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.2);
 }
 
 .subscription-note {
@@ -303,7 +378,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--border);
 }
 
 .metric-label {
@@ -323,6 +398,8 @@ main {
     color: var(--text-muted);
     font-size: 0.95rem;
 }
+
+/* ===== SECCIONES ===== */
 
 .section-header {
     display: flex;
@@ -624,17 +701,6 @@ main {
 .request-actions .button {
     min-width: 140px;
 }
-.button.button--primary {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-}
-.button.button--primary:hover,
-.button.button--primary:focus {
-    background: var(--accent-dark);
-    border-color: var(--accent-dark);
-    box-shadow: 0 18px 32px rgba(249, 115, 22, 0.35);
-}
 
 .empty-state {
     margin-top: 16px;
@@ -749,6 +815,13 @@ main {
     color: var(--text);
 }
 
+.workshop-meta dd {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+/* ===== DIALOGO ===== */
+
 .completion-dialog-backdrop {
     position: fixed;
     inset: 0;
@@ -821,10 +894,7 @@ main {
     flex-wrap: wrap;
 }
 
-.workshop-meta dd {
-    margin: 0;
-    color: var(--text-muted);
-}
+/* ===== FORM TALLER ===== */
 
 .workshop-form {
     display: flex;
@@ -883,10 +953,12 @@ main {
     align-self: flex-start;
 }
 
+/* ===== FOOTER ===== */
+
 .site-footer {
     width: min(1120px, 100%);
     text-align: center;
-    color: rgba(248, 250, 252, 0.72);
+    color: var(--text-muted);
     font-size: 0.95rem;
 }
 
@@ -899,6 +971,8 @@ main {
 .site-footer a:focus {
     text-decoration: underline;
 }
+
+/* ===== RESPONSIVE ===== */
 
 @media (max-width: 900px) {
     .site-header {
