@@ -145,13 +145,11 @@
         body: JSON.stringify({ messages: payload }),
       });
 
-      const data = await response.json().catch(() => ({}));
-
       if (!response.ok) {
-        const message = sanitize(data.error || `No se pudo contactar al asistente (estado ${response.status}).`);
-        throw new Error(message);
+        throw new Error(`Estado ${response.status}`);
       }
 
+      const data = await response.json();
       const reply = sanitize(data.reply || "");
 
       if (!reply) {
@@ -161,10 +159,10 @@
       persistMessage("assistant", reply);
     } catch (error) {
       console.error("Chatbot error", error);
-      const fallback = error?.message
-        ? `Error: ${error.message}`
-        : "Hubo un problema para contactar al asistente. Intenta nuevamente en unos segundos.";
-      persistMessage("assistant", fallback);
+      persistMessage(
+        "assistant",
+        "Hubo un problema para contactar al asistente. Intenta nuevamente en unos segundos."
+      );
     } finally {
       setSending(false);
     }

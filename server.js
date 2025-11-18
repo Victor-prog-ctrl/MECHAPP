@@ -2483,10 +2483,7 @@ app.post('/api/chat', async (req, res) => {
         .json({ error: 'El asistente no está configurado. Falta OPENAI_API_KEY.' });
     }
 
-    res.status(502).json({
-      error: 'No se pudo generar una respuesta en este momento.',
-      detail: error.message,
-    });
+    res.status(502).json({ error: 'No se pudo generar una respuesta en este momento.' });
   }
 });
 
