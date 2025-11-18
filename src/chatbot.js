@@ -4,64 +4,11 @@
   }
   window.__mechappChatbotLoaded = true;
 
-  const PROMPT_DESCRIPTION = `Eres Mechapp Assist, un copiloto experto en mantenimiento automotriz. ` +
-    `Ayudas tanto a conductores como a mecánicos a aprovechar la plataforma: resolver dudas sobre agendamiento, ` +
-    `registro, servicios ofrecidos, cobertura y soporte. Usa un tono cercano, proactivo y claro. ` +
-    `Si una respuesta requiere acciones dentro del sitio, guía paso a paso. Si no sabes algo, reconoce el límite y ofrece escalamiento.`;
-
-  const knowledgeBase = [
-    {
-      keywords: ["cita", "agendar", "agenda", "servicio", "visita", "domicilio", "presencial"],
-      response:
-        "Para agendar una cita entra en la sección <strong>Agendar cita</strong>. " +
-        "Selecciona el servicio, el tipo de visita (presencial o a domicilio), la fecha y agrega comentarios. " +
-        "Si eliges domicilio recuerda confirmar tu dirección o ubicarte con el mapa."
-    },
-    {
-      keywords: ["registr", "crear cuenta", "signup", "cuenta"],
-      response:
-        "Puedes registrarte como cliente o mecánico desde <strong>Crear cuenta</strong>. " +
-        "El formulario te pedirá nombre, correo y una contraseña segura. Si eres mecánico marca tu rol y carga tu certificado posteriormente en tu perfil."
-    },
-    {
-      keywords: ["login", "ingresar", "acceder", "contraseña"],
-      response:
-        "Inicia sesión desde la página <strong>Iniciar sesión</strong>. Si olvidaste tu contraseña utiliza la opción <em>¿Olvidaste tu contraseña?</em> para recibir un enlace de recuperación en tu correo."
-    },
-    {
-      keywords: ["perfil", "datos", "actualizar", "editar"],
-      response:
-        "En tu perfil puedes actualizar nombre, correo y contraseña desde las opciones de edición. " +
-        "Si eres mecánico también podrás subir o reemplazar tu certificado para validación."
-    },
-    {
-      keywords: ["certific", "valid", "documento"],
-      response:
-        "Nuestro equipo revisa los certificados de los mecánicos. Tras subirlo, el estado cambia a pendiente y recibirás una notificación cuando se valide o si necesitamos correcciones."
-    },
-    {
-      keywords: ["resena", "reseñas", "opiniones", "calificacion"],
-      response:
-        "En la sección de <strong>Reseñas</strong> encuentras comentarios de clientes sobre mecánicos certificados. Te ayuda a elegir con confianza."
-    },
-    {
-      keywords: ["contacto", "soporte", "ayuda", "problema"],
-      response:
-        "Si necesitas soporte adicional escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>. " +
-        "Describe el inconveniente y te acompañaremos paso a paso."
-    },
-    {
-      keywords: ["ubicacion", "comuna", "mapa", "cobertura"],
-      response:
-        "Actualmente operamos en la Región Metropolitana. Usa el buscador de comunas o tu ubicación actual en la página de inicio para encontrar mecánicos cercanos."
-    }
-  ];
-
   const suggestedPrompts = [
     "¿Cómo agendo una visita a domicilio?",
     "Quiero registrarme como mecánico",
     "Necesito cambiar mi contraseña",
-    "¿Qué zonas cubre Mechapp?"
+    "¿Qué zonas cubre Mechapp?",
   ];
 
   const container = document.createElement("div");
@@ -75,7 +22,7 @@
         <div class="mecha-chatbot__avatar">M</div>
         <div>
           <p class="mecha-chatbot__title">Mechapp Assist</p>
-          <p class="mecha-chatbot__status">Disponible · uso gratuito</p>
+          <p class="mecha-chatbot__status">Disponible · Potenciado por IA</p>
         </div>
       </header>
       <div class="mecha-chatbot__messages" data-chatbot-messages></div>
@@ -95,33 +42,40 @@
   document.body.appendChild(container);
 
   const toggleButton = container.querySelector(".mecha-chatbot__toggle");
-  const panel = container.querySelector(".mecha-chatbot__panel");
   const messagesEl = container.querySelector("[data-chatbot-messages]");
   const inputEl = container.querySelector("#mecha-chatbot-input");
   const sendButton = container.querySelector(".mecha-chatbot__send");
 
   const storageKey = "mechapp-chatbot-history";
+  const chatHistory = [];
 
-  const formatTime = (date) => {
+  const escapeHtml = (text = "") =>
+    text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
     return date.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
   };
 
-  const createMessageEl = (role, text, timestamp) => {
+  const renderMessage = ({ role, content, timestamp }) => {
     const wrapper = document.createElement("article");
-    wrapper.className = `mecha-chatbot__message mecha-chatbot__message--${role}`;
-    wrapper.innerHTML = `<span>${text}</span><span class="mecha-chatbot__time">${formatTime(timestamp)}</span>`;
-    return wrapper;
+    const variant = role === "assistant" ? "bot" : "user";
+    wrapper.className = `mecha-chatbot__message mecha-chatbot__message--${variant}`;
+    wrapper.innerHTML = `<span>${escapeHtml(content)}</span><span class="mecha-chatbot__time">${formatTime(
+      timestamp
+    )}</span>`;
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
   };
 
   const saveHistory = () => {
-    const payload = Array.from(messagesEl.querySelectorAll(".mecha-chatbot__message")).map((el) => ({
-      role: el.classList.contains("mecha-chatbot__message--bot") ? "bot" : "user",
-      text: el.firstElementChild?.innerHTML || "",
-      time: el.querySelector(".mecha-chatbot__time")?.textContent || ""
-    }));
-
     try {
-      localStorage.setItem(storageKey, JSON.stringify(payload));
+      localStorage.setItem(storageKey, JSON.stringify(chatHistory));
     } catch (error) {
       console.warn("No fue posible guardar el historial del chatbot", error);
     }
@@ -130,17 +84,10 @@
   const restoreHistory = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-      if (!Array.isArray(saved) || !saved.length) {
-        return false;
-      }
+      if (!Array.isArray(saved) || !saved.length) return false;
 
-      saved.forEach((entry) => {
-        const messageEl = document.createElement("article");
-        messageEl.className = `mecha-chatbot__message mecha-chatbot__message--${entry.role}`;
-        messageEl.innerHTML = `<span>${entry.text}</span><span class="mecha-chatbot__time">${entry.time}</span>`;
-        messagesEl.appendChild(messageEl);
-      });
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      chatHistory.push(...saved);
+      saved.forEach((entry) => renderMessage(entry));
       return true;
     } catch (error) {
       console.warn("No fue posible restaurar el historial del chatbot", error);
@@ -148,47 +95,90 @@
     }
   };
 
-  const appendMessage = (role, text) => {
-    const timestamp = new Date();
-    const el = createMessageEl(role, text, timestamp);
-    messagesEl.appendChild(el);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+  const persistMessage = (role, content, timestamp = Date.now()) => {
+    const entry = { role, content, timestamp };
+    chatHistory.push(entry);
+    renderMessage(entry);
     saveHistory();
+  };
+
+  const setSending = (sending) => {
+    sendButton.disabled = sending;
+    inputEl.disabled = sending;
+    sendButton.textContent = sending ? "Enviando..." : "Enviar";
   };
 
   const sanitize = (input) => input.trim();
 
-  const findResponse = (text) => {
-    const normalized = text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-    const entry = knowledgeBase.find((item) =>
-      item.keywords.some((keyword) => normalized.includes(keyword))
-    );
+  const renderSuggestions = () => {
+    if (!suggestedPrompts.length) return;
 
-    if (entry) {
-      return entry.response;
+    const wrapper = document.createElement("div");
+    wrapper.className = "mecha-chatbot__suggestions";
+
+    suggestedPrompts.forEach((prompt) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mecha-chatbot__suggestion";
+      button.textContent = prompt;
+      button.addEventListener("click", () => {
+        inputEl.value = prompt;
+        handleSend();
+      });
+      wrapper.appendChild(button);
+    });
+
+    const lastBotMessage = messagesEl.querySelector(".mecha-chatbot__message--bot:last-of-type");
+    if (lastBotMessage) {
+      lastBotMessage.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
-
-    return (
-      "No tengo una respuesta exacta para eso todavía. " +
-      "Puedo ayudarte con agendamientos, registro, validaciones y soporte general. " +
-      "Si quieres que te contacte una persona, escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a>."
-    );
   };
 
-  const botReply = (text) => {
-    setTimeout(() => {
-      appendMessage("bot", text);
-    }, 400);
+  const requestAssistantResponse = async () => {
+    setSending(true);
+    try {
+      const payload = chatHistory.map(({ role, content }) => ({ role, content }));
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: payload }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      const reply = sanitize(data.reply || "");
+
+      if (!response.ok) {
+        const fallback =
+          reply || sanitize(data.error) || `No se pudo contactar al asistente (estado ${response.status}).`;
+        persistMessage("assistant", fallback);
+        return;
+      }
+
+      if (!reply) {
+        throw new Error("Respuesta vacía del asistente");
+      }
+
+      persistMessage("assistant", reply);
+    } catch (error) {
+      console.error("Chatbot error", error);
+      const fallback = error?.message
+        ? `Error: ${error.message}`
+        : "Hubo un problema para contactar al asistente. Intenta nuevamente en unos segundos.";
+      persistMessage("assistant", fallback);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleSend = () => {
-    const raw = sanitize(inputEl.value);
+    const raw = sanitize(inputEl.value || "");
     if (!raw) return;
 
-    appendMessage("user", raw);
+    persistMessage("user", raw);
     inputEl.value = "";
-    const response = findResponse(raw);
-    botReply(response);
+    requestAssistantResponse();
   };
 
   toggleButton.addEventListener("click", () => {
@@ -207,43 +197,13 @@
     }
   });
 
-  const renderSuggestions = () => {
-    if (!suggestedPrompts.length) {
-      return;
-    }
-    const wrapper = document.createElement("div");
-    wrapper.className = "mecha-chatbot__suggestions";
-    suggestedPrompts.forEach((prompt) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "mecha-chatbot__suggestion";
-      button.textContent = prompt;
-      button.addEventListener("click", () => {
-        inputEl.value = prompt;
-        handleSend();
-      });
-      wrapper.appendChild(button);
-    });
-    const lastBotMessage = messagesEl.querySelector(
-      ".mecha-chatbot__message--bot:last-of-type"
-    );
-    if (lastBotMessage) {
-      lastBotMessage.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-  };
-
   const startConversation = () => {
     const restored = restoreHistory();
-    if (restored) {
-      return;
-    }
+    if (restored) return;
 
     const greeting =
-      "¡Hola! Soy <strong>Mechapp Assist</strong>. " +
-      "Estoy aquí para resolver tus dudas sobre servicios, registro, mecánicos y soporte en la plataforma. " +
-      "Cuéntame qué necesitas y te guiaré paso a paso.";
-    appendMessage("bot", greeting);
+      "¡Hola! Soy Mechapp Assist. Estoy aquí para resolver tus dudas sobre servicios, registro, mecánicos y soporte en la plataforma. Cuéntame qué necesitas y te guiaré paso a paso.";
+    persistMessage("assistant", greeting);
     renderSuggestions();
   };
 
@@ -256,6 +216,5 @@
     }
   });
 
-  // Expone el prompt descriptivo para depuración
-  window.mechappChatbotPrompt = PROMPT_DESCRIPTION;
+  window.mechappChatbotPrompt = "Conectado a /api/chat con OpenAI";
 })();

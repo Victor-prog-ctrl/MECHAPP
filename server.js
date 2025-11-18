@@ -9,12 +9,94 @@ const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
 
+function loadEnvFile() {
+  const envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  try {
+    const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+    for (const line of lines) {
+      if (!line || /^\s*#/.test(line)) continue;
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (match) {
+        const key = match[1];
+        const value = match[2].replace(/^['"]|['"]$/g, '').trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('No se pudo cargar el archivo .env', error);
+  }
+}
+
+loadEnvFile();
+
 const PORT = process.env.PORT || 3000;
 const app = express();
 
 // ===== fetch polyfill (Node 18+ ya trae fetch; para 16/17 cargamos dinámico) =====
 if (typeof fetch !== 'function') {
   global.fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+}
+
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const CHAT_SYSTEM_PROMPT = [
+  'Eres Mechapp Assist, un asistente especializado en servicios automotrices.',
+  'Ayudas a usuarios y mecánicos a entender cómo usar la plataforma, a resolver dudas sobre citas, registros y soporte,',
+  'y ofreces respuestas claras, concisas y accionables. Si no cuentas con información, dilo y sugiere contactar a soporte.',
+].join(' ');
+
+function buildChatMessages(messages = []) {
+  return [
+    { role: 'system', content: CHAT_SYSTEM_PROMPT },
+    ...messages
+      .filter((entry) =>
+        entry && typeof entry.content === 'string' && ['user', 'assistant'].includes(entry.role)
+      )
+      .slice(-10)
+      .map((entry) => ({
+        role: entry.role,
+        content: entry.content.trim(),
+      })),
+  ];
+}
+
+async function requestChatCompletion(messages) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Falta configurar OPENAI_API_KEY.');
+  }
+
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      messages: buildChatMessages(messages),
+      temperature: 0.6,
+      max_tokens: 400,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`OpenAI error ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const reply = data?.choices?.[0]?.message?.content?.trim();
+
+  if (!reply) {
+    throw new Error('Respuesta de OpenAI vacía.');
+  }
+
+  return reply;
 }
 
 // ====== PayPal (Sandbox) configuración básica ======
@@ -2368,6 +2450,57 @@ app.put('/api/admin/users/:id/account-type', requireAuth, requireAdmin, (req, re
   } catch (error) {
     console.error('Error actualizando el tipo de cuenta', error);
     res.status(500).json({ error: 'No se pudo actualizar el tipo de cuenta.' });
+  }
+});
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body || {};
+
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Formato de mensajes no válido.' });
+    }
+
+    const normalized = messages
+      .map((entry) => ({
+        role: entry.role === 'assistant' ? 'assistant' : 'user',
+        content: typeof entry.content === 'string' ? entry.content.trim() : '',
+      }))
+      .filter((entry) => entry.content.length > 0);
+
+    if (!normalized.length) {
+      return res.status(400).json({ error: 'Se requiere al menos un mensaje.' });
+    }
+
+    const reply = await requestChatCompletion(normalized);
+    res.json({ reply });
+  } catch (error) {
+    console.error('Error en el chatbot', error);
+    const missingKey = !process.env.OPENAI_API_KEY;
+    const detail = error?.message || 'Error desconocido';
+
+    const fallbackReply = missingKey
+      ? [
+          'No se pudo iniciar el asistente porque falta configurar OPENAI_API_KEY.',
+          'Agrega la clave en tu archivo .env y reinicia el servidor.',
+          `Detalle técnico: ${detail}`,
+        ].join(' ')
+      : [
+          'No se pudo contactar al modelo de IA en este momento.',
+          'Revisa que tu clave sea válida, tengas saldo y haya conexión a internet.',
+          `Detalle técnico: ${detail}`,
+        ].join(' ');
+
+    const status = missingKey ? 200 : 502;
+
+    res.status(status).json({
+      error: missingKey
+        ? 'El asistente no está configurado. Falta OPENAI_API_KEY.'
+        : 'No se pudo generar una respuesta en este momento.',
+      reply: fallbackReply,
+      detail,
+      offline: missingKey,
+    });
   }
 });
 
