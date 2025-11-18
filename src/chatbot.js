@@ -11,6 +11,22 @@
 
   const knowledgeBase = [
     {
+      keywords: [
+        "hola",
+        "saludo",
+        "saludos",
+        "buenas",
+        "buenos dias",
+        "buenas tardes",
+        "buenas noches",
+        "que tal"
+      ],
+      response:
+        "¡Hola! Soy <strong>Mechapp Assist</strong>. " +
+        "Puedo ayudarte a agendar servicios, crear tu cuenta o resolver dudas sobre mecánicos y cobertura. " +
+        "Dime qué necesitas y lo vemos juntos."
+    },
+    {
       keywords: ["cita", "agendar", "agenda", "servicio", "visita", "domicilio", "presencial"],
       response:
         "Para agendar una cita entra en la sección <strong>Agendar cita</strong>. " +
@@ -54,6 +70,15 @@
       keywords: ["ubicacion", "comuna", "mapa", "cobertura"],
       response:
         "Actualmente operamos en la Región Metropolitana. Usa el buscador de comunas o tu ubicación actual en la página de inicio para encontrar mecánicos cercanos."
+    },
+    {
+      keywords: ["gracias", "muchas gracias", "te agradezco"],
+      response:
+        "¡De nada! Si necesitas otra cosa sobre tus servicios, cuenta o soporte, solo dime y te ayudo."
+    },
+    {
+      keywords: ["adios", "chau", "hasta luego", "nos vemos"],
+      response: "¡Hasta luego! Si te surge otra pregunta, aquí estaré para ayudarte."
     }
   ];
 
