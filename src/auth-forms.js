@@ -196,10 +196,15 @@ function updatePasswordRules(form, passwordValue) {
 
     const value = (passwordValue || "").trim();
 
+    const hasValue = value.length > 0;
+
     passwordRuleDefinitions.forEach((rule) => {
         const item = form.querySelector(`[data-password-rule="${rule.key}"]`);
         if (item) {
-            item.classList.toggle("valid", rule.test(value));
+            const isValid = rule.test(value);
+            item.classList.toggle("valid", isValid);
+            item.classList.toggle("invalid", !isValid && hasValue);
+            item.classList.toggle("pending", !hasValue);
         }
     });
 }

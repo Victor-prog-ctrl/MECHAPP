@@ -269,15 +269,34 @@ select[aria-invalid="true"] {
 .password-rules li {
     position: relative;
     padding-left: 26px;
+    color: var(--text-muted);
 }
 
 .password-rules li::before {
-    content: "✕";
+    content: "•";
     position: absolute;
     left: 0;
     top: 0;
-    color: #f87171;
+    color: var(--text-muted);
     font-weight: 700;
+}
+
+.password-rules li.invalid {
+    color: #f87171;
+}
+
+.password-rules li.invalid::before {
+    content: "✕";
+    color: #f87171;
+}
+
+.password-rules li.pending {
+    color: var(--text-muted);
+}
+
+.password-rules li.pending::before {
+    content: "•";
+    color: var(--text-muted);
 }
 
 .password-rules li.valid {
