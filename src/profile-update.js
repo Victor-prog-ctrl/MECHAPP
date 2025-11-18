@@ -202,8 +202,26 @@ async function handleSubmit(event, options) {
             body: JSON.stringify(payload),
         });
 
-        if (handleUnauthorized(response)) {
-            return;
+        if (response.status === 401) {
+            let unauthorizedData = {};
+            try {
+                unauthorizedData = await response.json();
+            } catch (error) {
+                // Si falla el parseo, se usa un mensaje genérico.
+            }
+
+            if (updateType === "password") {
+                showFeedback(
+                    feedbackElement,
+                    unauthorizedData.error || "La contraseña actual no es correcta.",
+                    "error",
+                );
+                return;
+            }
+
+            if (handleUnauthorized(response)) {
+                return;
+            }
         }
 
         let data = {};
