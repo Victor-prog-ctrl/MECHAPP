@@ -64,6 +64,41 @@
     "¿Qué zonas cubre Mechapp?"
   ];
 
+  const quickActions = [
+    {
+      label: "Agendar cita",
+      response:
+        "Para agendar una cita ve a <strong>Agendar cita</strong> y sigue estos pasos:<br>" +
+        "1) Elige el servicio que necesitas.<br>" +
+        "2) Selecciona si la atención será presencial o a domicilio.<br>" +
+        "3) Define fecha y hora disponibles.<br>" +
+        "4) Deja un comentario con detalles del auto o la falla.<br>" +
+        "5) Confirma. Si es a domicilio, revisa tu dirección o compártela con el mapa."
+    },
+    {
+      label: "Crear cuenta",
+      response:
+        "Desde <strong>Crear cuenta</strong> completa nombre, correo y contraseña segura. " +
+        "Si eres mecánico marca tu rol y luego sube el certificado desde tu perfil para validarlo."
+    },
+    {
+      label: "Cambiar contraseña",
+      response:
+        "Ingresa a <strong>Iniciar sesión</strong> y usa la opción <em>¿Olvidaste tu contraseña?</em>. " +
+        "Recibirás un enlace en tu correo para crear una nueva clave de forma segura."
+    },
+    {
+      label: "Cobertura",
+      response:
+        "Actualmente atendemos en la Región Metropolitana. Puedes buscar por comuna o usar tu ubicación en la página principal para ver mecánicos cercanos."
+    },
+    {
+      label: "Soporte",
+      response:
+        "Si necesitas ayuda inmediata escríbenos a <a href=\"mailto:soporte@mechapp.cl\">soporte@mechapp.cl</a> con los detalles del problema y tu correo registrado."
+    }
+  ];
+
   const container = document.createElement("div");
   container.className = "mecha-chatbot";
   container.innerHTML = `
@@ -79,6 +114,7 @@
         </div>
       </header>
       <div class="mecha-chatbot__messages" data-chatbot-messages></div>
+      <div class="mecha-chatbot__quick-actions" data-chatbot-quick-actions></div>
       <footer class="mecha-chatbot__footer">
         <label class="sr-only" for="mecha-chatbot-input">Escribe tu mensaje</label>
         <textarea id="mecha-chatbot-input" class="mecha-chatbot__input" rows="1" placeholder="Escribe tu duda" aria-label="Escribe tu mensaje"></textarea>
@@ -99,6 +135,7 @@
   const messagesEl = container.querySelector("[data-chatbot-messages]");
   const inputEl = container.querySelector("#mecha-chatbot-input");
   const sendButton = container.querySelector(".mecha-chatbot__send");
+  const quickActionsEl = container.querySelector("[data-chatbot-quick-actions]");
 
   const storageKey = "mechapp-chatbot-history";
 
@@ -233,6 +270,36 @@
     }
   };
 
+  const renderQuickActions = () => {
+    if (!quickActionsEl || !quickActions.length) {
+      return;
+    }
+
+    quickActionsEl.innerHTML = "";
+
+    const title = document.createElement("p");
+    title.className = "mecha-chatbot__quick-actions-title";
+    title.textContent = "Atajos rápidos";
+    quickActionsEl.appendChild(title);
+
+    const list = document.createElement("div");
+    list.className = "mecha-chatbot__quick-actions-list";
+
+    quickActions.forEach((action) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mecha-chatbot__quick-action";
+      button.textContent = action.label;
+      button.addEventListener("click", () => {
+        appendMessage("user", action.label);
+        botReply(action.response);
+      });
+      list.appendChild(button);
+    });
+
+    quickActionsEl.appendChild(list);
+  };
+
   const startConversation = () => {
     const restored = restoreHistory();
     if (restored) {
@@ -247,6 +314,7 @@
     renderSuggestions();
   };
 
+  renderQuickActions();
   startConversation();
 
   document.addEventListener("keydown", (event) => {
