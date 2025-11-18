@@ -2476,31 +2476,14 @@ app.post('/api/chat', async (req, res) => {
     res.json({ reply });
   } catch (error) {
     console.error('Error en el chatbot', error);
-    const missingKey = !process.env.OPENAI_API_KEY;
-    const detail = error?.message || 'Error desconocido';
 
-    const fallbackReply = missingKey
-      ? [
-          'No se pudo iniciar el asistente porque falta configurar OPENAI_API_KEY.',
-          'Agrega la clave en tu archivo .env y reinicia el servidor.',
-          `Detalle técnico: ${detail}`,
-        ].join(' ')
-      : [
-          'No se pudo contactar al modelo de IA en este momento.',
-          'Revisa que tu clave sea válida, tengas saldo y haya conexión a internet.',
-          `Detalle técnico: ${detail}`,
-        ].join(' ');
+    if (error.message.includes('OPENAI_API_KEY')) {
+      return res
+        .status(500)
+        .json({ error: 'El asistente no está configurado. Falta OPENAI_API_KEY.' });
+    }
 
-    const status = missingKey ? 200 : 502;
-
-    res.status(status).json({
-      error: missingKey
-        ? 'El asistente no está configurado. Falta OPENAI_API_KEY.'
-        : 'No se pudo generar una respuesta en este momento.',
-      reply: fallbackReply,
-      detail,
-      offline: missingKey,
-    });
+    res.status(502).json({ error: 'No se pudo generar una respuesta en este momento.' });
   }
 });
 
