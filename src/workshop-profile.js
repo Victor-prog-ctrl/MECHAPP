@@ -106,17 +106,7 @@
   }
 
   function showEmptyState() {
-    const sections = document.querySelectorAll('main > section');
-    sections.forEach((section) => {
-      if (section.dataset.workshopEmpty === undefined) {
-        section.hidden = true;
-      }
-    });
-
-    const emptySection = document.querySelector('[data-workshop-empty]');
-    if (emptySection) {
-      emptySection.hidden = false;
-    }
+    window.location.href = './paginainicio.html';
   }
 
   async function fetchWorkshop(id) {
