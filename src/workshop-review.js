@@ -152,6 +152,11 @@
       if (select && workshopId) {
         select.value = workshopId;
       }
+
+      if (workshopId) {
+        const workshopDetailUrl = `./resenas-taller.html?id=${encodeURIComponent(workshopId)}`;
+        window.location.href = workshopDetailUrl;
+      }
     } catch (error) {
       console.error(error);
       showFeedback('No pudimos guardar tu reseña. Verifica tu conexión e inténtalo nuevamente.', true);
@@ -166,6 +171,13 @@
     const defaultWorkshopId = getWorkshopIdFromQuery();
     populateWorkshopSelect(defaultWorkshopId);
     setupRatingKeyboardSupport();
+
+    const visitDateInput = document.getElementById('visit-date');
+    if (visitDateInput) {
+      const today = new Date();
+      const formattedToday = today.toISOString().split('T')[0];
+      visitDateInput.max = formattedToday;
+    }
 
     const form = document.getElementById('review-form');
     if (form) {
