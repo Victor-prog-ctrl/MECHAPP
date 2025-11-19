@@ -620,7 +620,7 @@ function getClientNotifications(clientId) {
 
   const rows = db
     .prepare(
-      `SELECT id, service, status, rejection_reason, scheduled_for, created_at
+      `SELECT id, service, status, rejection_reason, scheduled_for, created_at, abono_pagado
        FROM appointments
        WHERE client_id = ?
        ORDER BY datetime(created_at) DESC, id DESC
