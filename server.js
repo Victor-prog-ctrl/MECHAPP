@@ -658,8 +658,8 @@ function getClientNotifications(clientId) {
           id: `client-abono-paid-${row.id}`,
           type: 'success',
           message: scheduledLabel
-            ? `Tu abono para la cita de ${service} del ${scheduledLabel} ya fue pagado.`
-            : `Tu abono para la cita de ${service} ya fue pagado.`,
+            ? `¡Abono realizado con éxito! Tu cita de ${service} del ${scheduledLabel} está confirmada.`
+            : `¡Abono realizado con éxito! Tu cita de ${service} está confirmada.`,
           // sin action, porque ya está pagado
         });
         return;
