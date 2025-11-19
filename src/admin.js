@@ -6,7 +6,6 @@ const statusClassMap = {
 
 const dashboardState = {
   users: [],
-  workshops: [],
 };
 
 function formatDate(dateString) {
@@ -69,11 +68,6 @@ async function fetchUsers() {
   return data?.users ?? [];
 }
 
-async function fetchWorkshops() {
-  const data = await fetchWithHandling('/api/admin/workshops');
-  return data?.workshops ?? [];
-}
-
 function updateStatusIndicator(indicator, status) {
   indicator.className = 'status-indicator';
   if (statusClassMap[status]) {
@@ -101,7 +95,7 @@ function createStatCard({ title, value, footnote }) {
   return container;
 }
 
-function renderStats(users, workshops = []) {
+function renderStats(users) {
   const statsContainer = document.getElementById('dashboard-stats');
   if (!statsContainer) return;
 
@@ -110,8 +104,6 @@ function renderStats(users, workshops = []) {
   const totalAdmins = users.filter((user) => user.account_type === 'admin').length;
   const validatedCertificates = users.filter((user) => user.certificate_status === 'validado').length;
   const pendingCertificates = users.filter((user) => user.certificate_status === 'pendiente').length;
-  const totalWorkshops = workshops.length;
-  const workshopsWithOwner = workshops.filter((workshop) => workshop.ownerId).length;
 
   const stats = [
     {
@@ -123,11 +115,6 @@ function renderStats(users, workshops = []) {
       title: 'Certificados validados',
       value: validatedCertificates,
       footnote: `${pendingCertificates} pendientes de revisión`,
-    },
-    {
-      title: 'Talleres registrados',
-      value: totalWorkshops,
-      footnote: `${workshopsWithOwner} con propietario verificado`,
     },
   ];
 
@@ -203,90 +190,6 @@ function renderUsers(users) {
   });
 
   tbody.replaceChildren(...rows);
-}
-
-function formatWorkshopRating(workshop) {
-  if (typeof workshop.averageRating === 'number' && workshop.reviewsCount > 0) {
-    return `${workshop.averageRating} ★`;
-  }
-  return 'Sin reseñas';
-}
-
-function formatWorkshopReviews(workshop) {
-  const count = workshop.reviewsCount || 0;
-  if (!count) return 'Aún sin reseñas';
-  return count === 1 ? '1 reseña' : `${count} reseñas`;
-}
-
-function formatWorkshopContact(workshop) {
-  const entries = [];
-  if (workshop.phone) entries.push(workshop.phone);
-  if (workshop.email) entries.push(workshop.email);
-  if (entries.length) return entries.join(' · ');
-  return 'No disponible';
-}
-
-function renderWorkshopTags(container, tags = []) {
-  if (!container) return;
-  if (!tags.length) {
-    container.textContent = 'Sin especialidades registradas';
-    return;
-  }
-
-  const pills = tags.slice(0, 6).map((tag) => {
-    const pill = document.createElement('span');
-    pill.className = 'workshop-tag';
-    pill.textContent = tag;
-    return pill;
-  });
-
-  container.replaceChildren(...pills);
-}
-
-function renderWorkshops(workshops) {
-  const container = document.getElementById('workshops-list');
-  const emptyState = document.getElementById('workshops-empty-state');
-  const template = document.getElementById('workshop-card-template');
-
-  if (!container || !template) return;
-
-  if (!workshops.length) {
-    container.innerHTML = '';
-    if (emptyState) emptyState.hidden = false;
-    return;
-  }
-
-  if (emptyState) emptyState.hidden = true;
-
-  const cards = workshops.map((workshop) => {
-    const fragment = template.content.cloneNode(true);
-
-    const name = fragment.querySelector('[data-workshop-name]');
-    const description = fragment.querySelector('[data-workshop-description]');
-    const rating = fragment.querySelector('[data-workshop-rating]');
-    const reviews = fragment.querySelector('[data-workshop-reviews]');
-    const experience = fragment.querySelector('[data-workshop-experience]');
-    const address = fragment.querySelector('[data-workshop-address]');
-    const schedule = fragment.querySelector('[data-workshop-schedule]');
-    const contact = fragment.querySelector('[data-workshop-contact]');
-    const owner = fragment.querySelector('[data-workshop-owner]');
-    const tags = fragment.querySelector('[data-workshop-tags]');
-
-    if (name) name.textContent = workshop.name;
-    if (description) description.textContent = workshop.shortDescription || workshop.description;
-    if (rating) rating.textContent = formatWorkshopRating(workshop);
-    if (reviews) reviews.textContent = formatWorkshopReviews(workshop);
-    if (experience) experience.textContent = `${workshop.experienceYears || 0} años de experiencia`;
-    if (address) address.textContent = workshop.address || 'No especificada';
-    if (schedule) schedule.textContent = workshop.schedule || 'No indicado';
-    if (contact) contact.textContent = formatWorkshopContact(workshop);
-    if (owner) owner.textContent = workshop.ownerName || workshop.ownerEmail || 'Sin propietario asignado';
-    if (tags) renderWorkshopTags(tags, workshop.specialties || []);
-
-    return fragment;
-  });
-
-  container.replaceChildren(...cards);
 }
 
 function applyFilters(users) {
@@ -514,10 +417,9 @@ function setupSectionNavigation() {
 }
 
 function refreshDashboard() {
-  renderStats(dashboardState.users, dashboardState.workshops);
+  renderStats(dashboardState.users);
   const filtered = applyFilters(dashboardState.users);
   renderUsers(filtered);
-  renderWorkshops(dashboardState.workshops);
 }
 
 async function initAdminDashboard() {
@@ -530,11 +432,10 @@ async function initAdminDashboard() {
       return;
     }
 
-    const [users, workshops] = await Promise.all([fetchUsers(), fetchWorkshops()]);
+    const users = await fetchUsers();
     if (!users) return;
 
     dashboardState.users = users;
-    dashboardState.workshops = workshops || [];
     refreshDashboard();
     setupFilters();
     wireTableActions();

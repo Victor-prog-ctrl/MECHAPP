@@ -27,7 +27,6 @@
       </div>
       <nav class="main-nav admin-nav" aria-label="Secciones del panel">
         <a href="#resumen" class="nav-link active">Resumen</a>
-        <a href="#talleres" class="nav-link">Talleres</a>
         <a href="#usuarios" class="nav-link">Usuarios</a>
       </nav>
       <div class="header-actions">
@@ -42,19 +41,6 @@
           <p class="card-subtitle">Monitorea usuarios y certificados en tiempo real.</p>
         </div>
         <div class="stats-grid" id="dashboard-stats" aria-live="polite"></div>
-      </section>
-
-      <section class="admin-card" id="talleres" aria-labelledby="talleres-title">
-        <div class="card-header">
-          <div>
-            <h2 id="talleres-title">Talleres registrados</h2>
-            <p class="card-subtitle">Revisa los talleres creados por los mecánicos y sus detalles principales.</p>
-          </div>
-        </div>
-        <div class="workshops-grid" id="workshops-list" aria-live="polite"></div>
-        <div id="workshops-empty-state" class="empty-state" hidden>
-          <p>No hay talleres registrados aún.</p>
-        </div>
       </section>
 
       <section class="admin-card" id="usuarios" aria-labelledby="usuarios-title">
@@ -138,41 +124,6 @@
           <p class="feedback" data-row-feedback hidden></p>
         </td>
       </tr>
-    </template>
-
-    <template id="workshop-card-template">
-      <article class="workshop-card">
-        <div class="workshop-card__header">
-          <div class="workshop-card__title">
-            <p class="workshop-label" data-workshop-experience></p>
-            <h3 data-workshop-name></h3>
-            <p class="workshop-description" data-workshop-description></p>
-          </div>
-          <div class="workshop-rating">
-            <span class="rating-value" data-workshop-rating></span>
-            <p class="rating-reviews" data-workshop-reviews></p>
-          </div>
-        </div>
-        <dl class="workshop-meta">
-          <div class="meta-item">
-            <dt>Dirección</dt>
-            <dd data-workshop-address></dd>
-          </div>
-          <div class="meta-item">
-            <dt>Horario</dt>
-            <dd data-workshop-schedule></dd>
-          </div>
-          <div class="meta-item">
-            <dt>Contacto</dt>
-            <dd data-workshop-contact></dd>
-          </div>
-          <div class="meta-item">
-            <dt>Propietario</dt>
-            <dd data-workshop-owner></dd>
-          </div>
-        </dl>
-        <div class="workshop-tags" data-workshop-tags></div>
-      </article>
     </template>
 
     <script src="../src/chatbot.js" defer></script>
