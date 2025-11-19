@@ -435,6 +435,7 @@ const WORKSHOP_WITH_STATS_QUERY = `
     w.name,
     w.short_description,
     w.description,
+    w.owner_id,
     w.experience_years,
     w.address,
     w.schedule,
@@ -444,6 +445,8 @@ const WORKSHOP_WITH_STATS_QUERY = `
     w.services,
     w.certifications,
     w.photo,
+    u.name AS owner_name,
+    u.email AS owner_email,
     COALESCE(rs.reviews_count, 0) AS reviews_count,
     rs.average_rating,
     lr.rating AS latest_rating,
@@ -455,9 +458,12 @@ const WORKSHOP_WITH_STATS_QUERY = `
     lr.created_at AS latest_created_at,
     lr.latest_client_name AS latest_client_name
   FROM workshops w
+  LEFT JOIN users u ON u.id = w.owner_id
   LEFT JOIN review_stats rs ON rs.workshop_id = w.id
   LEFT JOIN latest_reviews lr ON lr.workshop_id = w.id AND lr.row_number = 1
 `;
+
+const ADMIN_WORKSHOPS_QUERY = WORKSHOP_WITH_STATS_QUERY;
 
 function computeWorkshopStats(rows) {
   const specialtySet = new Set();
@@ -2208,6 +2214,23 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, (req, res) => {
   } catch (e) {
     console.error('payments admin list error', e);
     res.status(500).json({ error: 'No se pudieron obtener los pagos.' });
+  }
+});
+
+app.get('/api/admin/workshops', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const rows = db.prepare(`${ADMIN_WORKSHOPS_QUERY} ORDER BY w.name COLLATE NOCASE`).all();
+    const workshops = rows.map((row) => ({
+      ...mapWorkshopDetail(row),
+      ownerId: row.owner_id || null,
+      ownerName: row.owner_name || null,
+      ownerEmail: row.owner_email || null,
+    }));
+
+    res.json({ workshops });
+  } catch (error) {
+    console.error('Error obteniendo talleres para administración', error);
+    res.status(500).json({ error: 'No se pudieron obtener los talleres registrados.' });
   }
 });
 
