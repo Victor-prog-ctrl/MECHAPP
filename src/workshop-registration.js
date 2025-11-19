@@ -375,6 +375,8 @@
       form.reset();
       renderServiceOptions();
       showFeedback('Tu taller se registró correctamente. Pronto aparecerá en el listado público.', 'success');
+
+      window.location.assign('./paginainicio.html');
     } catch (error) {
       console.error(error);
       showFeedback('Ocurrió un problema al enviar el formulario. Revisa tu conexión e inténtalo de nuevo.', 'error');
