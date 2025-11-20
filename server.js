@@ -656,12 +656,14 @@ function getClientNotifications(clientId) {
         row.abono_pagado === true;
 
       if (abonoPagado) {
+        const abonoMessageBase = 'Gracias por el abono, tu cita ya estará reservada para ti. ¡No faltes!';
+
         notifications.push({
           id: `client-abono-paid-${row.id}`,
           type: 'success',
           message: scheduledLabel
-            ? `¡Abono realizado con éxito! Tu cita de ${service} del ${scheduledLabel} está confirmada.`
-            : `¡Abono realizado con éxito! Tu cita de ${service} está confirmada.`,
+            ? `${abonoMessageBase} Detalles: ${service} para ${scheduledLabel}.`
+            : `${abonoMessageBase} Detalles: ${service}.`,
           // sin action, porque ya está pagado
         });
         return;
