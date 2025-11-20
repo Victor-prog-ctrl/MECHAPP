@@ -445,6 +445,42 @@ main {
     resize: vertical;
 }
 
+.time-slot-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.time-slot {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: border 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.time-slot:hover,
+.time-slot:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.time-slot.is-selected {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.time-slot:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 /* ===== RADIO CHIPS ===== */
 
 .radio-group {

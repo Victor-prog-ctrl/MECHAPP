@@ -309,6 +309,7 @@ function getMechanicWorkshopSummary(mechanicId) {
          w.id,
          w.name,
          w.address,
+         w.schedule,
          COUNT(r.id) AS reviews_count,
          AVG(r.rating) AS average_rating
        FROM workshops w
@@ -328,6 +329,7 @@ function getMechanicWorkshopSummary(mechanicId) {
     id: row.id,
     name: row.name,
     address: row.address,
+    schedule: row.schedule,
     reviewsCount,
     averageRating: normalizeAverage(row.average_rating, reviewsCount),
   };
