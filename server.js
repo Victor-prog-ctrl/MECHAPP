@@ -300,6 +300,37 @@ function normalizeAverage(value, count) {
   return Number(numeric.toFixed(1));
 }
 
+function parseTimeToMinutes(value) {
+  if (typeof value !== 'string') return null;
+
+  const [hours, minutes] = value.split(':').map((part) => Number.parseInt(part, 10));
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+  return hours * 60 + minutes;
+}
+
+function getScheduleRange(scheduleText) {
+  const defaults = { start: 9 * 60, end: 18 * 60 };
+  if (!scheduleText || typeof scheduleText !== 'string') {
+    return defaults;
+  }
+
+  const matches = scheduleText.match(/(\d{1,2}:\d{2})/g);
+  if (!matches || matches.length < 2) {
+    return defaults;
+  }
+
+  const startMinutes = parseTimeToMinutes(matches[0]);
+  const endMinutes = parseTimeToMinutes(matches[matches.length - 1]);
+
+  if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+    return defaults;
+  }
+
+  return { start: startMinutes, end: endMinutes };
+}
+
 function getMechanicWorkshopSummary(mechanicId) {
   if (!mechanicId) return null;
 
@@ -1814,16 +1845,21 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     const start = formatDate(today);
     const end = formatDate(endLimit);
 
+    const workshopSummary = getMechanicWorkshopSummary(mechanicId);
+    const scheduleRange = getScheduleRange(workshopSummary?.schedule);
+    const totalSlots = Math.max(Math.floor((scheduleRange.end - scheduleRange.start) / 60) + 1, 1);
+
     const rows = db
       .prepare(
-        `SELECT DATE(scheduled_for) AS day
+        `SELECT DATE(scheduled_for) AS day, COUNT(*) AS total
          FROM appointments
          WHERE mechanic_id = ?
            AND DATE(scheduled_for) BETWEEN DATE(?) AND DATE(?)
            AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')
-         GROUP BY day`
+         GROUP BY day
+         HAVING total >= ?`
       )
-      .all(mechanicId, start, end);
+      .all(mechanicId, start, end, totalSlots);
 
     const unavailableDays = rows
       .map((row) => (typeof row.day === 'string' ? row.day : null))
