@@ -1741,12 +1741,12 @@ app.get('/api/notifications', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    let notifications = [];
-    if (user.account_type === 'mecanico') {
-      notifications = getMechanicNotifications(user.id);
-    } else if (user.account_type === 'cliente') {
-      notifications = getClientNotifications(user.id);
-    }
+    const normalizedAccountType = String(user.account_type || '').trim().toLowerCase();
+
+    const notifications =
+      normalizedAccountType === 'mecanico'
+        ? getMechanicNotifications(user.id)
+        : getClientNotifications(user.id);
 
     res.json({ notifications });
   } catch (error) {
