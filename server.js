@@ -864,6 +864,7 @@ function ensureAppointmentLocationColumns() {
   const hasLatitude = columns.some((column) => column.name === 'client_latitude');
   const hasLongitude = columns.some((column) => column.name === 'client_longitude');
   const hasRejectionReason = columns.some((column) => column.name === 'rejection_reason');
+  const hasDepositPaid = columns.some((column) => column.name === 'abono_pagado');
 
   if (!hasLatitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
@@ -875,6 +876,10 @@ function ensureAppointmentLocationColumns() {
 
   if (!hasRejectionReason) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN rejection_reason TEXT`).run();
+  }
+
+  if (!hasDepositPaid) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN abono_pagado INTEGER NOT NULL DEFAULT 0`).run();
   }
 }
 ensureAppointmentLocationColumns();
