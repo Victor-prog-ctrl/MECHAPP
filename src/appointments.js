@@ -44,6 +44,50 @@ function parseDateKey(value) {
     return result;
 }
 
+function parseTimeToMinutes(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const [hours, minutes] = value.split(":").map((part) => Number.parseInt(part, 10));
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+        return null;
+    }
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return null;
+    }
+    return hours * 60 + minutes;
+}
+
+function formatMinutesToTime(minutes) {
+    if (!Number.isFinite(minutes)) {
+        return "";
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainder = minutes % 60;
+    return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function getScheduleRange(scheduleText) {
+    const defaults = { start: 9 * 60, end: 18 * 60 };
+    if (!scheduleText || typeof scheduleText !== "string") {
+        return defaults;
+    }
+
+    const matches = scheduleText.match(/(\d{1,2}:\d{2})/g);
+    if (!matches || matches.length < 2) {
+        return defaults;
+    }
+
+    const startMinutes = parseTimeToMinutes(matches[0]);
+    const endMinutes = parseTimeToMinutes(matches[matches.length - 1]);
+
+    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+        return defaults;
+    }
+
+    return { start: startMinutes, end: endMinutes };
+}
+
 function getSelectedVisitType() {
     const selected = document.querySelector('input[name="visit-type"]:checked');
     return selected?.value || "presencial";
@@ -56,6 +100,12 @@ function getSelectedWorkshopId() {
     }
     const value = select.value;
     return value ? String(value) : null;
+}
+
+function getSelectedMechanicId() {
+    const select = document.getElementById("mechanic-select");
+    const mechanicId = Number.parseInt(select?.value || "", 10);
+    return Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
 }
 
 function formatWorkshopDescription(workshop) {
@@ -237,6 +287,91 @@ function updateCalendarHelper(message) {
     helper.textContent = message;
 }
 
+function updateTimeSlotSelection(selectedValue) {
+    const container = document.getElementById("visit-time-slots");
+    if (!container) {
+        return;
+    }
+
+    container.querySelectorAll(".time-slot").forEach((button) => {
+        const isSelected = button.dataset.time === selectedValue;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-selected", isSelected ? "true" : "false");
+    });
+}
+
+function renderTimeSlotsForMechanic(mechanicId) {
+    const container = document.getElementById("visit-time-slots");
+    const helper = document.getElementById("time-helper");
+    const timeInput = document.getElementById("visit-time");
+
+    if (!container || !timeInput) {
+        return;
+    }
+
+    const mechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicRegistry.get(mechanicId) : null;
+    if (!mechanic) {
+        container.innerHTML = "";
+        timeInput.value = "";
+        updateTimeSlotSelection("");
+        if (helper) {
+            helper.textContent = "Selecciona un mecánico para ver los horarios disponibles.";
+        }
+        updateScheduledForValue();
+        return;
+    }
+
+    const scheduleText = mechanic.workshop?.schedule || "";
+    const range = getScheduleRange(scheduleText);
+
+    const slots = [];
+    for (let minutes = range.start; minutes <= range.end; minutes += 60) {
+        slots.push(formatMinutesToTime(minutes));
+    }
+
+    if (!slots.length) {
+        container.innerHTML = "";
+        if (helper) {
+            helper.textContent = "No hay horarios disponibles configurados para este mecánico.";
+        }
+        timeInput.value = "";
+        updateScheduledForValue();
+        return;
+    }
+
+    container.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+
+    slots.forEach((timeValue) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "time-slot";
+        button.dataset.time = timeValue;
+        button.textContent = timeValue;
+        button.setAttribute("role", "option");
+        fragment.appendChild(button);
+    });
+
+    container.appendChild(fragment);
+
+    const currentValue = timeInput.value;
+    if (!slots.includes(currentValue)) {
+        timeInput.value = "";
+    }
+
+    updateTimeSlotSelection(timeInput.value);
+
+    if (helper) {
+        const first = slots[0];
+        const last = slots[slots.length - 1];
+        helper.textContent = scheduleText
+            ? `Disponibilidad del taller (${scheduleText}). Selecciona una hora entre ${first} y ${last}.`
+            : `Horas disponibles cada 60 minutos entre ${first} y ${last}.`;
+    }
+
+    updateScheduledForValue();
+}
+
 function updateScheduledForValue() {
     const scheduledInput = document.getElementById("scheduled-for");
     const dateInput = document.getElementById("visit-date");
@@ -399,6 +534,34 @@ function setupCalendar() {
     updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
 }
 
+function setupTimeSlotInteractions() {
+    const container = document.getElementById("visit-time-slots");
+    if (!container) {
+        return;
+    }
+
+    container.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const button = target.closest(".time-slot");
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const timeValue = button.dataset.time || "";
+        const timeInput = document.getElementById("visit-time");
+        if (timeInput) {
+            timeInput.value = timeValue;
+        }
+
+        updateTimeSlotSelection(timeValue);
+        updateScheduledForValue();
+    });
+}
+
 function setVisitPanelsVisibility(visitType) {
     const domicilioPanel = document.querySelector("[data-domicilio-panel]");
     const domicilioAddress = document.getElementById("domicile-address");
@@ -549,6 +712,7 @@ function renderMechanicOptions({ mechanics, visitType, workshopId, preserveSelec
         updateMechanicWorkshopInfo(null);
     }
 
+    renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     updateMechanicHelperMessage(visitType, workshopId, mechanics.length);
 }
 
@@ -604,6 +768,7 @@ async function fetchMechanics() {
                       id: mechanic.workshop.id ? String(mechanic.workshop.id) : null,
                       name: mechanic.workshop.name || "",
                       address: mechanic.workshop.address || "",
+                      schedule: mechanic.workshop.schedule || "",
                   }
                 : null;
 
@@ -621,6 +786,7 @@ async function fetchMechanics() {
         });
 
         applyMechanicFilters({ preserveSelection: true });
+        renderTimeSlotsForMechanic(getSelectedMechanicId());
 
         if (helper && !mechanics.length) {
             helper.textContent = "Aún no hay mecánicos validados disponibles.";
@@ -755,6 +921,7 @@ function setupMechanicAvailabilityListener() {
         } else {
             fetchUnavailableDates(null);
         }
+        renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     });
 }
 
@@ -905,6 +1072,7 @@ async function submitAppointment(event) {
         }
         renderCalendar();
         updateScheduledForValue();
+        renderTimeSlotsForMechanic(getSelectedMechanicId());
 
         const mechanicSelect = document.getElementById("mechanic-select");
         const currentMechanicId = mechanicSelect ? Number.parseInt(mechanicSelect.value, 10) : null;
@@ -979,9 +1147,11 @@ function initializeAppointmentPage() {
     setupVisitTypeRadios();
     setupWorkshopSelection();
     setupCalendar();
+    setupTimeSlotInteractions();
     setupMechanicAvailabilityListener();
     setupAuthVisibilityControls();
     updateMechanicWorkshopInfo(null);
+    renderTimeSlotsForMechanic(null);
     fetchWorkshops();
     fetchMechanics();
 
