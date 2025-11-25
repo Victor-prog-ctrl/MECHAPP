@@ -189,60 +189,6 @@ function parseTextList(value) {
     return [];
 }
 
-function showDepositSuccessBanner() {
-    if (typeof window === "undefined" || !window.sessionStorage) {
-        return;
-    }
-
-    const rawPayload = window.sessionStorage.getItem("abonoPagoExitoso");
-    if (!rawPayload) {
-        return;
-    }
-
-    window.sessionStorage.removeItem("abonoPagoExitoso");
-
-    let payload;
-    try {
-        payload = JSON.parse(rawPayload);
-    } catch (error) {
-        console.error("No se pudo leer la notificación de abono", error);
-        return;
-    }
-
-    const message = payload?.message || "Tu abono se registró con éxito.";
-    const title = payload?.title || "Pago confirmado";
-
-    const container = document.querySelector("main");
-    if (!container) {
-        return;
-    }
-
-    const banner = document.createElement("div");
-    banner.className = "alert-banner";
-
-    const bannerTitle = document.createElement("strong");
-    bannerTitle.textContent = title;
-
-    const bannerMessage = document.createElement("span");
-    bannerMessage.textContent = ` ${message}`;
-
-    banner.appendChild(bannerTitle);
-    banner.appendChild(bannerMessage);
-
-    container.prepend(banner);
-
-    window.requestAnimationFrame(() => {
-        banner.classList.add("is-visible");
-    });
-
-    window.setTimeout(() => {
-        banner.classList.remove("is-visible");
-        window.setTimeout(() => {
-            banner.remove();
-        }, 250);
-    }, 6000);
-}
-
 function formatListForTextarea(values) {
     if (!Array.isArray(values) || !values.length) {
         return "";
@@ -1931,7 +1877,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupCompletionDialog();
     setupProfilePage();
     setupSubscriptionForm();
-    showDepositSuccessBanner();
 
     const logoutButton = document.getElementById("logout-button");
     if (logoutButton) {
