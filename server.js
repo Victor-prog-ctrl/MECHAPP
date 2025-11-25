@@ -669,7 +669,7 @@ function getClientNotifications(clientId) {
   rows.forEach((row) => {
     const normalizedStatus = (row.status || 'pendiente').toLowerCase();
     const service = row.service || 'tu cita';
-    const scheduledLabel = formatNotificationDate(row.scheduled_for);
+    const scheduledLabel = formatNotificationDate(row.scheduled_for, { includeTime: false });
 
     if (normalizedStatus === 'rechazado') {
       const reasonText = normalizeReason(row.rejection_reason);
