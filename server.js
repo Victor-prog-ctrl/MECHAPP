@@ -1847,9 +1847,7 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     const start = formatDate(today);
     const end = formatDate(endLimit);
 
-    const workshopSummary = getMechanicWorkshopSummary(mechanicId);
-    const scheduleRange = getScheduleRange(workshopSummary?.schedule);
-    const totalSlots = Math.max(Math.floor((scheduleRange.end - scheduleRange.start) / 60) + 1, 1);
+    const totalSlots = 10;
 
     const rows = db
       .prepare(
@@ -2032,6 +2030,26 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return `${year}-${month}-${day}T${hours}:${minutes}:00`;
     };
 
+    const scheduledValue = formatLocalDateTime(scheduledDate);
+    if (!scheduledValue) {
+      return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
+    }
+
+    const dateKey = scheduledValue.split('T')[0];
+    const dailyTotal = db
+      .prepare(
+        `SELECT COUNT(*) AS total
+         FROM appointments
+         WHERE mechanic_id = ?
+           AND DATE(scheduled_for) = DATE(?)
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')`
+      )
+      .get(parsedMechanicId, dateKey);
+
+    if ((dailyTotal?.total || 0) >= 10) {
+      return res.status(400).json({ error: 'Este día ya no tiene cupos disponibles.' });
+    }
+
     const insert = db.prepare(
       `INSERT INTO appointments (
         client_id,
@@ -2045,11 +2063,6 @@ app.post('/api/appointments', requireAuth, (req, res) => {
         client_longitude
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
-
-    const scheduledValue = formatLocalDateTime(scheduledDate);
-    if (!scheduledValue) {
-      return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
-    }
 
     const result = insert.run(
       currentUser.id,
