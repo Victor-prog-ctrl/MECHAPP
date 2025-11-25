@@ -279,6 +279,40 @@
         </section>
 
         <section
+            class="role-upgrade"
+            aria-labelledby="role-upgrade-title"
+            data-visible-for="cliente"
+            data-role-upgrade
+        >
+            <div class="section-header">
+                <div>
+                    <h2 id="role-upgrade-title">¿Abriste o tienes un taller?</h2>
+                    <p>Envía tu formulario para que un administrador cambie tu cuenta a mecánico.</p>
+                </div>
+                <button type="button" class="button button--primary" data-role-upgrade-trigger>
+                    Cambiar de rol
+                </button>
+            </div>
+
+            <div class="role-upgrade__body">
+                <p class="role-upgrade__status" data-role-upgrade-status>
+                    Comparte tu certificado o formulario y te ayudaremos a migrar a cuenta de mecánico.
+                </p>
+
+                <ul class="role-upgrade__steps">
+                    <li>Adjunta tu certificado o formulario en PDF o imagen.</li>
+                    <li>Lo enviaremos a un administrador para validar tu solicitud.</li>
+                    <li>Cuando se apruebe, podrás iniciar sesión como mecánico.</li>
+                </ul>
+
+                <p class="role-upgrade__helper" data-role-upgrade-helper>
+                    Tras enviar tu solicitud te llevaremos al inicio de sesión para que vuelvas a entrar cuando el
+                    admin la apruebe.
+                </p>
+            </div>
+        </section>
+
+        <section
             class="history"
             id="historial"
             aria-labelledby="historial-title"
@@ -297,6 +331,54 @@
         </section>
 
     </main>
+
+    <div
+        class="role-upgrade-dialog-backdrop"
+        data-role-upgrade-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="role-upgrade-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <div class="role-upgrade-dialog">
+            <div class="role-upgrade-dialog__header">
+                <h2 id="role-upgrade-dialog-title">Solicitar cambio a mecánico</h2>
+                <button type="button" class="dialog-close" data-role-upgrade-close aria-label="Cerrar formulario">
+                    ×
+                </button>
+            </div>
+            <p class="role-upgrade-dialog__intro">
+                Sube tu certificado o formulario. Lo enviaremos al administrador para que valide la información y
+                cambie tu rol.
+            </p>
+
+            <form class="role-upgrade-form" data-role-upgrade-form novalidate>
+                <label class="form-field form-field--wide">
+                    <span>Documento del taller (PDF, JPG o PNG)</span>
+                    <input type="file" name="upgrade-certificate" accept=".pdf,image/*" required />
+                </label>
+
+                <label class="form-field form-field--wide">
+                    <span>Notas para el administrador (opcional)</span>
+                    <textarea
+                        name="upgrade-notes"
+                        rows="3"
+                        placeholder="Comparte detalles relevantes sobre tu taller"
+                    ></textarea>
+                </label>
+
+                <p class="form-message" data-role-upgrade-feedback hidden></p>
+
+                <div class="role-upgrade-dialog__actions">
+                    <button type="button" class="button ghost" data-role-upgrade-close>Cancelar</button>
+                    <button type="submit" class="button button--primary" data-role-upgrade-submit>
+                        Enviar solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div
         class="completion-dialog-backdrop"
