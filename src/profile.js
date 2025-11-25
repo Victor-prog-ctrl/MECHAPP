@@ -1544,7 +1544,7 @@ function applyRoleUpgradeStatus(status, elements) {
     }
 
     let message =
-        "Comparte tu certificado o formulario y te ayudaremos a migrar a cuenta de mecánico.";
+        "Comparte tu certificado o formulario y te ayudaremos a cambiar a cuenta de mecánico.";
     let statusClass = "";
     let buttonLabel = "Cambiar de rol";
     let buttonDisabled = false;
