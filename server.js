@@ -11,6 +11,7 @@ const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
+const DAILY_APPOINTMENT_CAPACITY = 10;
 
 // ===== fetch polyfill (Node 18+ ya trae fetch; para 16/17 cargamos dinámico) =====
 if (typeof fetch !== 'function') {
@@ -1847,8 +1848,6 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     const start = formatDate(today);
     const end = formatDate(endLimit);
 
-    const totalSlots = 10;
-
     const rows = db
       .prepare(
         `SELECT DATE(scheduled_for) AS day, COUNT(*) AS total
@@ -1859,7 +1858,7 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
          GROUP BY day
          HAVING total >= ?`
       )
-      .all(mechanicId, start, end, totalSlots);
+      .all(mechanicId, start, end, DAILY_APPOINTMENT_CAPACITY);
 
     const unavailableDays = rows
       .map((row) => (typeof row.day === 'string' ? row.day : null))
@@ -1878,7 +1877,7 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
     const dateParam = typeof req.query.date === 'string' ? req.query.date : '';
 
     if (!Number.isInteger(mechanicId) || mechanicId <= 0) {
-      return res.json({ unavailableSlots: [] });
+      return res.json({ unavailableSlots: [], totalSlots: DAILY_APPOINTMENT_CAPACITY });
     }
 
     const mechanic = db
@@ -1893,7 +1892,7 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
 
     const parsedDate = new Date(dateParam);
     if (Number.isNaN(parsedDate.getTime())) {
-      return res.json({ unavailableSlots: [] });
+      return res.json({ unavailableSlots: [], totalSlots: DAILY_APPOINTMENT_CAPACITY });
     }
 
     const formatDate = (value) => {
@@ -1920,7 +1919,7 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
       .map((row) => (typeof row.time === 'string' ? row.time : null))
       .filter((value) => typeof value === 'string');
 
-    res.json({ unavailableSlots });
+    res.json({ unavailableSlots, totalSlots: DAILY_APPOINTMENT_CAPACITY });
   } catch (error) {
     console.error('Error obteniendo horarios ocupados', error);
     res.status(500).json({ error: 'No se pudo obtener los horarios ocupados.' });

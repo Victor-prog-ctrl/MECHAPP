@@ -293,6 +293,16 @@ main {
     color: var(--text-muted);
 }
 
+.availability-info {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.availability-info.is-error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
 /* ===== CALENDARIO (claro) ===== */
 
 .calendar {
