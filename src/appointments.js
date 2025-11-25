@@ -7,6 +7,12 @@ const calendarState = {
     mechanicId: null,
 };
 
+const timeSlotState = {
+    mechanicId: null,
+    dateKey: null,
+    unavailableTimes: new Set(),
+};
+
 const mechanicRegistry = new Map();
 const workshopRegistry = new Map();
 const mechanicState = {
@@ -339,6 +345,11 @@ function renderTimeSlotsForMechanic(mechanicId) {
         return;
     }
 
+    const selectedDateKey = calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null;
+    const applyUnavailable =
+        timeSlotState.mechanicId === mechanicId && timeSlotState.dateKey === selectedDateKey;
+    const unavailableTimes = applyUnavailable ? timeSlotState.unavailableTimes : new Set();
+
     container.innerHTML = "";
     const fragment = document.createDocumentFragment();
 
@@ -349,13 +360,20 @@ function renderTimeSlotsForMechanic(mechanicId) {
         button.dataset.time = timeValue;
         button.textContent = timeValue;
         button.setAttribute("role", "option");
+
+        const isUnavailable = applyUnavailable && unavailableTimes.has(timeValue);
+        if (isUnavailable) {
+            button.disabled = true;
+            button.classList.add("is-unavailable");
+        }
+
         fragment.appendChild(button);
     });
 
     container.appendChild(fragment);
 
     const currentValue = timeInput.value;
-    if (!slots.includes(currentValue)) {
+    if (!slots.includes(currentValue) || (applyUnavailable && unavailableTimes.has(currentValue))) {
         timeInput.value = "";
     }
 
@@ -370,6 +388,57 @@ function renderTimeSlotsForMechanic(mechanicId) {
     }
 
     updateScheduledForValue();
+}
+
+async function fetchUnavailableSlots(mechanicId, dateKey) {
+    const validMechanicId = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
+    const parsedDate = parseDateKey(dateKey);
+    const validDateKey = parsedDate ? formatDateKey(parsedDate) : null;
+
+    timeSlotState.mechanicId = validMechanicId;
+    timeSlotState.dateKey = validDateKey;
+    timeSlotState.unavailableTimes = new Set();
+
+    if (!validMechanicId || !validDateKey) {
+        renderTimeSlotsForMechanic(validMechanicId);
+        return;
+    }
+
+    try {
+        const params = new URLSearchParams({ mechanicId: String(validMechanicId), date: validDateKey });
+        const response = await fetch(`/api/appointments/unavailable-slots?${params.toString()}`, {
+            credentials: "same-origin",
+        });
+
+        if (response.status === 401) {
+            window.location.href = "./login.html";
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error("No pudimos obtener los horarios reservados para este día.");
+        }
+
+        const data = await response.json();
+        const slots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
+
+        if (
+            timeSlotState.mechanicId !== validMechanicId ||
+            timeSlotState.dateKey !== validDateKey
+        ) {
+            return;
+        }
+
+        timeSlotState.unavailableTimes = new Set(slots);
+        renderTimeSlotsForMechanic(validMechanicId);
+    } catch (error) {
+        console.error(error);
+        if (timeSlotState.mechanicId !== validMechanicId || timeSlotState.dateKey !== validDateKey) {
+            return;
+        }
+        timeSlotState.unavailableTimes = new Set();
+        renderTimeSlotsForMechanic(validMechanicId);
+    }
 }
 
 function updateScheduledForValue() {
@@ -427,6 +496,7 @@ function selectCalendarDate(dateKey) {
     calendarState.selectedDate = parsed;
     updateScheduledForValue();
     renderCalendar();
+    fetchUnavailableSlots(getSelectedMechanicId(), formatDateKey(parsed));
 }
 
 async function fetchUnavailableDates(mechanicId) {
@@ -918,8 +988,10 @@ function setupMechanicAvailabilityListener() {
         updateMechanicWorkshopInfo(Number.isInteger(mechanicId) ? mechanicId : null);
         if (Number.isInteger(mechanicId) && mechanicId > 0) {
             fetchUnavailableDates(mechanicId);
+            fetchUnavailableSlots(mechanicId, calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null);
         } else {
             fetchUnavailableDates(null);
+            fetchUnavailableSlots(null, null);
         }
         renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     });
