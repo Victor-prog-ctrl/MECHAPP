@@ -311,7 +311,9 @@ function parseTimeToMinutes(value) {
 }
 
 function getScheduleRange(scheduleText) {
-  const defaults = { start: 9 * 60, end: 18 * 60 };
+  const WORKDAY_START_MINUTES = 10 * 60;
+  const WORKDAY_END_MINUTES = 18 * 60;
+  const defaults = { start: WORKDAY_START_MINUTES, end: WORKDAY_END_MINUTES };
   if (!scheduleText || typeof scheduleText !== 'string') {
     return defaults;
   }
@@ -321,8 +323,8 @@ function getScheduleRange(scheduleText) {
     return defaults;
   }
 
-  const startMinutes = parseTimeToMinutes(matches[0]);
-  const endMinutes = parseTimeToMinutes(matches[matches.length - 1]);
+  const startMinutes = Math.max(WORKDAY_START_MINUTES, parseTimeToMinutes(matches[0]));
+  const endMinutes = Math.min(WORKDAY_END_MINUTES, parseTimeToMinutes(matches[matches.length - 1]));
 
   if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
     return defaults;
@@ -1984,11 +1986,36 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
     }
 
+    const workshopSummary = getMechanicWorkshopSummary(parsedMechanicId);
+    const scheduleRange = getScheduleRange(workshopSummary?.schedule);
+
     const parseCoordinate = (value) => {
       if (value === null || value === undefined || value === '') return null;
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
     };
+
+    const formatMinutesToTime = (minutes) => {
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      return `${String(hours).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+    };
+
+    const dayOfWeek = scheduledDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return res.status(400).json({ error: 'Solo puedes agendar citas de lunes a viernes.' });
+    }
+
+    const minutesOfDay = scheduledDate.getHours() * 60 + scheduledDate.getMinutes();
+    const withinSchedule =
+      minutesOfDay >= scheduleRange.start && minutesOfDay <= scheduleRange.end && scheduledDate.getMinutes() === 0;
+    if (!withinSchedule) {
+      const startLabel = formatMinutesToTime(scheduleRange.start);
+      const endLabel = formatMinutesToTime(scheduleRange.end);
+      return res
+        .status(400)
+        .json({ error: `Selecciona una hora en intervalos de 60 minutos entre ${startLabel} y ${endLabel}.` });
+    }
 
     const formatLocalDateTime = (value) => {
       if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
