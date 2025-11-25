@@ -19,6 +19,9 @@ const mechanicState = {
     all: [],
 };
 
+const WORKDAY_START_MINUTES = 10 * 60;
+const WORKDAY_END_MINUTES = 18 * 60;
+
 function initializeCalendarState() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -74,7 +77,7 @@ function formatMinutesToTime(minutes) {
 }
 
 function getScheduleRange(scheduleText) {
-    const defaults = { start: 9 * 60, end: 18 * 60 };
+    const defaults = { start: WORKDAY_START_MINUTES, end: WORKDAY_END_MINUTES };
     if (!scheduleText || typeof scheduleText !== "string") {
         return defaults;
     }
@@ -84,8 +87,8 @@ function getScheduleRange(scheduleText) {
         return defaults;
     }
 
-    const startMinutes = parseTimeToMinutes(matches[0]);
-    const endMinutes = parseTimeToMinutes(matches[matches.length - 1]);
+    const startMinutes = Math.max(WORKDAY_START_MINUTES, parseTimeToMinutes(matches[0]));
+    const endMinutes = Math.min(WORKDAY_END_MINUTES, parseTimeToMinutes(matches[matches.length - 1]));
 
     if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
         return defaults;
@@ -380,11 +383,10 @@ function renderTimeSlotsForMechanic(mechanicId) {
     updateTimeSlotSelection(timeInput.value);
 
     if (helper) {
-        const first = slots[0];
-        const last = slots[slots.length - 1];
-        helper.textContent = scheduleText
-            ? `Disponibilidad del taller (${scheduleText}). Selecciona una hora entre ${first} y ${last}.`
-            : `Horas disponibles cada 60 minutos entre ${first} y ${last}.`;
+        const first = formatMinutesToTime(range.start);
+        const last = formatMinutesToTime(range.end);
+        helper.textContent =
+            `Disponibilidad de lunes a viernes entre ${first} y ${last}, en intervalos de 60 minutos.`;
     }
 
     updateScheduledForValue();
@@ -485,6 +487,10 @@ function updateScheduledForValue() {
 function selectCalendarDate(dateKey) {
     const parsed = parseDateKey(dateKey);
     if (!parsed) {
+        return;
+    }
+    const weekday = parsed.getDay();
+    if (weekday === 0 || weekday === 6) {
         return;
     }
     if (calendarState.today && parsed < calendarState.today) {
