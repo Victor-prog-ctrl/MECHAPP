@@ -1904,22 +1904,19 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
 
     const dateKey = formatDate(parsedDate);
 
-    const rows = db
+    const row = db
       .prepare(
-        `SELECT strftime('%H:%M', scheduled_for) as time
+        `SELECT COUNT(*) as total
          FROM appointments
          WHERE mechanic_id = ?
            AND DATE(scheduled_for) = DATE(?)
-           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')
-         ORDER BY time`
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')`
       )
-      .all(mechanicId, dateKey);
+      .get(mechanicId, dateKey);
 
-    const unavailableSlots = rows
-      .map((row) => (typeof row.time === 'string' ? row.time : null))
-      .filter((value) => typeof value === 'string');
+    const reservedCount = Number.isFinite(Number(row?.total)) ? Number(row.total) : 0;
 
-    res.json({ unavailableSlots, totalSlots: DAILY_APPOINTMENT_CAPACITY });
+    res.json({ unavailableSlots: [], reservedCount, totalSlots: DAILY_APPOINTMENT_CAPACITY });
   } catch (error) {
     console.error('Error obteniendo horarios ocupados', error);
     res.status(500).json({ error: 'No se pudo obtener los horarios ocupados.' });
@@ -1960,7 +1957,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Indica el servicio requerido.' });
     }
     if (!scheduledFor || typeof scheduledFor !== 'string') {
-      return res.status(400).json({ error: 'Selecciona la fecha y hora de la visita.' });
+      return res.status(400).json({ error: 'Selecciona la fecha de la visita.' });
     }
     const scheduledDate = new Date(scheduledFor);
     if (Number.isNaN(scheduledDate.getTime())) {
@@ -1983,36 +1980,16 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
     }
 
-    const workshopSummary = getMechanicWorkshopSummary(parsedMechanicId);
-    const scheduleRange = getScheduleRange(workshopSummary?.schedule);
-
     const parseCoordinate = (value) => {
       if (value === null || value === undefined || value === '') return null;
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    const formatMinutesToTime = (minutes) => {
-      const hours = Math.floor(minutes / 60);
-      const remainder = minutes % 60;
-      return `${String(hours).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
-    };
-
     const dayOfWeek = scheduledDate.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return res.status(400).json({ error: 'Solo puedes agendar citas de lunes a viernes.' });
     }
-
-    const minutesOfDay = scheduledDate.getHours() * 60 + scheduledDate.getMinutes();
-    const withinSchedule = minutesOfDay >= scheduleRange.start && minutesOfDay <= scheduleRange.end;
-    if (!withinSchedule) {
-      const startLabel = formatMinutesToTime(scheduleRange.start);
-      const endLabel = formatMinutesToTime(scheduleRange.end);
-      return res
-        .status(400)
-        .json({ error: `Selecciona una hora dentro del horario disponible entre ${startLabel} y ${endLabel}.` });
-    }
-
     const formatLocalDateTime = (value) => {
       if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
         return null;
@@ -2022,10 +1999,8 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       const year = value.getFullYear();
       const month = pad(value.getMonth() + 1);
       const day = pad(value.getDate());
-      const hours = pad(value.getHours());
-      const minutes = pad(value.getMinutes());
 
-      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      return `${year}-${month}-${day}`;
     };
 
     const scheduledValue = formatLocalDateTime(scheduledDate);

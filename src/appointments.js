@@ -339,6 +339,9 @@ async function fetchDayAvailability({ mechanicId, date }) {
         }
 
         const unavailableSlots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
+        const reservedCount = Number.isInteger(data?.reservedCount)
+            ? data.reservedCount
+            : unavailableSlots.length;
         const capacityFromServer = Number.parseInt(data?.totalSlots, 10);
         const totalSlots = Number.isInteger(capacityFromServer) && capacityFromServer > 0
             ? capacityFromServer
@@ -346,7 +349,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
 
         availabilityState.totalSlots = totalSlots;
 
-        const remaining = Math.max(totalSlots - unavailableSlots.length, 0);
+        const remaining = Math.max(totalSlots - reservedCount, 0);
 
         if (remaining > 0) {
             setAvailabilityMessage(`Cupos disponibles para este día: ${remaining} de ${totalSlots}.`);
@@ -905,8 +908,8 @@ async function submitAppointment(event) {
         return;
     }
 
-    const scheduledDate = new Date(scheduledValue);
-    if (Number.isNaN(scheduledDate.getTime())) {
+    const scheduledDate = parseDateKey(scheduledValue);
+    if (!(scheduledDate instanceof Date) || Number.isNaN(scheduledDate.getTime())) {
         showFormFeedback("La fecha seleccionada no es válida.", "error");
         return;
     }
@@ -956,7 +959,7 @@ async function submitAppointment(event) {
             mechanicId,
             service,
             visitType,
-            scheduledFor: scheduledDate.toISOString(),
+            scheduledFor: formatDateKey(scheduledDate),
             notes,
             address: locationDetail,
         };
