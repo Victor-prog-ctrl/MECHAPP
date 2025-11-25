@@ -13,6 +13,11 @@ const mechanicState = {
     all: [],
 };
 
+const availabilityState = {
+    totalSlots: 10,
+    requestId: 0,
+};
+
 function initializeCalendarState() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -243,6 +248,19 @@ function updateCalendarHelper(message) {
     helper.textContent = message;
 }
 
+function setAvailabilityMessage(message, { tone = "info" } = {}) {
+    const element = document.getElementById("calendar-availability");
+    if (!element) {
+        return;
+    }
+    element.textContent = message || "";
+    element.hidden = !message;
+    element.classList.remove("is-error");
+    if (tone === "error") {
+        element.classList.add("is-error");
+    }
+}
+
 function updateScheduledForValue() {
     const scheduledInput = document.getElementById("scheduled-for");
     const dateInput = document.getElementById("visit-date");
@@ -259,6 +277,7 @@ function updateScheduledForValue() {
     if (!date) {
         scheduledInput.value = "";
         updateCalendarHelper("Selecciona un día disponible para tu visita.");
+        setAvailabilityMessage("");
         return;
     }
 
@@ -268,6 +287,80 @@ function updateScheduledForValue() {
     updateCalendarHelper(
         `Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}.`,
     );
+}
+
+function refreshDayAvailability() {
+    const mechanicId = getSelectedMechanicId();
+    const date = calendarState.selectedDate;
+    const validMechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
+
+    if (!(date instanceof Date) || !validMechanic) {
+        setAvailabilityMessage("");
+        return;
+    }
+
+    fetchDayAvailability({ mechanicId: validMechanic, date });
+}
+
+async function fetchDayAvailability({ mechanicId, date }) {
+    const parsedDate = date instanceof Date ? date : null;
+    const validMechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
+
+    if (!parsedDate || !validMechanic) {
+        setAvailabilityMessage("");
+        return;
+    }
+
+    const dateKey = formatDateKey(parsedDate);
+    const requestId = availabilityState.requestId + 1;
+    availabilityState.requestId = requestId;
+
+    setAvailabilityMessage("Cargando cupos disponibles...");
+
+    try {
+        const params = new URLSearchParams({ mechanicId: String(validMechanic), date: dateKey });
+        const response = await fetch(`/api/appointments/unavailable-slots?${params.toString()}`, {
+            credentials: "same-origin",
+        });
+
+        if (response.status === 401) {
+            window.location.href = "./login.html";
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error("No se pudieron obtener los cupos disponibles.");
+        }
+
+        const data = await response.json();
+
+        if (availabilityState.requestId !== requestId) {
+            return;
+        }
+
+        const unavailableSlots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
+        const capacityFromServer = Number.parseInt(data?.totalSlots, 10);
+        const totalSlots = Number.isInteger(capacityFromServer) && capacityFromServer > 0
+            ? capacityFromServer
+            : availabilityState.totalSlots;
+
+        availabilityState.totalSlots = totalSlots;
+
+        const remaining = Math.max(totalSlots - unavailableSlots.length, 0);
+
+        if (remaining > 0) {
+            setAvailabilityMessage(`Cupos disponibles para este día: ${remaining} de ${totalSlots}.`);
+            return;
+        }
+
+        setAvailabilityMessage("No quedan cupos para este día.", { tone: "error" });
+    } catch (error) {
+        console.error(error);
+        if (availabilityState.requestId !== requestId) {
+            return;
+        }
+        setAvailabilityMessage("No pudimos cargar los cupos disponibles. Intenta nuevamente.", { tone: "error" });
+    }
 }
 
 function selectCalendarDate(dateKey) {
@@ -288,6 +381,7 @@ function selectCalendarDate(dateKey) {
     calendarState.selectedDate = parsed;
     updateScheduledForValue();
     renderCalendar();
+    refreshDayAvailability();
 }
 
 async function fetchUnavailableDates(mechanicId) {
@@ -300,6 +394,7 @@ async function fetchUnavailableDates(mechanicId) {
         updateScheduledForValue();
         renderCalendar();
         updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
+        refreshDayAvailability();
         return;
     }
 
@@ -337,6 +432,7 @@ async function fetchUnavailableDates(mechanicId) {
         renderCalendar();
         updateScheduledForValue();
 
+        refreshDayAvailability();
         updateCalendarHelper("Selecciona un día disponible para tu visita.");
     } catch (error) {
         console.error(error);
@@ -346,6 +442,7 @@ async function fetchUnavailableDates(mechanicId) {
         calendarState.unavailableDates = new Set();
         updateCalendarHelper("No pudimos cargar la disponibilidad. Intenta nuevamente más tarde.");
         renderCalendar();
+        refreshDayAvailability();
     }
 }
 
@@ -387,6 +484,7 @@ function setupCalendar() {
     }
 
     updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
+    setAvailabilityMessage("");
 }
 
 function setVisitPanelsVisibility(visitType) {
