@@ -419,13 +419,77 @@ main {
 }
 
 .history,
-.mechanic-rating {
+.mechanic-rating,
+.role-upgrade {
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 36px 40px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.role-upgrade__body {
+    display: grid;
+    gap: 16px;
+}
+
+.role-upgrade__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 600;
+    max-width: 640px;
+}
+
+.role-upgrade__status.is-pending {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #9a3412;
+}
+
+.role-upgrade__status.is-error {
+    background: #fef2f2;
+    border-color: #fecdd3;
+    color: #991b1b;
+}
+
+.role-upgrade__status.is-success {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.role-upgrade__steps {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.role-upgrade__steps li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    line-height: 1.5;
+}
+
+.role-upgrade__steps li::before {
+    content: "•";
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.role-upgrade__helper {
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 .history-list {
@@ -892,6 +956,95 @@ main {
     gap: 12px;
     margin-top: 8px;
     flex-wrap: wrap;
+}
+
+.role-upgrade-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 1200;
+    backdrop-filter: blur(3px);
+}
+
+.role-upgrade-dialog {
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: min(520px, 100%);
+    box-shadow: 0 28px 52px rgba(15, 23, 42, 0.34);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.role-upgrade-dialog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dialog-close {
+    border: none;
+    background: transparent;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.dialog-close:hover,
+.dialog-close:focus-visible {
+    color: var(--accent);
+}
+
+.role-upgrade-dialog__intro {
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.role-upgrade-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.role-upgrade-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-message {
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    font-size: 0.95rem;
+}
+
+.form-message.info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.form-message.success {
+    background: #ecfdf3;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.form-message.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecdd3;
 }
 
 /* ===== FORM TALLER ===== */

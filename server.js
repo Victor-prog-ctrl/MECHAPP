@@ -1044,6 +1044,25 @@ async function storeCertificateFile({ dataUrl }, identifier) {
   return relativePath;
 }
 
+async function deleteCertificateFile(relativePath) {
+  if (!relativePath) return;
+
+  const absolutePath = path.join(dataDir, relativePath);
+  const normalizedPath = path.normalize(absolutePath);
+
+  if (!normalizedPath.startsWith(certificatesDirNormalized)) {
+    return;
+  }
+
+  try {
+    await fsp.unlink(normalizedPath);
+  } catch (error) {
+    if (error && error.code !== 'ENOENT') {
+      console.error('No se pudo eliminar el certificado', error);
+    }
+  }
+}
+
 const workshopPhotosDir = path.join(dataDir, 'workshop-photos');
 fs.mkdirSync(workshopPhotosDir, { recursive: true });
 
@@ -1731,7 +1750,9 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/profile', requireAuth, (req, res) => {
   try {
     const user = db
-      .prepare(`SELECT id, name, email, account_type, created_at FROM users WHERE id = ?`)
+      .prepare(
+        `SELECT id, name, email, account_type, created_at, certificate_status, certificate_uploaded FROM users WHERE id = ?`
+      )
       .get(
         req.session.userId
       );
@@ -1743,6 +1764,8 @@ app.get('/api/profile', requireAuth, (req, res) => {
       name: user.name,
       email: user.email,
       accountType: user.account_type,
+      certificateStatus: user.certificate_status,
+      certificateUploaded: Boolean(user.certificate_uploaded),
       createdAt: user.created_at,
       mechanicWorkshop:
         user.account_type === 'mecanico' ? getMechanicWorkshopSummary(user.id) : null,
@@ -1752,6 +1775,65 @@ app.get('/api/profile', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Error obteniendo perfil', error);
     res.status(500).json({ error: 'Ocurrió un error al obtener el perfil.' });
+  }
+});
+
+app.post('/api/profile/request-mechanic', requireAuth, async (req, res) => {
+  let newCertificatePath = null;
+
+  try {
+    const user = db
+      .prepare(`SELECT id, email, account_type, certificate_path FROM users WHERE id = ?`)
+      .get(req.session.userId);
+
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+
+    if (user.account_type !== 'cliente') {
+      return res.status(400).json({ error: 'Solo los clientes pueden solicitar el cambio de rol.' });
+    }
+
+    const { certificate } = req.body || {};
+    if (!certificate || typeof certificate !== 'object') {
+      return res
+        .status(400)
+        .json({ error: 'Adjunta el certificado o formulario en formato PDF o imagen.' });
+    }
+
+    try {
+      newCertificatePath = await storeCertificateFile(certificate, user.email);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'No se pudo guardar el certificado.' });
+    }
+
+    db.prepare(
+      `UPDATE users
+       SET certificate_uploaded = 1,
+           certificate_status = 'pendiente',
+           certificate_path = ?,
+           account_type = 'cliente'
+       WHERE id = ?`
+    ).run(newCertificatePath, user.id);
+
+    if (user.certificate_path && user.certificate_path !== newCertificatePath) {
+      await deleteCertificateFile(user.certificate_path);
+    }
+
+    req.session.destroy((destroyError) => {
+      if (destroyError) {
+        console.error('No se pudo cerrar la sesión después de solicitar el cambio de rol', destroyError);
+      }
+    });
+
+    res.json({
+      message:
+        'Recibimos tu formulario. Te llevaremos al inicio de sesión para continuar cuando el administrador lo apruebe.',
+    });
+  } catch (error) {
+    if (newCertificatePath) {
+      await deleteCertificateFile(newCertificatePath).catch(() => {});
+    }
+    console.error('Error al solicitar cambio de rol', error);
+    res.status(500).json({ error: 'No se pudo procesar tu solicitud en este momento.' });
   }
 });
 

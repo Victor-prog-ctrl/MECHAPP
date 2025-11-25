@@ -1530,6 +1530,199 @@ async function fetchClientHistory() {
     return Array.isArray(data?.history) ? data.history : [];
 }
 
+function applyRoleUpgradeStatus(status, elements) {
+    const normalized = typeof status === "string" ? status.toLowerCase() : "";
+    const { statusElement, helperElement, triggerButton } = elements;
+    const statusClasses = ["is-pending", "is-error", "is-success"];
+
+    if (statusElement) {
+        statusElement.classList.remove(...statusClasses);
+    }
+
+    if (helperElement) {
+        helperElement.hidden = normalized === "pendiente";
+    }
+
+    let message =
+        "Comparte tu certificado o formulario y te ayudaremos a migrar a cuenta de mecánico.";
+    let statusClass = "";
+    let buttonLabel = "Cambiar de rol";
+    let buttonDisabled = false;
+
+    switch (normalized) {
+        case "pendiente":
+            message = "Ya recibimos tu solicitud. Un administrador la está revisando.";
+            statusClass = "is-pending";
+            buttonLabel = "Solicitud en revisión";
+            buttonDisabled = true;
+            break;
+        case "rechazado":
+            message =
+                "Tu solicitud anterior fue rechazada. Adjunta un nuevo documento para revisarla nuevamente.";
+            statusClass = "is-error";
+            buttonLabel = "Enviar nuevamente";
+            break;
+        default:
+            break;
+    }
+
+    if (triggerButton) {
+        triggerButton.disabled = buttonDisabled;
+        triggerButton.textContent = buttonLabel;
+    }
+
+    if (statusElement) {
+        statusElement.textContent = message;
+        if (statusClass) {
+            statusElement.classList.add(statusClass);
+        }
+    }
+}
+
+function setupRoleUpgradeFlow(profile) {
+    const section = document.querySelector("[data-role-upgrade]");
+    const triggerButton = section?.querySelector("[data-role-upgrade-trigger]");
+    const statusElement = section?.querySelector("[data-role-upgrade-status]");
+    const helperElement = section?.querySelector("[data-role-upgrade-helper]");
+    const dialog = document.querySelector("[data-role-upgrade-dialog]");
+    const form = dialog?.querySelector("[data-role-upgrade-form]");
+    const fileInput = form?.querySelector('input[name="upgrade-certificate"]');
+    const notesInput = form?.querySelector('textarea[name="upgrade-notes"]');
+    const feedbackElement = form?.querySelector("[data-role-upgrade-feedback]");
+    const submitButton = form?.querySelector("[data-role-upgrade-submit]");
+    const closeButtons = dialog?.querySelectorAll("[data-role-upgrade-close]");
+
+    if (profile?.accountType !== "cliente") {
+        if (section) {
+            section.hidden = true;
+        }
+        return;
+    }
+
+    if (!section || !triggerButton || !dialog || !form || !fileInput || !feedbackElement || !submitButton) {
+        return;
+    }
+
+    const currentStatus = typeof profile?.certificateStatus === "string" ? profile.certificateStatus : "";
+    applyRoleUpgradeStatus(currentStatus, { statusElement, helperElement, triggerButton });
+
+    const dialogState = { open: false };
+
+    function openDialog() {
+        dialog.hidden = false;
+        dialogState.open = true;
+        updateMessage(feedbackElement, "", "info");
+        dialog.focus();
+    }
+
+    function closeDialog() {
+        dialog.hidden = true;
+        dialogState.open = false;
+        form.reset();
+        updateMessage(feedbackElement, "", "info");
+        triggerButton.focus();
+    }
+
+    triggerButton.addEventListener("click", () => {
+        if (triggerButton.disabled) {
+            return;
+        }
+        openDialog();
+    });
+
+    closeButtons?.forEach((button) => {
+        button.addEventListener("click", closeDialog);
+    });
+
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) {
+            closeDialog();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && dialogState.open) {
+            closeDialog();
+        }
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const certificateFile = fileInput.files?.[0];
+        if (!(certificateFile instanceof File)) {
+            updateMessage(
+                feedbackElement,
+                "Adjunta tu certificado en formato PDF o imagen para continuar.",
+                "error",
+            );
+            fileInput.focus();
+            return;
+        }
+
+        submitButton.disabled = true;
+        updateMessage(feedbackElement, "Enviando solicitud...", "info");
+
+        let certificateDataUrl = "";
+        try {
+            certificateDataUrl = await readFileAsDataUrl(certificateFile);
+        } catch (error) {
+            console.error(error);
+            updateMessage(
+                feedbackElement,
+                "No pudimos leer el documento seleccionado. Intenta con otro archivo.",
+                "error",
+            );
+            submitButton.disabled = false;
+            return;
+        }
+
+        const payload = {
+            certificate: { dataUrl: certificateDataUrl },
+            notes: String(notesInput?.value || "").trim(),
+        };
+
+        try {
+            const response = await fetch("/api/profile/request-mechanic", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.status === 401) {
+                window.location.href = "./login.html";
+                return;
+            }
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || "No se pudo enviar tu solicitud.");
+            }
+
+            applyRoleUpgradeStatus("pendiente", { statusElement, helperElement, triggerButton });
+            updateMessage(
+                feedbackElement,
+                data.message ||
+                    "Recibimos tu solicitud. Te llevaremos al inicio de sesión para continuar el cambio de rol.",
+                "success",
+            );
+
+            setTimeout(() => {
+                window.location.href = "./login.html";
+            }, 1500);
+        } catch (error) {
+            console.error(error);
+            updateMessage(
+                feedbackElement,
+                error.message || "No se pudo enviar tu solicitud. Inténtalo nuevamente.",
+                "error",
+            );
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+}
+
 async function setupProfilePage() {
     try {
         const profile = await fetchProfile();
@@ -1559,6 +1752,7 @@ async function setupProfilePage() {
             }
         } else {
             renderMechanicRequests([]);
+            setupRoleUpgradeFlow(profile);
             try {
                 const history = await fetchClientHistory();
                 renderClientHistory(history);
