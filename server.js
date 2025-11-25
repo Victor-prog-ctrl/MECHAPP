@@ -2004,14 +2004,13 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     }
 
     const minutesOfDay = scheduledDate.getHours() * 60 + scheduledDate.getMinutes();
-    const withinSchedule =
-      minutesOfDay >= scheduleRange.start && minutesOfDay <= scheduleRange.end && scheduledDate.getMinutes() === 0;
+    const withinSchedule = minutesOfDay >= scheduleRange.start && minutesOfDay <= scheduleRange.end;
     if (!withinSchedule) {
       const startLabel = formatMinutesToTime(scheduleRange.start);
       const endLabel = formatMinutesToTime(scheduleRange.end);
       return res
         .status(400)
-        .json({ error: `Selecciona una hora en intervalos de 60 minutos entre ${startLabel} y ${endLabel}.` });
+        .json({ error: `Selecciona una hora dentro del horario disponible entre ${startLabel} y ${endLabel}.` });
     }
 
     const formatLocalDateTime = (value) => {
