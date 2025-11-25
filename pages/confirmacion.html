@@ -356,7 +356,22 @@
             // Botones
             document.querySelector('#btnImprimir').addEventListener('click', () => window.print());
             document.querySelector('#btnInicio').addEventListener('click', () => location.href = './paginainicio.html');
-            document.querySelector('#btnVerPerfil').addEventListener('click', () => location.href = './perfil.html');
+            document.querySelector('#btnVerPerfil').addEventListener('click', () => {
+                if (statusRaw === 'COMPLETED') {
+                    try {
+                        const payload = {
+                            title: 'Pago de abono confirmado',
+                            message: 'Tu abono se registró con éxito. Puedes revisar los detalles en tu perfil.',
+                            createdAt: Date.now(),
+                        };
+                        sessionStorage.setItem('abonoPagoExitoso', JSON.stringify(payload));
+                    } catch (error) {
+                        console.error('No se pudo preparar la notificación de abono', error);
+                    }
+                }
+
+                location.href = './perfil.html';
+            });
             document.querySelector('#btnCopiar').addEventListener('click', async () => {
                 try { await navigator.clipboard.writeText(order); alert('N.º de orden copiado'); }
                 catch { alert('No se pudo copiar el N.º de orden'); }
