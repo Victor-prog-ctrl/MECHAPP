@@ -906,6 +906,7 @@ async function submitAppointment(event) {
         }
         updateMechanicWorkshopInfo(Number.isInteger(currentMechanicId) ? currentMechanicId : null);
         showFormFeedback("¡Solicitud enviada! Te contactaremos para confirmar la cita.", "success");
+        window.location.href = "./paginainicio.html";
     } catch (error) {
         console.error(error);
         showFormFeedback(error.message || "No pudimos agendar la cita. Inténtalo nuevamente.", "error");
