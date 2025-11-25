@@ -7,20 +7,11 @@ const calendarState = {
     mechanicId: null,
 };
 
-const timeSlotState = {
-    mechanicId: null,
-    dateKey: null,
-    unavailableTimes: new Set(),
-};
-
 const mechanicRegistry = new Map();
 const workshopRegistry = new Map();
 const mechanicState = {
     all: [],
 };
-
-const WORKDAY_START_MINUTES = 10 * 60;
-const WORKDAY_END_MINUTES = 18 * 60;
 
 function initializeCalendarState() {
     const today = new Date();
@@ -51,50 +42,6 @@ function parseDateKey(value) {
         return null;
     }
     return result;
-}
-
-function parseTimeToMinutes(value) {
-    if (typeof value !== "string") {
-        return null;
-    }
-    const [hours, minutes] = value.split(":").map((part) => Number.parseInt(part, 10));
-    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
-        return null;
-    }
-    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-        return null;
-    }
-    return hours * 60 + minutes;
-}
-
-function formatMinutesToTime(minutes) {
-    if (!Number.isFinite(minutes)) {
-        return "";
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainder = minutes % 60;
-    return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
-}
-
-function getScheduleRange(scheduleText) {
-    const defaults = { start: WORKDAY_START_MINUTES, end: WORKDAY_END_MINUTES };
-    if (!scheduleText || typeof scheduleText !== "string") {
-        return defaults;
-    }
-
-    const matches = scheduleText.match(/(\d{1,2}:\d{2})/g);
-    if (!matches || matches.length < 2) {
-        return defaults;
-    }
-
-    const startMinutes = Math.max(WORKDAY_START_MINUTES, parseTimeToMinutes(matches[0]));
-    const endMinutes = Math.min(WORKDAY_END_MINUTES, parseTimeToMinutes(matches[matches.length - 1]));
-
-    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
-        return defaults;
-    }
-
-    return { start: startMinutes, end: endMinutes };
 }
 
 function getSelectedVisitType() {
@@ -296,163 +243,14 @@ function updateCalendarHelper(message) {
     helper.textContent = message;
 }
 
-function updateTimeSlotSelection(selectedValue) {
-    const container = document.getElementById("visit-time-slots");
-    if (!container) {
-        return;
-    }
-
-    container.querySelectorAll(".time-slot").forEach((button) => {
-        const isSelected = button.dataset.time === selectedValue;
-        button.classList.toggle("is-selected", isSelected);
-        button.setAttribute("aria-selected", isSelected ? "true" : "false");
-    });
-}
-
-function renderTimeSlotsForMechanic(mechanicId) {
-    const container = document.getElementById("visit-time-slots");
-    const helper = document.getElementById("time-helper");
-    const timeInput = document.getElementById("visit-time");
-
-    if (!container || !timeInput) {
-        return;
-    }
-
-    const mechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicRegistry.get(mechanicId) : null;
-    if (!mechanic) {
-        container.innerHTML = "";
-        timeInput.value = "";
-        updateTimeSlotSelection("");
-        if (helper) {
-            helper.textContent = "Selecciona un mecánico para ver los horarios disponibles.";
-        }
-        updateScheduledForValue();
-        return;
-    }
-
-    const scheduleText = mechanic.workshop?.schedule || "";
-    const range = getScheduleRange(scheduleText);
-
-    const slots = [];
-    for (let minutes = range.start; minutes <= range.end; minutes += 60) {
-        slots.push(formatMinutesToTime(minutes));
-    }
-
-    if (!slots.length) {
-        container.innerHTML = "";
-        if (helper) {
-            helper.textContent = "No hay horarios disponibles configurados para este mecánico.";
-        }
-        timeInput.value = "";
-        updateScheduledForValue();
-        return;
-    }
-
-    const selectedDateKey = calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null;
-    const applyUnavailable =
-        timeSlotState.mechanicId === mechanicId && timeSlotState.dateKey === selectedDateKey;
-    const unavailableTimes = applyUnavailable ? timeSlotState.unavailableTimes : new Set();
-
-    container.innerHTML = "";
-    const fragment = document.createDocumentFragment();
-
-    slots.forEach((timeValue) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "time-slot";
-        button.dataset.time = timeValue;
-        button.textContent = timeValue;
-        button.setAttribute("role", "option");
-
-        const isUnavailable = applyUnavailable && unavailableTimes.has(timeValue);
-        if (isUnavailable) {
-            button.disabled = true;
-            button.classList.add("is-unavailable");
-        }
-
-        fragment.appendChild(button);
-    });
-
-    container.appendChild(fragment);
-
-    const currentValue = timeInput.value;
-    if (!slots.includes(currentValue) || (applyUnavailable && unavailableTimes.has(currentValue))) {
-        timeInput.value = "";
-    }
-
-    updateTimeSlotSelection(timeInput.value);
-
-    if (helper) {
-        const first = formatMinutesToTime(range.start);
-        const last = formatMinutesToTime(range.end);
-        helper.textContent =
-            `Disponibilidad de lunes a viernes entre ${first} y ${last}, en intervalos de 60 minutos.`;
-    }
-
-    updateScheduledForValue();
-}
-
-async function fetchUnavailableSlots(mechanicId, dateKey) {
-    const validMechanicId = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
-    const parsedDate = parseDateKey(dateKey);
-    const validDateKey = parsedDate ? formatDateKey(parsedDate) : null;
-
-    timeSlotState.mechanicId = validMechanicId;
-    timeSlotState.dateKey = validDateKey;
-    timeSlotState.unavailableTimes = new Set();
-
-    if (!validMechanicId || !validDateKey) {
-        renderTimeSlotsForMechanic(validMechanicId);
-        return;
-    }
-
-    try {
-        const params = new URLSearchParams({ mechanicId: String(validMechanicId), date: validDateKey });
-        const response = await fetch(`/api/appointments/unavailable-slots?${params.toString()}`, {
-            credentials: "same-origin",
-        });
-
-        if (response.status === 401) {
-            window.location.href = "./login.html";
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error("No pudimos obtener los horarios reservados para este día.");
-        }
-
-        const data = await response.json();
-        const slots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
-
-        if (
-            timeSlotState.mechanicId !== validMechanicId ||
-            timeSlotState.dateKey !== validDateKey
-        ) {
-            return;
-        }
-
-        timeSlotState.unavailableTimes = new Set(slots);
-        renderTimeSlotsForMechanic(validMechanicId);
-    } catch (error) {
-        console.error(error);
-        if (timeSlotState.mechanicId !== validMechanicId || timeSlotState.dateKey !== validDateKey) {
-            return;
-        }
-        timeSlotState.unavailableTimes = new Set();
-        renderTimeSlotsForMechanic(validMechanicId);
-    }
-}
-
 function updateScheduledForValue() {
     const scheduledInput = document.getElementById("scheduled-for");
     const dateInput = document.getElementById("visit-date");
-    const timeInput = document.getElementById("visit-time");
     if (!scheduledInput) {
         return;
     }
 
     const date = calendarState.selectedDate;
-    const timeValue = timeInput?.value || "";
 
     if (dateInput) {
         dateInput.value = date ? formatDateKey(date) : "";
@@ -464,19 +262,7 @@ function updateScheduledForValue() {
         return;
     }
 
-    if (!timeValue) {
-        scheduledInput.value = "";
-        updateCalendarHelper(
-            `Seleccionaste el ${date.toLocaleDateString("es-CL", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-            })}. Ahora elige una hora disponible.`,
-        );
-        return;
-    }
-
-    const combined = `${formatDateKey(date)}T${timeValue}`;
+    const combined = formatDateKey(date);
     scheduledInput.value = combined;
 
     updateCalendarHelper(
@@ -502,7 +288,6 @@ function selectCalendarDate(dateKey) {
     calendarState.selectedDate = parsed;
     updateScheduledForValue();
     renderCalendar();
-    fetchUnavailableSlots(getSelectedMechanicId(), formatDateKey(parsed));
 }
 
 async function fetchUnavailableDates(mechanicId) {
@@ -601,41 +386,7 @@ function setupCalendar() {
         });
     }
 
-    const timeInput = document.getElementById("visit-time");
-    if (timeInput) {
-        timeInput.addEventListener("change", updateScheduledForValue);
-        timeInput.addEventListener("input", updateScheduledForValue);
-    }
-
     updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
-}
-
-function setupTimeSlotInteractions() {
-    const container = document.getElementById("visit-time-slots");
-    if (!container) {
-        return;
-    }
-
-    container.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) {
-            return;
-        }
-
-        const button = target.closest(".time-slot");
-        if (!(button instanceof HTMLButtonElement)) {
-            return;
-        }
-
-        const timeValue = button.dataset.time || "";
-        const timeInput = document.getElementById("visit-time");
-        if (timeInput) {
-            timeInput.value = timeValue;
-        }
-
-        updateTimeSlotSelection(timeValue);
-        updateScheduledForValue();
-    });
 }
 
 function setVisitPanelsVisibility(visitType) {
@@ -788,15 +539,6 @@ function renderMechanicOptions({ mechanics, visitType, workshopId, preserveSelec
         updateMechanicWorkshopInfo(null);
     }
 
-    const selectedDateKey = calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null;
-
-    if (selectedDateKey) {
-        fetchUnavailableSlots(Number.isInteger(mechanicId) ? mechanicId : null, selectedDateKey);
-    } else {
-        fetchUnavailableSlots(null, null);
-    }
-
-    renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     updateMechanicHelperMessage(visitType, workshopId, mechanics.length);
 }
 
@@ -870,7 +612,6 @@ async function fetchMechanics() {
         });
 
         applyMechanicFilters({ preserveSelection: true });
-        renderTimeSlotsForMechanic(getSelectedMechanicId());
 
         if (helper && !mechanics.length) {
             helper.textContent = "Aún no hay mecánicos validados disponibles.";
@@ -1002,12 +743,9 @@ function setupMechanicAvailabilityListener() {
         updateMechanicWorkshopInfo(Number.isInteger(mechanicId) ? mechanicId : null);
         if (Number.isInteger(mechanicId) && mechanicId > 0) {
             fetchUnavailableDates(mechanicId);
-            fetchUnavailableSlots(mechanicId, calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null);
         } else {
             fetchUnavailableDates(null);
-            fetchUnavailableSlots(null, null);
         }
-        renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     });
 }
 
@@ -1060,7 +798,7 @@ async function submitAppointment(event) {
     }
 
     if (!scheduledValue) {
-        showFormFeedback("Selecciona un día y una hora disponibles para la visita.", "error");
+        showFormFeedback("Selecciona un día disponible para la visita.", "error");
         return;
     }
 
@@ -1158,7 +896,6 @@ async function submitAppointment(event) {
         }
         renderCalendar();
         updateScheduledForValue();
-        renderTimeSlotsForMechanic(getSelectedMechanicId());
 
         const mechanicSelect = document.getElementById("mechanic-select");
         const currentMechanicId = mechanicSelect ? Number.parseInt(mechanicSelect.value, 10) : null;
@@ -1233,11 +970,9 @@ function initializeAppointmentPage() {
     setupVisitTypeRadios();
     setupWorkshopSelection();
     setupCalendar();
-    setupTimeSlotInteractions();
     setupMechanicAvailabilityListener();
     setupAuthVisibilityControls();
     updateMechanicWorkshopInfo(null);
-    renderTimeSlotsForMechanic(null);
     fetchWorkshops();
     fetchMechanics();
 
