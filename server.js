@@ -1872,6 +1872,61 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
   }
 });
 
+app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
+  try {
+    const mechanicId = Number.parseInt(req.query.mechanicId, 10);
+    const dateParam = typeof req.query.date === 'string' ? req.query.date : '';
+
+    if (!Number.isInteger(mechanicId) || mechanicId <= 0) {
+      return res.json({ unavailableSlots: [] });
+    }
+
+    const mechanic = db
+      .prepare(
+        `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
+      )
+      .get(mechanicId);
+
+    if (!mechanic) {
+      return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
+    }
+
+    const parsedDate = new Date(dateParam);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.json({ unavailableSlots: [] });
+    }
+
+    const formatDate = (value) => {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day = String(value.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const dateKey = formatDate(parsedDate);
+
+    const rows = db
+      .prepare(
+        `SELECT strftime('%H:%M', scheduled_for) as time
+         FROM appointments
+         WHERE mechanic_id = ?
+           AND DATE(scheduled_for) = DATE(?)
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')
+         ORDER BY time`
+      )
+      .all(mechanicId, dateKey);
+
+    const unavailableSlots = rows
+      .map((row) => (typeof row.time === 'string' ? row.time : null))
+      .filter((value) => typeof value === 'string');
+
+    res.json({ unavailableSlots });
+  } catch (error) {
+    console.error('Error obteniendo horarios ocupados', error);
+    res.status(500).json({ error: 'No se pudo obtener los horarios ocupados.' });
+  }
+});
+
 app.post('/api/appointments', requireAuth, (req, res) => {
   try {
     const currentUser = db
