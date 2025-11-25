@@ -782,6 +782,14 @@ function renderMechanicOptions({ mechanics, visitType, workshopId, preserveSelec
         updateMechanicWorkshopInfo(null);
     }
 
+    const selectedDateKey = calendarState.selectedDate ? formatDateKey(calendarState.selectedDate) : null;
+
+    if (selectedDateKey) {
+        fetchUnavailableSlots(Number.isInteger(mechanicId) ? mechanicId : null, selectedDateKey);
+    } else {
+        fetchUnavailableSlots(null, null);
+    }
+
     renderTimeSlotsForMechanic(Number.isInteger(mechanicId) ? mechanicId : null);
     updateMechanicHelperMessage(visitType, workshopId, mechanics.length);
 }
