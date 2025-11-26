@@ -84,36 +84,59 @@ function canRequestBeCompleted(request) {
     return scheduledDate.getTime() <= Date.now();
 }
 
-function formatDateTime(dateString) {
+function parseDate(dateString) {
     if (!dateString) {
+        return null;
+    }
+
+    try {
+        const normalized = typeof dateString === "string" ? dateString.trim() : dateString;
+        const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+
+        if (typeof normalized === "string" && dateOnlyPattern.test(normalized)) {
+            const [year, month, day] = normalized.split("-").map((part) => Number.parseInt(part, 10));
+            const date = new Date(year, month - 1, day);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const date = new Date(normalized);
+        return Number.isNaN(date.getTime()) ? null : date;
+    } catch (error) {
+        console.error("No se pudo interpretar la fecha", error);
+        return null;
+    }
+}
+
+function formatDateTime(dateString) {
+    const date = parseDate(dateString);
+    if (!date) {
         return "";
     }
 
     try {
-        const date = new Date(dateString);
         return new Intl.DateTimeFormat("es", {
             dateStyle: "medium",
             timeStyle: "short",
         }).format(date);
     } catch (error) {
         console.error("No se pudo formatear la fecha y hora", error);
-        return dateString;
+        return String(dateString || "");
     }
 }
 
 function formatDate(dateString) {
-    if (!dateString) {
+    const date = parseDate(dateString);
+    if (!date) {
         return "";
     }
 
     try {
-        const date = new Date(dateString);
         return new Intl.DateTimeFormat("es", {
             dateStyle: "long",
         }).format(date);
     } catch (error) {
         console.error("No se pudo formatear la fecha", error);
-        return dateString;
+        return String(dateString || "");
     }
 }
 
