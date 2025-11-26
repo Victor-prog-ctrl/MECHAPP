@@ -690,7 +690,7 @@ function getClientNotifications(clientId) {
         row.abono_pagado === true;
 
       if (abonoPagado) {
-        const abonoMessageBase = 'Gracias por el abono, tu cita ya estará reservada para ti. ¡No faltes!';
+        const abonoMessageBase = 'Abono realizado. Gracias por tu pago, tu cita ya quedó reservada para ti. ¡No faltes!';
 
         notifications.push({
           id: `client-abono-paid-${row.id}`,
@@ -2368,7 +2368,7 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
 // ====== ENDPOINT PayPal: CAPTURAR y guardar ======
 app.post('/api/paypal/capture', async (req, res) => {
   try {
-    const { orderID } = req.body || {};
+    const { orderID, appointmentId } = req.body || {};
     if (!orderID) return res.status(400).json({ error: 'orderID requerido' });
 
     // 1) Capturar en PayPal (esto hace el cobro real en sandbox)
@@ -2397,13 +2397,32 @@ app.post('/api/paypal/capture', async (req, res) => {
       JSON.stringify(data)
     );
 
+    let appointmentUpdated = false;
+    const appointmentIdNumber = Number(appointmentId);
+    if (Number.isFinite(appointmentIdNumber)) {
+      const result = db
+        .prepare(
+          `UPDATE appointments
+           SET abono_pagado = 1,
+               status = CASE
+                 WHEN LOWER(COALESCE(status, '')) IN ('pendiente', 'confirmado', '') THEN 'confirmado'
+                 ELSE status
+               END
+           WHERE id = ?`
+        )
+        .run(appointmentIdNumber);
+
+      appointmentUpdated = result.changes > 0;
+    }
+
     // 4) Responder al front
     res.json({
       orderId: data.id,
       status,
       amount,
       currency,
-      payerEmail
+      payerEmail,
+      appointmentUpdated
     });
   } catch (e) {
     console.error('PayPal capture error:', e);
