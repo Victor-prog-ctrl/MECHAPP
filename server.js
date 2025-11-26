@@ -624,7 +624,23 @@ function getClientAppointmentHistory(clientId) {
 
 function formatNotificationDate(value, { includeTime = true } = {}) {
   if (!value) return null;
-  const date = new Date(value);
+  let date;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const dateOnlyMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      // Interpret fechas sin hora en horario local para evitar desfases de zona
+      // (por ejemplo, que el 27 se muestre como 26 en notificaciones).
+      date = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      date = new Date(trimmed);
+    }
+  } else {
+    date = new Date(value);
+  }
   if (Number.isNaN(date.getTime())) {
     return null;
   }
