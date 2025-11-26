@@ -2005,6 +2005,31 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
   }
 });
 
+const parseDateOnly = (value) => {
+  if (typeof value !== 'string') return null;
+
+  const [yearStr, monthStr, dayStr] = value.split('-');
+  const year = Number.parseInt(yearStr, 10);
+  const month = Number.parseInt(monthStr, 10);
+  const day = Number.parseInt(dayStr, 10);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
 app.post('/api/appointments', requireAuth, (req, res) => {
   try {
     const currentUser = db
@@ -2041,8 +2066,8 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     if (!scheduledFor || typeof scheduledFor !== 'string') {
       return res.status(400).json({ error: 'Selecciona la fecha de la visita.' });
     }
-    const scheduledDate = new Date(scheduledFor);
-    if (Number.isNaN(scheduledDate.getTime())) {
+    const scheduledDate = parseDateOnly(scheduledFor);
+    if (!(scheduledDate instanceof Date)) {
       return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
     }
     if (!normalizedAddress) {
