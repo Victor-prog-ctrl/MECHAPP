@@ -118,15 +118,15 @@
     try {
       const response = await fetch('/api/profile', { credentials: 'same-origin' });
       if (!response.ok) {
-        throw new Error('No autenticado');
+        return;
       }
 
       const profile = await response.json();
-      if (profile?.accountType !== 'mecanico') {
+      if (profile?.accountType === 'cliente') {
         scheduleButton.removeAttribute('hidden');
       }
     } catch (error) {
-      scheduleButton.removeAttribute('hidden');
+      console.error('No se pudo verificar el perfil del usuario:', error);
     }
   }
 
