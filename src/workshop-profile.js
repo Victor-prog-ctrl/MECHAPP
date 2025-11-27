@@ -115,7 +115,7 @@
       return;
     }
 
-    if (window.user?.role === 'client') {
+    if (window.user?.role === 'cliente') {
       scheduleButton.removeAttribute('hidden');
       return;
     }
