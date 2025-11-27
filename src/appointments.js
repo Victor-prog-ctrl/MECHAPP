@@ -73,6 +73,13 @@ function buildSlotsFromSchedule(config = DEFAULT_SCHEDULE_CONFIG) {
 
 const DEFAULT_TIME_SLOTS = buildSlotsFromSchedule(DEFAULT_SCHEDULE_CONFIG);
 
+const authState = {
+    isAuthenticated: false,
+    isMechanic: false,
+};
+
+let applyAuthVisibility = null;
+
 const mechanicRegistry = new Map();
 const workshopRegistry = new Map();
 const mechanicState = {
@@ -1332,11 +1339,6 @@ function setupAuthVisibilityControls() {
         return;
     }
 
-    const state = {
-        isAuthenticated: false,
-        isMechanic: false,
-    };
-
     const unauthenticatedOnly = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
     const authenticatedOnly = document.querySelectorAll('[data-auth-visibility="authenticated"]');
     const mechanicOnly = document.querySelectorAll('[data-visible-for="mecanico"]');
@@ -1350,43 +1352,62 @@ function setupAuthVisibilityControls() {
         }
     };
 
-    const applyVisibility = () => {
-        const { isAuthenticated, isMechanic } = state;
+    applyAuthVisibility = () => {
+        const { isAuthenticated, isMechanic } = authState;
         unauthenticatedOnly.forEach((el) => setVisibility(el, !isAuthenticated));
         authenticatedOnly.forEach((el) => setVisibility(el, isAuthenticated));
         mechanicOnly.forEach((el) => setVisibility(el, isAuthenticated && isMechanic));
         userOnly.forEach((el) => setVisibility(el, isAuthenticated && !isMechanic));
     };
 
-    applyVisibility();
-
-    fetch("/api/profile")
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error("No autenticado");
-            }
-            return response.json();
-        })
-        .then((profile) => {
-            state.isAuthenticated = true;
-            state.isMechanic = profile?.accountType === "mecanico";
-            applyVisibility();
-        })
-        .catch(() => {
-            state.isAuthenticated = false;
-            state.isMechanic = false;
-            applyVisibility();
-        });
+    applyAuthVisibility();
 }
 
-function initializeAppointmentPage() {
+function setAuthState(updates) {
+    authState.isAuthenticated = Boolean(updates?.isAuthenticated);
+    authState.isMechanic = Boolean(updates?.isMechanic);
+    if (typeof applyAuthVisibility === "function") {
+        applyAuthVisibility();
+    }
+}
+
+async function ensureAuthenticatedUser() {
+    try {
+        const response = await fetch("/api/profile", { credentials: "same-origin" });
+        if (!response.ok) {
+            throw new Error("No autenticado");
+        }
+        const profile = await response.json();
+        setAuthState({
+            isAuthenticated: true,
+            isMechanic: profile?.accountType === "mecanico",
+        });
+        if (authState.isMechanic) {
+            throw new Error("Los mecánicos no pueden agendar citas.");
+        }
+        return true;
+    } catch (error) {
+        setAuthState({ isAuthenticated: false, isMechanic: false });
+        const redirectTarget = encodeURIComponent("./agendar-cita.html");
+        window.location.href = `./login.html?redirect=${redirectTarget}`;
+        return false;
+    }
+}
+
+async function initializeAppointmentPage() {
+    setupAuthVisibilityControls();
+
+    const isAuthenticated = await ensureAuthenticatedUser();
+    if (!isAuthenticated) {
+        return;
+    }
+
     setVisitPanelsVisibility("presencial");
     setupVisitTypeRadios();
     setupWorkshopSelection();
     setupCalendar();
     setupTimeSlotSelector();
     setupMechanicAvailabilityListener();
-    setupAuthVisibilityControls();
     updateMechanicWorkshopInfo(null);
     fetchWorkshops();
     fetchMechanics();
