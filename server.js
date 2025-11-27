@@ -323,6 +323,113 @@ function formatTimeFromMinutes(minutes) {
   return `${String(hours).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
+function padWithZero(value) {
+  return String(value).padStart(2, '0');
+}
+
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = padWithZero(date.getMonth() + 1);
+  const day = padWithZero(date.getDate());
+  return `${year}-${month}-${day}`;
+}
+
+function parseSlotValue(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const match = value.match(/^(\d{2}):(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number.parseInt(match[1], 10);
+  const minutes = Number.parseInt(match[2], 10);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+    return null;
+  }
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return `${padWithZero(hours)}:${padWithZero(minutes)}`;
+}
+
+function extractSlotFromValue(value) {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const [, timePart] = trimmed.split(/T|\s+/);
+    const candidate = parseSlotValue((timePart || '').slice(0, 5));
+    if (candidate) return candidate;
+
+    // Fallback: try to find the first HH:MM occurrence in the string
+    const match = trimmed.match(/(\d{2}:\d{2})/);
+    if (match) return parseSlotValue(match[1]);
+    return null;
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return `${padWithZero(value.getHours())}:${padWithZero(value.getMinutes())}`;
+  }
+
+  return null;
+}
+
+function parseDateTimeWithSlot(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))/);
+  if (!match) {
+    return null;
+  }
+
+  const [, yearStr, monthStr, dayStr, hourStr, minuteStr] = match;
+  const year = Number.parseInt(yearStr, 10);
+  const month = Number.parseInt(monthStr, 10) - 1;
+  const day = Number.parseInt(dayStr, 10);
+  const hours = Number.parseInt(hourStr, 10);
+  const minutes = Number.parseInt(minuteStr, 10);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes)
+  ) {
+    return null;
+  }
+
+  const date = new Date(year, month, day, hours, minutes, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDateTimeSlotValue(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const dateKey = formatDateKey(date);
+  const slot = `${padWithZero(date.getHours())}:${padWithZero(date.getMinutes())}:00`;
+  return `${dateKey} ${slot}`;
+}
+
 function buildTimeSlots(scheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
   const startMinutes = parseTimeToMinutes(scheduleConfig?.start);
   const endMinutes = parseTimeToMinutes(scheduleConfig?.end);
