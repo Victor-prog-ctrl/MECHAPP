@@ -620,7 +620,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
         updateScheduledForValue();
 
         if (remaining > 0) {
-            setAvailabilityMessage(`Horarios disponibles para este día: ${remaining} de ${totalSlots}.`);
+            setAvailabilityMessage("");
             updateCalendarHelper(
                 `Seleccionaste el ${parsedDate.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}. Elige una hora.`,
             );
