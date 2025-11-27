@@ -121,13 +121,27 @@
                             />
                         </div>
                         <div class="field">
-                            <label for="schedule">Horario de atención</label>
-                            <input
-                                type="text"
-                                id="schedule"
-                                name="schedule"
-                                placeholder="Lunes a viernes de 9:00 a 18:00"
-                            />
+                            <span class="field-label">Horario de atención</span>
+                            <p class="help-text">Selecciona los días y el rango horario en que atiende tu taller.</p>
+                            <div class="schedule-days" aria-label="Días de atención">
+                                <label><input type="checkbox" name="schedule-days" value="1" checked /> Lunes</label>
+                                <label><input type="checkbox" name="schedule-days" value="2" checked /> Martes</label>
+                                <label><input type="checkbox" name="schedule-days" value="3" checked /> Miércoles</label>
+                                <label><input type="checkbox" name="schedule-days" value="4" checked /> Jueves</label>
+                                <label><input type="checkbox" name="schedule-days" value="5" checked /> Viernes</label>
+                                <label><input type="checkbox" name="schedule-days" value="6" /> Sábado</label>
+                                <label><input type="checkbox" name="schedule-days" value="0" /> Domingo</label>
+                            </div>
+                            <div class="field-group">
+                                <div class="field">
+                                    <label for="schedule-start">Hora de inicio</label>
+                                    <input type="time" id="schedule-start" name="schedule-start" value="10:00" required />
+                                </div>
+                                <div class="field">
+                                    <label for="schedule-end">Hora de término</label>
+                                    <input type="time" id="schedule-end" name="schedule-end" value="18:00" required />
+                                </div>
+                            </div>
                         </div>
                         <div class="field-group">
                             <div class="field">

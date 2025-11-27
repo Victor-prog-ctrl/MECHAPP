@@ -7,17 +7,71 @@ const calendarState = {
     mechanicId: null,
 };
 
-const TIME_SLOTS = [
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-];
+const DEFAULT_SCHEDULE_CONFIG = { days: [1, 2, 3, 4, 5], start: "10:00", end: "18:00" };
+
+function parseTimeToMinutes(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const [hoursStr, minutesStr] = value.split(":");
+    const hours = Number.parseInt(hoursStr, 10);
+    const minutes = Number.parseInt(minutesStr, 10);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+        return null;
+    }
+    return hours * 60 + minutes;
+}
+
+function formatMinutesToTime(minutes) {
+    if (!Number.isFinite(minutes)) {
+        return "";
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainder = Math.max(0, minutes - hours * 60);
+    return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function normalizeScheduleConfig(config) {
+    const dayList = Array.isArray(config?.days) ? config.days : DEFAULT_SCHEDULE_CONFIG.days;
+    const days = Array.from(
+        new Set(
+            dayList
+                .map((day) => Number.parseInt(day, 10))
+                .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+        ),
+    ).sort((a, b) => a - b);
+
+    const startMinutes = parseTimeToMinutes(config?.start);
+    const endMinutes = parseTimeToMinutes(config?.end);
+
+    const defaultStart = parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.start);
+    const defaultEnd = parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.end);
+
+    const start = Number.isFinite(startMinutes) ? startMinutes : defaultStart;
+    const end = Number.isFinite(endMinutes) ? endMinutes : defaultEnd;
+
+    const effectiveStart = Math.min(start, end - 60);
+    const effectiveEnd = Math.max(end, start + 60);
+
+    return {
+        days: days.length ? days : [...DEFAULT_SCHEDULE_CONFIG.days],
+        start: formatMinutesToTime(effectiveStart),
+        end: formatMinutesToTime(effectiveEnd),
+    };
+}
+
+function buildSlotsFromSchedule(config = DEFAULT_SCHEDULE_CONFIG) {
+    const normalized = normalizeScheduleConfig(config);
+    const start = parseTimeToMinutes(normalized.start);
+    const end = parseTimeToMinutes(normalized.end);
+    const slots = [];
+    for (let minutes = start; minutes <= end; minutes += 60) {
+        slots.push(formatMinutesToTime(minutes));
+    }
+    return slots;
+}
+
+const DEFAULT_TIME_SLOTS = buildSlotsFromSchedule(DEFAULT_SCHEDULE_CONFIG);
 
 const mechanicRegistry = new Map();
 const workshopRegistry = new Map();
@@ -26,11 +80,19 @@ const mechanicState = {
 };
 
 const availabilityState = {
-    totalSlots: TIME_SLOTS.length,
+    totalSlots: DEFAULT_TIME_SLOTS.length,
     requestId: 0,
     selectedSlot: null,
     unavailableSlots: new Set(),
+    timeSlots: DEFAULT_TIME_SLOTS,
+    scheduleConfig: DEFAULT_SCHEDULE_CONFIG,
 };
+
+function getTimeSlots() {
+    return availabilityState.timeSlots && availabilityState.timeSlots.length
+        ? availabilityState.timeSlots
+        : DEFAULT_TIME_SLOTS;
+}
 
 function initializeCalendarState() {
     const today = new Date();
@@ -96,7 +158,7 @@ function parseSlotValue(value) {
 }
 
 function isFullDay(unavailableSet) {
-    return unavailableSet.size >= TIME_SLOTS.length;
+    return unavailableSet.size >= getTimeSlots().length;
 }
 
 function parseDateTimeInput(value) {
@@ -140,6 +202,43 @@ function formatWorkshopDescription(workshop) {
         return `${workshop.name} · ${workshop.address}`;
     }
     return workshop.name;
+}
+
+function isAllowedDay(date) {
+    if (!(date instanceof Date)) {
+        return false;
+    }
+    const schedule = normalizeScheduleConfig(availabilityState.scheduleConfig || DEFAULT_SCHEDULE_CONFIG);
+    return schedule.days.includes(date.getDay());
+}
+
+function syncScheduleWithSelection() {
+    const mechanicId = getSelectedMechanicId();
+    const workshopId = getSelectedWorkshopId();
+    const visitType = getSelectedVisitType();
+
+    const mechanicWorkshop = mechanicId ? mechanicRegistry.get(mechanicId)?.workshop : null;
+    const workshop = visitType === "presencial" && workshopId ? workshopRegistry.get(workshopId) : null;
+    const source = mechanicWorkshop || workshop;
+
+    const normalizedConfig = normalizeScheduleConfig(source?.scheduleConfig || DEFAULT_SCHEDULE_CONFIG);
+    const providedSlots = Array.isArray(source?.timeSlots)
+        ? source.timeSlots.map((slot) => parseSlotValue(slot)).filter(Boolean)
+        : [];
+    const slots = providedSlots.length ? providedSlots : buildSlotsFromSchedule(normalizedConfig);
+
+    availabilityState.scheduleConfig = normalizedConfig;
+    availabilityState.timeSlots = slots;
+    availabilityState.totalSlots = slots.length;
+    availabilityState.unavailableSlots = new Set();
+    availabilityState.selectedSlot = null;
+    calendarState.unavailableDates = new Set();
+    calendarState.selectedDate = null;
+
+    const referenceMonth = calendarState.currentMonth || calendarState.startOfTodayMonth || new Date();
+    renderCalendar(referenceMonth);
+    renderTimeSlots();
+    updateScheduledForValue();
 }
 
 function getCalendarElements() {
@@ -256,9 +355,6 @@ function renderCalendar() {
         button.dataset.date = cellKey;
         button.setAttribute("aria-label", cellDate.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" }));
 
-        const weekday = cellDate.getDay();
-        const isWeekend = weekday === 0 || weekday === 6;
-
         const isOutside = cellDate.getMonth() !== month.getMonth();
         if (isOutside) {
             button.classList.add("is-outside");
@@ -270,7 +366,7 @@ function renderCalendar() {
             button.disabled = true;
         }
 
-        if (isWeekend) {
+        if (!isAllowedDay(cellDate)) {
             button.classList.add("is-unavailable");
             button.disabled = true;
         }
@@ -391,8 +487,13 @@ function renderTimeSlots() {
     }
 
     const dayIsFull = isFullDay(unavailable);
+    const slots = getTimeSlots();
+    if (!slots.includes(availabilityState.selectedSlot || "")) {
+        availabilityState.selectedSlot = null;
+        updateScheduledForValue();
+    }
 
-    TIME_SLOTS.forEach((slot) => {
+    slots.forEach((slot) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "slot-button";
@@ -490,7 +591,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
         const capacityFromServer = Number.parseInt(data?.totalSlots, 10);
         const totalSlots = Number.isInteger(capacityFromServer) && capacityFromServer > 0
             ? capacityFromServer
-            : TIME_SLOTS.length;
+            : getTimeSlots().length;
 
         availabilityState.totalSlots = totalSlots;
         availabilityState.unavailableSlots = normalizedUnavailable;
@@ -685,6 +786,7 @@ function setVisitPanelsVisibility(visitType) {
     }
 
     applyMechanicFilters({ preserveSelection: visitType === "presencial" });
+    syncScheduleWithSelection();
 }
 
 function updateMechanicWorkshopInfo(mechanicId) {
@@ -810,6 +912,8 @@ function renderMechanicOptions({ mechanics, visitType, workshopId, preserveSelec
         updateMechanicWorkshopInfo(null);
     }
 
+    syncScheduleWithSelection();
+
     updateMechanicHelperMessage(visitType, workshopId, mechanics.length);
 }
 
@@ -866,6 +970,10 @@ async function fetchMechanics() {
                       name: mechanic.workshop.name || "",
                       address: mechanic.workshop.address || "",
                       schedule: mechanic.workshop.schedule || "",
+                      scheduleConfig: mechanic.workshop.scheduleConfig || DEFAULT_SCHEDULE_CONFIG,
+                      timeSlots: Array.isArray(mechanic.workshop.timeSlots)
+                          ? mechanic.workshop.timeSlots.map((slot) => parseSlotValue(slot)).filter(Boolean)
+                          : [],
                   }
                 : null;
 
@@ -944,10 +1052,16 @@ async function fetchWorkshops() {
         workshopRegistry.clear();
         workshops.forEach((workshop) => {
             const normalizedId = workshop.id ? String(workshop.id) : null;
+            const normalizedSlots = Array.isArray(workshop.timeSlots)
+                ? workshop.timeSlots.map((slot) => parseSlotValue(slot)).filter(Boolean)
+                : [];
             const normalizedWorkshop = {
                 id: normalizedId,
                 name: workshop.name || "",
                 address: workshop.address || "",
+                schedule: workshop.schedule || "",
+                scheduleConfig: workshop.scheduleConfig || DEFAULT_SCHEDULE_CONFIG,
+                timeSlots: normalizedSlots.length ? normalizedSlots : buildSlotsFromSchedule(workshop.scheduleConfig),
             };
 
             if (normalizedId) {
@@ -1040,6 +1154,7 @@ function setupMechanicAvailabilityListener() {
         } else {
             fetchUnavailableDates(null);
         }
+        syncScheduleWithSelection();
     });
 }
 
@@ -1068,6 +1183,7 @@ function setupWorkshopSelection() {
         const workshopId = getSelectedWorkshopId();
         updateWorkshopDetailInput(workshopId);
         applyMechanicFilters({ preserveSelection: false });
+        syncScheduleWithSelection();
     });
 }
 

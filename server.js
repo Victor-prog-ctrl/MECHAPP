@@ -11,7 +11,8 @@ const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
-const TIME_SLOTS = ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const DEFAULT_SCHEDULE_CONFIG = { days: [1, 2, 3, 4, 5], start: '10:00', end: '18:00' };
+const TIME_SLOTS = buildTimeSlots(DEFAULT_SCHEDULE_CONFIG);
 const DAILY_APPOINTMENT_CAPACITY = TIME_SLOTS.length;
 
 // ===== fetch polyfill (Node 18+ ya trae fetch; para 16/17 cargamos dinámico) =====
@@ -312,6 +313,160 @@ function parseTimeToMinutes(value) {
   return hours * 60 + minutes;
 }
 
+function formatTimeFromMinutes(minutes) {
+  if (!Number.isFinite(minutes)) {
+    return '';
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = Math.max(0, minutes - hours * 60);
+  return `${String(hours).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+}
+
+function buildTimeSlots(scheduleConfig = DEFAULT_SCHEDULE_CONFIG) {
+  const startMinutes = parseTimeToMinutes(scheduleConfig?.start);
+  const endMinutes = parseTimeToMinutes(scheduleConfig?.end);
+  const safeStart = Number.isFinite(startMinutes) ? startMinutes : parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.start);
+  const safeEnd = Number.isFinite(endMinutes) ? endMinutes : parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.end);
+
+  const effectiveStart = Math.min(safeStart, safeEnd - 60);
+  const effectiveEnd = Math.max(safeEnd, safeStart + 60);
+
+  const slots = [];
+  for (let minutes = effectiveStart; minutes <= effectiveEnd; minutes += 60) {
+    slots.push(formatTimeFromMinutes(minutes));
+  }
+
+  return slots;
+}
+
+function normalizeScheduleConfig(config) {
+  const dayList = Array.isArray(config?.days) ? config.days : DEFAULT_SCHEDULE_CONFIG.days;
+  const uniqueDays = Array.from(
+    new Set(
+      dayList
+        .map((day) => Number.parseInt(day, 10))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+    )
+  ).sort((a, b) => a - b);
+
+  const days = uniqueDays.length ? uniqueDays : [...DEFAULT_SCHEDULE_CONFIG.days];
+
+  const startMinutes = parseTimeToMinutes(config?.start);
+  const endMinutes = parseTimeToMinutes(config?.end);
+
+  const defaultStart = parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.start);
+  const defaultEnd = parseTimeToMinutes(DEFAULT_SCHEDULE_CONFIG.end);
+
+  const start = Number.isFinite(startMinutes) ? startMinutes : defaultStart;
+  const end = Number.isFinite(endMinutes) ? endMinutes : defaultEnd;
+
+  const effectiveStart = Math.min(start, end - 60);
+  const effectiveEnd = Math.max(end, start + 60);
+
+  const normalized = {
+    days,
+    start: formatTimeFromMinutes(effectiveStart),
+    end: formatTimeFromMinutes(effectiveEnd),
+  };
+
+  return normalized;
+}
+
+function formatScheduleLabel(config) {
+  if (!config) {
+    return 'Horario no especificado';
+  }
+
+  const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const sortedDays = Array.isArray(config.days)
+    ? Array.from(new Set(config.days)).sort((a, b) => a - b)
+    : [...DEFAULT_SCHEDULE_CONFIG.days];
+
+  let daysLabel = '';
+  const weekdays = [1, 2, 3, 4, 5];
+  const weekend = [0, 6];
+
+  if (sortedDays.length === 7) {
+    daysLabel = 'Todos los días';
+  } else if (sortedDays.every((day, idx) => day === weekdays[idx])) {
+    daysLabel = 'Lunes a viernes';
+  } else if (sortedDays.every((day, idx) => day === weekend[idx])) {
+    daysLabel = 'Fines de semana';
+  } else {
+    daysLabel = sortedDays.map((day) => dayLabels[day] || '').filter(Boolean).join(', ');
+  }
+
+  const start = config.start || DEFAULT_SCHEDULE_CONFIG.start;
+  const end = config.end || DEFAULT_SCHEDULE_CONFIG.end;
+
+  return `${daysLabel} · ${start} a ${end} hrs`;
+}
+
+function parseStoredSchedule(value) {
+  if (value && typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const config = normalizeScheduleConfig(parsed);
+        const label = typeof parsed?.label === 'string' && parsed.label.trim()
+          ? parsed.label.trim()
+          : formatScheduleLabel(config);
+        const slots = buildTimeSlots(config);
+        return { config, label, slots, serialized: JSON.stringify({ ...config, label }) };
+      } catch (error) {
+        // fallback to defaults below
+      }
+    }
+
+    const range = getScheduleRange(trimmed);
+    const config = normalizeScheduleConfig({ ...DEFAULT_SCHEDULE_CONFIG, start: formatTimeFromMinutes(range.start), end: formatTimeFromMinutes(range.end) });
+    const label = trimmed || formatScheduleLabel(config);
+    const slots = buildTimeSlots(config);
+    return { config, label, slots, serialized: JSON.stringify({ ...config, label }) };
+  }
+
+  const config = normalizeScheduleConfig(DEFAULT_SCHEDULE_CONFIG);
+  const label = formatScheduleLabel(config);
+  const slots = buildTimeSlots(config);
+  return { config, label, slots, serialized: JSON.stringify({ ...config, label }) };
+}
+
+function normalizeScheduleInput(input) {
+  if (input && typeof input === 'object') {
+    const config = normalizeScheduleConfig(input);
+    const label = formatScheduleLabel(config);
+    return { config, label, serialized: JSON.stringify({ ...config, label }) };
+  }
+
+  try {
+    if (typeof input === 'string' && input.trim().startsWith('{')) {
+      const parsed = JSON.parse(input);
+      const config = normalizeScheduleConfig(parsed);
+      const label = typeof parsed?.label === 'string' && parsed.label.trim()
+        ? parsed.label.trim()
+        : formatScheduleLabel(config);
+      return { config, label, serialized: JSON.stringify({ ...config, label }) };
+    }
+  } catch (error) {
+    // fallback to default handling below
+  }
+
+  const config = normalizeScheduleConfig(DEFAULT_SCHEDULE_CONFIG);
+  const label = typeof input === 'string' && input.trim() ? input.trim() : formatScheduleLabel(config);
+  return { config, label, serialized: JSON.stringify({ ...config, label }) };
+}
+
+function scheduleAllowsDate(config, date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const allowedDays = Array.isArray(config?.days) ? config.days : DEFAULT_SCHEDULE_CONFIG.days;
+  return allowedDays.includes(date.getDay());
+}
+
 function getScheduleRange(scheduleText) {
   const WORKDAY_START_MINUTES = 10 * 60;
   const WORKDAY_END_MINUTES = 18 * 60;
@@ -359,15 +514,34 @@ function getMechanicWorkshopSummary(mechanicId) {
   if (!row) return null;
 
   const reviewsCount = Number(row.reviews_count || 0);
+  const schedule = parseStoredSchedule(row.schedule);
 
   return {
     id: row.id,
     name: row.name,
     address: row.address,
-    schedule: row.schedule,
+    schedule: schedule.label,
+    scheduleConfig: schedule.config,
+    timeSlots: schedule.slots,
     reviewsCount,
     averageRating: normalizeAverage(row.average_rating, reviewsCount),
   };
+}
+
+function resolveMechanicSchedule(mechanicId) {
+  const workshop = getMechanicWorkshopSummary(mechanicId);
+  if (!workshop) {
+    const fallback = parseStoredSchedule(JSON.stringify({ ...DEFAULT_SCHEDULE_CONFIG, label: formatScheduleLabel(DEFAULT_SCHEDULE_CONFIG) }));
+    return { label: fallback.label, config: fallback.config, slots: fallback.slots };
+  }
+
+  const config = workshop.scheduleConfig || DEFAULT_SCHEDULE_CONFIG;
+  const label = workshop.schedule || formatScheduleLabel(config);
+  const slots = Array.isArray(workshop.timeSlots) && workshop.timeSlots.length
+    ? workshop.timeSlots
+    : buildTimeSlots(config);
+
+  return { label, config, slots };
 }
 
 function getMechanicAppointmentsSummary(mechanicId) {
@@ -400,6 +574,7 @@ function getMechanicAppointmentsSummary(mechanicId) {
 function mapWorkshopSummary(row) {
   const reviewsCount = Number(row.reviews_count || 0);
   const averageRating = normalizeAverage(row.average_rating, reviewsCount);
+  const schedule = parseStoredSchedule(row.schedule);
 
   return {
     id: row.id,
@@ -411,6 +586,9 @@ function mapWorkshopSummary(row) {
     experienceYears: Number(row.experience_years || 0),
     averageRating,
     reviewsCount,
+    schedule: schedule.label,
+    scheduleConfig: schedule.config,
+    timeSlots: schedule.slots,
     latestReview:
       row.latest_comment && row.latest_rating
         ? {
@@ -429,6 +607,7 @@ function mapWorkshopSummary(row) {
 
 function mapWorkshopDetail(row) {
   const summary = mapWorkshopSummary(row);
+  const schedule = parseStoredSchedule(row.schedule);
 
   return {
     ...summary,
@@ -436,7 +615,9 @@ function mapWorkshopDetail(row) {
     services: parseJsonArray(row.services),
     certifications: parseJsonArray(row.certifications),
     address: row.address,
-    schedule: row.schedule,
+    schedule: schedule.label,
+    scheduleConfig: schedule.config,
+    timeSlots: schedule.slots,
     phone: row.phone,
     email: row.email,
   };
@@ -1327,7 +1508,7 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
       return res.status(400).json({ error: 'Ingresa la dirección del taller.' });
     }
 
-    const normalizedSchedule = typeof schedule === 'string' && schedule.trim() ? schedule.trim() : 'Horario no especificado';
+    const normalizedSchedule = normalizeScheduleInput(schedule);
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
@@ -1388,7 +1569,7 @@ app.post('/api/workshops', requireAuth, requireMechanic, async (req, res) => {
       normalizedDescription,
       safeExperience,
       normalizedAddress,
-      normalizedSchedule,
+      normalizedSchedule.serialized,
       normalizedPhone || null,
       normalizedEmail || null,
       JSON.stringify(parsedSpecialties),
@@ -1448,9 +1629,7 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
       ? shortDescription.trim()
       : createShortDescription(normalizedDescription);
     const normalizedAddress = typeof address === 'string' && address.trim() ? address.trim() : existing.address;
-    const normalizedSchedule = typeof schedule === 'string' && schedule.trim()
-      ? schedule.trim()
-      : existing.schedule || 'Horario no especificado';
+    const normalizedSchedule = normalizeScheduleInput(schedule || existing.schedule);
     const normalizedPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
     const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
 
@@ -1512,7 +1691,7 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
       normalizedDescription,
       normalizedExperienceYears,
       normalizedAddress,
-      normalizedSchedule,
+      normalizedSchedule.serialized,
       normalizedPhone || null,
       normalizedEmail || null,
       JSON.stringify(specialtiesToStore),
@@ -1940,6 +2119,9 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     const start = formatDateKey(today);
     const end = formatDateKey(endLimit);
 
+    const mechanicSchedule = resolveMechanicSchedule(mechanicId);
+    const dailyCapacity = mechanicSchedule.slots.length || DAILY_APPOINTMENT_CAPACITY;
+
     const rows = db
       .prepare(
         `SELECT DATE(scheduled_for) AS day, scheduled_for
@@ -1962,7 +2144,7 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     }
 
     const unavailableDays = Array.from(daySlots.entries())
-      .filter(([, slots]) => slots.size >= DAILY_APPOINTMENT_CAPACITY)
+      .filter(([, slots]) => slots.size >= dailyCapacity)
       .map(([day]) => day);
 
     res.json({ unavailableDays });
@@ -1998,6 +2180,9 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
 
     const dateKey = formatDateKey(parsedDate);
 
+    const mechanicSchedule = resolveMechanicSchedule(mechanicId);
+    const totalSlots = mechanicSchedule.slots.length || DAILY_APPOINTMENT_CAPACITY;
+
     const rows = db
       .prepare(
         `SELECT scheduled_for
@@ -2014,7 +2199,7 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
 
     const uniqueSlots = Array.from(new Set(unavailableSlots));
 
-    res.json({ unavailableSlots: uniqueSlots, totalSlots: DAILY_APPOINTMENT_CAPACITY });
+    res.json({ unavailableSlots: uniqueSlots, totalSlots });
   } catch (error) {
     console.error('Error obteniendo horarios ocupados', error);
     res.status(500).json({ error: 'No se pudo obtener los horarios ocupados.' });
@@ -2110,15 +2295,21 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    const dayOfWeek = scheduledDateTime.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      return res.status(400).json({ error: 'Solo puedes agendar citas de lunes a viernes.' });
-    }
-
     const now = new Date();
     if (scheduledDateTime < now) {
       return res.status(400).json({ error: 'No puedes agendar una hora en el pasado.' });
     }
+
+    const mechanicSchedule = resolveMechanicSchedule(parsedMechanicId);
+    if (!scheduleAllowsDate(mechanicSchedule.config, scheduledDateTime)) {
+      return res.status(400).json({ error: 'El taller no atiende el día seleccionado.' });
+    }
+
+    if (!mechanicSchedule.slots.includes(scheduledSlot)) {
+      return res.status(400).json({ error: 'Selecciona un horario dentro de la jornada del taller.' });
+    }
+
+    const dailyCapacity = mechanicSchedule.slots.length || DAILY_APPOINTMENT_CAPACITY;
 
     const formatLocalDateTime = (value) => {
       if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
@@ -2143,7 +2334,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       )
       .get(parsedMechanicId, dateKey);
 
-    if ((dailyTotal?.total || 0) >= DAILY_APPOINTMENT_CAPACITY) {
+    if ((dailyTotal?.total || 0) >= dailyCapacity) {
       return res.status(400).json({ error: 'Este día ya no tiene cupos disponibles.' });
     }
 

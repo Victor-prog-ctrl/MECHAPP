@@ -101,6 +101,53 @@
     return [];
   }
 
+  function parseTimeToMinutes(value) {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const [hoursStr, minutesStr] = value.split(':');
+    const hours = Number.parseInt(hoursStr, 10);
+    const minutes = Number.parseInt(minutesStr, 10);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+      return null;
+    }
+    return hours * 60 + minutes;
+  }
+
+  function getSchedulePayload() {
+    const dayInputs = form.querySelectorAll('input[name="schedule-days"]');
+    const startInput = form.querySelector('#schedule-start');
+    const endInput = form.querySelector('#schedule-end');
+
+    const days = Array.from(dayInputs)
+      .filter((input) => input.checked)
+      .map((input) => Number.parseInt(input.value, 10))
+      .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
+
+    const uniqueDays = Array.from(new Set(days)).sort((a, b) => a - b);
+    if (!uniqueDays.length) {
+      showFeedback('Selecciona al menos un día de atención.', 'error');
+      return null;
+    }
+
+    const startValue = startInput?.value || '10:00';
+    const endValue = endInput?.value || '18:00';
+    const startMinutes = parseTimeToMinutes(startValue);
+    const endMinutes = parseTimeToMinutes(endValue);
+
+    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes)) {
+      showFeedback('Ingresa una hora de inicio y término válidas.', 'error');
+      return null;
+    }
+
+    if (endMinutes <= startMinutes) {
+      showFeedback('La hora de término debe ser posterior a la hora de inicio.', 'error');
+      return null;
+    }
+
+    return { days: uniqueDays, start: startValue, end: endValue };
+  }
+
   function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -325,13 +372,18 @@
       const selectedServices = formData.getAll('services');
       const services = Array.from(new Set(parseTextList(selectedServices)));
 
+      const scheduleConfig = getSchedulePayload();
+      if (!scheduleConfig) {
+        return;
+      }
+
       const payload = {
         name: formData.get('workshop-name'),
         description: formData.get('workshop-description'),
         services,
         experienceYears: formData.get('experience-years'),
         address: formData.get('address'),
-        schedule: formData.get('schedule'),
+        schedule: scheduleConfig,
         phone: formData.get('contact-phone'),
         email: formData.get('contact-email'),
         certifications: parseTextList(formData.get('certifications')),
