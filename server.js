@@ -1263,6 +1263,7 @@ async function deleteCertificateFile(relativePath) {
 
 const workshopPhotosDir = path.join(dataDir, 'workshop-photos');
 fs.mkdirSync(workshopPhotosDir, { recursive: true });
+const workshopPhotosDirNormalized = path.normalize(workshopPhotosDir + path.sep);
 
 async function storeWorkshopPhotoFile(dataUrl, identifier) {
   const { buffer, extension } = parseWorkshopPhotoDataUrl(dataUrl);
@@ -1274,6 +1275,30 @@ async function storeWorkshopPhotoFile(dataUrl, identifier) {
 
   await fsp.writeFile(absolutePath, buffer);
   return `../${relativePath.replace(/\\/g, '/')}`;
+}
+
+async function deleteWorkshopPhotoFile(relativePath) {
+  if (!relativePath) return;
+
+  const normalizedRelative = String(relativePath).replace(/^\.\.\//, '');
+  if (!normalizedRelative.startsWith('workshop-photos')) {
+    return;
+  }
+
+  const absolutePath = path.join(dataDir, normalizedRelative);
+  const normalizedAbsolutePath = path.normalize(absolutePath);
+
+  if (!normalizedAbsolutePath.startsWith(workshopPhotosDirNormalized)) {
+    return;
+  }
+
+  try {
+    await fsp.unlink(normalizedAbsolutePath);
+  } catch (error) {
+    if (error && error.code !== 'ENOENT') {
+      console.error('No se pudo eliminar la fotografía del taller', error);
+    }
+  }
 }
 
 // ----- BYPASS de seguridad SOLO para agendar-cita.html (test) -----
@@ -1709,6 +1734,37 @@ app.put('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => 
   } catch (error) {
     console.error('Error actualizando taller', error);
     res.status(500).json({ error: 'No se pudo actualizar el taller en este momento.' });
+  }
+});
+
+app.delete('/api/workshops/:id', requireAuth, requireMechanic, async (req, res) => {
+  const workshopId = String(req.params.id || '').trim();
+  if (!workshopId) return res.status(400).json({ error: 'Identificador de taller no válido.' });
+
+  try {
+    const existing = db
+      .prepare(`SELECT id, owner_id, photo FROM workshops WHERE id = ? LIMIT 1`)
+      .get(workshopId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Taller no encontrado.' });
+    }
+
+    if (Number(existing.owner_id) !== Number(req.session.userId)) {
+      return res.status(403).json({ error: 'Solo puedes eliminar tu propio taller.' });
+    }
+
+    try {
+      await deleteWorkshopPhotoFile(existing.photo);
+    } catch (error) {
+      console.error('No se pudo limpiar la fotografía del taller', error);
+    }
+
+    db.prepare(`DELETE FROM workshops WHERE id = ?`).run(workshopId);
+    res.json({ message: 'Taller eliminado correctamente.' });
+  } catch (error) {
+    console.error('Error eliminando taller', error);
+    res.status(500).json({ error: 'No pudimos eliminar tu taller en este momento.' });
   }
 });
 
