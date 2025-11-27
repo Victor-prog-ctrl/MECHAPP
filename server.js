@@ -11,7 +11,8 @@ const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
-const DAILY_APPOINTMENT_CAPACITY = 10;
+const TIME_SLOTS = ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const DAILY_APPOINTMENT_CAPACITY = TIME_SLOTS.length;
 
 // ===== fetch polyfill (Node 18+ ya trae fetch; para 16/17 cargamos dinámico) =====
 if (typeof fetch !== 'function') {
@@ -1936,31 +1937,33 @@ app.get('/api/appointments/unavailable-days', requireAuth, (req, res) => {
     endLimit.setMonth(endLimit.getMonth() + 6);
     endLimit.setHours(23, 59, 59, 999);
 
-    const formatDate = (value) => {
-      const year = value.getFullYear();
-      const month = String(value.getMonth() + 1).padStart(2, '0');
-      const day = String(value.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const start = formatDate(today);
-    const end = formatDate(endLimit);
+    const start = formatDateKey(today);
+    const end = formatDateKey(endLimit);
 
     const rows = db
       .prepare(
-        `SELECT DATE(scheduled_for) AS day, COUNT(*) AS total
+        `SELECT DATE(scheduled_for) AS day, scheduled_for
          FROM appointments
          WHERE mechanic_id = ?
            AND DATE(scheduled_for) BETWEEN DATE(?) AND DATE(?)
-           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')
-         GROUP BY day
-         HAVING total >= ?`
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')`
       )
-      .all(mechanicId, start, end, DAILY_APPOINTMENT_CAPACITY);
+      .all(mechanicId, start, end);
 
-    const unavailableDays = rows
-      .map((row) => (typeof row.day === 'string' ? row.day : null))
-      .filter((day) => typeof day === 'string');
+    const daySlots = new Map();
+    for (const row of rows) {
+      const day = typeof row?.day === 'string' ? row.day : null;
+      const slot = extractSlotFromValue(row?.scheduled_for);
+      if (!day || !slot) continue;
+      if (!daySlots.has(day)) {
+        daySlots.set(day, new Set());
+      }
+      daySlots.get(day).add(slot);
+    }
+
+    const unavailableDays = Array.from(daySlots.entries())
+      .filter(([, slots]) => slots.size >= DAILY_APPOINTMENT_CAPACITY)
+      .map(([day]) => day);
 
     res.json({ unavailableDays });
   } catch (error) {
@@ -1993,28 +1996,25 @@ app.get('/api/appointments/unavailable-slots', requireAuth, (req, res) => {
       return res.json({ unavailableSlots: [], totalSlots: DAILY_APPOINTMENT_CAPACITY });
     }
 
-    const formatDate = (value) => {
-      const year = value.getFullYear();
-      const month = String(value.getMonth() + 1).padStart(2, '0');
-      const day = String(value.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
+    const dateKey = formatDateKey(parsedDate);
 
-    const dateKey = formatDate(parsedDate);
-
-    const row = db
+    const rows = db
       .prepare(
-        `SELECT COUNT(*) as total
+        `SELECT scheduled_for
          FROM appointments
          WHERE mechanic_id = ?
            AND DATE(scheduled_for) = DATE(?)
            AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')`
       )
-      .get(mechanicId, dateKey);
+      .all(mechanicId, dateKey);
 
-    const reservedCount = Number.isFinite(Number(row?.total)) ? Number(row.total) : 0;
+    const unavailableSlots = rows
+      .map((row) => extractSlotFromValue(row?.scheduled_for))
+      .filter((slot) => typeof slot === 'string');
 
-    res.json({ unavailableSlots: [], reservedCount, totalSlots: DAILY_APPOINTMENT_CAPACITY });
+    const uniqueSlots = Array.from(new Set(unavailableSlots));
+
+    res.json({ unavailableSlots: uniqueSlots, totalSlots: DAILY_APPOINTMENT_CAPACITY });
   } catch (error) {
     console.error('Error obteniendo horarios ocupados', error);
     res.status(500).json({ error: 'No se pudo obtener los horarios ocupados.' });
@@ -2082,9 +2082,10 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     if (!scheduledFor || typeof scheduledFor !== 'string') {
       return res.status(400).json({ error: 'Selecciona la fecha de la visita.' });
     }
-    const scheduledDate = parseDateOnly(scheduledFor);
-    if (!(scheduledDate instanceof Date)) {
-      return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
+    const scheduledDateTime = parseDateTimeWithSlot(scheduledFor);
+    const scheduledSlot = extractSlotFromValue(scheduledFor);
+    if (!(scheduledDateTime instanceof Date) || !scheduledSlot) {
+      return res.status(400).json({ error: 'La fecha u horario seleccionado no es válido.' });
     }
     if (!normalizedAddress) {
       const message =
@@ -2109,32 +2110,32 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    const dayOfWeek = scheduledDate.getDay();
+    const dayOfWeek = scheduledDateTime.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return res.status(400).json({ error: 'Solo puedes agendar citas de lunes a viernes.' });
     }
+
+    const now = new Date();
+    if (scheduledDateTime < now) {
+      return res.status(400).json({ error: 'No puedes agendar una hora en el pasado.' });
+    }
+
     const formatLocalDateTime = (value) => {
       if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
         return null;
       }
-
-      const pad = (num) => String(num).padStart(2, '0');
-      const year = value.getFullYear();
-      const month = pad(value.getMonth() + 1);
-      const day = pad(value.getDate());
-
-      return `${year}-${month}-${day}`;
+      return formatDateTimeSlotValue(value);
     };
 
-    const scheduledValue = formatLocalDateTime(scheduledDate);
+    const scheduledValue = formatLocalDateTime(scheduledDateTime);
     if (!scheduledValue) {
       return res.status(400).json({ error: 'La fecha seleccionada no es válida.' });
     }
 
-    const dateKey = scheduledValue.split('T')[0];
+    const dateKey = formatDateKey(scheduledDateTime);
     const dailyTotal = db
       .prepare(
-        `SELECT COUNT(*) AS total
+        `SELECT COUNT(DISTINCT strftime('%H:%M', scheduled_for)) AS total
          FROM appointments
          WHERE mechanic_id = ?
            AND DATE(scheduled_for) = DATE(?)
@@ -2142,8 +2143,23 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       )
       .get(parsedMechanicId, dateKey);
 
-    if ((dailyTotal?.total || 0) >= 10) {
+    if ((dailyTotal?.total || 0) >= DAILY_APPOINTMENT_CAPACITY) {
       return res.status(400).json({ error: 'Este día ya no tiene cupos disponibles.' });
+    }
+
+    const slotConflict = db
+      .prepare(
+        `SELECT COUNT(*) AS total
+         FROM appointments
+         WHERE mechanic_id = ?
+           AND DATE(scheduled_for) = DATE(?)
+           AND strftime('%H:%M', scheduled_for) = ?
+           AND COALESCE(status, 'pendiente') NOT IN ('cancelada', 'rechazada')`
+      )
+      .get(parsedMechanicId, dateKey, scheduledSlot);
+
+    if ((slotConflict?.total || 0) > 0) {
+      return res.status(400).json({ error: 'Ese horario ya está reservado para el día seleccionado.' });
     }
 
     const insert = db.prepare(

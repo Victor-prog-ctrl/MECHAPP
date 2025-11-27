@@ -673,3 +673,51 @@ main {
 #paypal-button-container {
     margin-top: 10px;
 }
+
+
+.time-slot-panel {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.time-slot-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+}
+
+.slot-button {
+    border: 1px solid #d1d5db;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.slot-button:hover,
+.slot-button:focus-visible {
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent-border);
+    outline: none;
+}
+
+.slot-button.is-selected {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.slot-button.is-unavailable {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+}
+
+.slot-button:disabled {
+    cursor: not-allowed;
+}

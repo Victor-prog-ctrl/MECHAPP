@@ -7,6 +7,18 @@ const calendarState = {
     mechanicId: null,
 };
 
+const TIME_SLOTS = [
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+];
+
 const mechanicRegistry = new Map();
 const workshopRegistry = new Map();
 const mechanicState = {
@@ -14,8 +26,10 @@ const mechanicState = {
 };
 
 const availabilityState = {
-    totalSlots: 10,
+    totalSlots: TIME_SLOTS.length,
     requestId: 0,
+    selectedSlot: null,
+    unavailableSlots: new Set(),
 };
 
 function initializeCalendarState() {
@@ -47,6 +61,55 @@ function parseDateKey(value) {
         return null;
     }
     return result;
+}
+
+function formatDateTimeValue(date, slot) {
+    if (!(date instanceof Date) || typeof slot !== "string") {
+        return "";
+    }
+    const [hours, minutes] = slot.split(":").map((part) => Number.parseInt(part, 10));
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+        return "";
+    }
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(hours)}:${pad(minutes)}:00`;
+}
+
+function formatSlotLabel(slot) {
+    return `${slot} hrs`;
+}
+
+function parseSlotValue(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const match = value.match(/^(\d{2}):(\d{2})$/);
+    if (!match) {
+        return null;
+    }
+    const hours = Number.parseInt(match[1], 10);
+    const minutes = Number.parseInt(match[2], 10);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+        return null;
+    }
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function isFullDay(unavailableSet) {
+    return unavailableSet.size >= TIME_SLOTS.length;
+}
+
+function parseDateTimeInput(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const [datePart, timePart] = value.split(/T|\s+/);
+    const parsedDate = parseDateKey(datePart);
+    const slot = parseSlotValue((timePart || "").slice(0, 5));
+    if (!(parsedDate instanceof Date) || !slot) {
+        return null;
+    }
+    return { date: parsedDate, slot };
 }
 
 function getSelectedVisitType() {
@@ -219,6 +282,9 @@ function renderCalendar() {
         if (calendarState.unavailableDates.has(cellKey)) {
             button.classList.add("is-unavailable");
             button.disabled = true;
+            button.title = "Este día ya está lleno";
+            const ariaLabel = button.getAttribute("aria-label") || "";
+            button.setAttribute("aria-label", `${ariaLabel} (sin horarios disponibles)`);
         }
 
         if (calendarState.selectedDate && isSameDate(cellDate, calendarState.selectedDate)) {
@@ -261,6 +327,13 @@ function setAvailabilityMessage(message, { tone = "info" } = {}) {
     }
 }
 
+function updateSlotHelper(message) {
+    const helper = document.getElementById("slot-helper");
+    if (helper) {
+        helper.textContent = message;
+    }
+}
+
 function updateScheduledForValue() {
     const scheduledInput = document.getElementById("scheduled-for");
     const dateInput = document.getElementById("visit-date");
@@ -269,6 +342,7 @@ function updateScheduledForValue() {
     }
 
     const date = calendarState.selectedDate;
+    const slot = availabilityState.selectedSlot;
 
     if (dateInput) {
         dateInput.value = date ? formatDateKey(date) : "";
@@ -276,17 +350,82 @@ function updateScheduledForValue() {
 
     if (!date) {
         scheduledInput.value = "";
+        availabilityState.selectedSlot = null;
         updateCalendarHelper("Selecciona un día disponible para tu visita.");
+        updateSlotHelper("Selecciona un día para ver los horarios disponibles.");
         setAvailabilityMessage("");
         return;
     }
 
-    const combined = formatDateKey(date);
+    if (!slot) {
+        scheduledInput.value = "";
+        updateCalendarHelper(`Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}.`);
+        updateSlotHelper("Elige una hora disponible para confirmar tu cita.");
+        return;
+    }
+
+    const combined = formatDateTimeValue(date, slot);
     scheduledInput.value = combined;
 
-    updateCalendarHelper(
-        `Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}.`,
-    );
+    updateCalendarHelper(`Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })} a las ${slot} hrs.`);
+    updateSlotHelper("Puedes cambiar la hora si necesitas otro horario.");
+}
+
+
+function renderTimeSlots() {
+    const container = document.getElementById("time-slot-list");
+    const date = calendarState.selectedDate;
+    const unavailable = availabilityState.unavailableSlots instanceof Set
+        ? availabilityState.unavailableSlots
+        : new Set();
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (!(date instanceof Date)) {
+        updateSlotHelper("Selecciona un día para ver los horarios disponibles.");
+        return;
+    }
+
+    const dayIsFull = isFullDay(unavailable);
+
+    TIME_SLOTS.forEach((slot) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "slot-button";
+        button.textContent = formatSlotLabel(slot);
+        button.dataset.slot = slot;
+
+        const isUnavailable = unavailable.has(slot) || dayIsFull;
+        if (availabilityState.selectedSlot === slot) {
+            button.classList.add("is-selected");
+        }
+        if (isUnavailable) {
+            button.classList.add("is-unavailable");
+            button.disabled = true;
+            button.title = dayIsFull ? "Este día ya está lleno" : "Horario no disponible";
+        }
+
+        container.appendChild(button);
+    });
+
+    if (dayIsFull) {
+        updateSlotHelper("Este día ya está lleno. Elige otra fecha.");
+    } else if (availabilityState.selectedSlot) {
+        updateSlotHelper("Puedes cambiar la hora si necesitas otro horario.");
+    } else {
+        updateSlotHelper("Elige una hora disponible para confirmar tu cita.");
+    }
+}
+
+function resetSlotSelection() {
+    availabilityState.selectedSlot = null;
+    availabilityState.unavailableSlots = new Set();
+    renderTimeSlots();
+    updateScheduledForValue();
 }
 
 function refreshDayAvailability() {
@@ -295,6 +434,7 @@ function refreshDayAvailability() {
     const validMechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
 
     if (!(date instanceof Date) || !validMechanic) {
+        resetSlotSelection();
         setAvailabilityMessage("");
         return;
     }
@@ -307,6 +447,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
     const validMechanic = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
 
     if (!parsedDate || !validMechanic) {
+        resetSlotSelection();
         setAvailabilityMessage("");
         return;
     }
@@ -315,7 +456,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
     const requestId = availabilityState.requestId + 1;
     availabilityState.requestId = requestId;
 
-    setAvailabilityMessage("Cargando cupos disponibles...");
+    setAvailabilityMessage("Cargando horarios disponibles...");
 
     try {
         const params = new URLSearchParams({ mechanicId: String(validMechanic), date: dateKey });
@@ -329,7 +470,7 @@ async function fetchDayAvailability({ mechanicId, date }) {
         }
 
         if (!response.ok) {
-            throw new Error("No se pudieron obtener los cupos disponibles.");
+            throw new Error("No se pudieron obtener los horarios disponibles.");
         }
 
         const data = await response.json();
@@ -339,30 +480,53 @@ async function fetchDayAvailability({ mechanicId, date }) {
         }
 
         const unavailableSlots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
-        const reservedCount = Number.isInteger(data?.reservedCount)
-            ? data.reservedCount
-            : unavailableSlots.length;
+        const normalizedUnavailable = new Set(
+            unavailableSlots
+                .map((value) => parseSlotValue(value))
+                .filter((value) => typeof value === "string"),
+        );
+
+        const reservedCount = normalizedUnavailable.size;
         const capacityFromServer = Number.parseInt(data?.totalSlots, 10);
         const totalSlots = Number.isInteger(capacityFromServer) && capacityFromServer > 0
             ? capacityFromServer
-            : availabilityState.totalSlots;
+            : TIME_SLOTS.length;
 
         availabilityState.totalSlots = totalSlots;
+        availabilityState.unavailableSlots = normalizedUnavailable;
+        availabilityState.selectedSlot = null;
 
         const remaining = Math.max(totalSlots - reservedCount, 0);
 
-        if (remaining > 0) {
-            setAvailabilityMessage(`Cupos disponibles para este día: ${remaining} de ${totalSlots}.`);
+        if (isFullDay(normalizedUnavailable)) {
+            calendarState.unavailableDates.add(dateKey);
+            calendarState.selectedDate = null;
+            renderCalendar();
+            resetSlotSelection();
+            updateCalendarHelper("Este día ya está lleno. Elige otra fecha.");
+            setAvailabilityMessage("Este día ya está lleno.", { tone: "error" });
             return;
         }
 
-        setAvailabilityMessage("No quedan cupos para este día.", { tone: "error" });
+        renderTimeSlots();
+        updateScheduledForValue();
+
+        if (remaining > 0) {
+            setAvailabilityMessage(`Horarios disponibles para este día: ${remaining} de ${totalSlots}.`);
+            updateCalendarHelper(
+                `Seleccionaste el ${parsedDate.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}. Elige una hora.`,
+            );
+            return;
+        }
+
+        setAvailabilityMessage("No quedan horarios para este día.", { tone: "error" });
     } catch (error) {
         console.error(error);
         if (availabilityState.requestId !== requestId) {
             return;
         }
-        setAvailabilityMessage("No pudimos cargar los cupos disponibles. Intenta nuevamente.", { tone: "error" });
+        resetSlotSelection();
+        setAvailabilityMessage("No pudimos cargar los horarios disponibles. Intenta nuevamente.", { tone: "error" });
     }
 }
 
@@ -382,6 +546,9 @@ function selectCalendarDate(dateKey) {
         return;
     }
     calendarState.selectedDate = parsed;
+    availabilityState.selectedSlot = null;
+    availabilityState.unavailableSlots = new Set();
+    renderTimeSlots();
     updateScheduledForValue();
     renderCalendar();
     refreshDayAvailability();
@@ -394,6 +561,7 @@ async function fetchUnavailableDates(mechanicId) {
     if (!requestedId) {
         calendarState.unavailableDates = new Set();
         calendarState.selectedDate = null;
+        resetSlotSelection();
         updateScheduledForValue();
         renderCalendar();
         updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
@@ -434,6 +602,7 @@ async function fetchUnavailableDates(mechanicId) {
 
         renderCalendar();
         updateScheduledForValue();
+        renderTimeSlots();
 
         refreshDayAvailability();
         updateCalendarHelper("Selecciona un día disponible para tu visita.");
@@ -488,6 +657,7 @@ function setupCalendar() {
 
     updateCalendarHelper("Selecciona un mecánico para ver la disponibilidad.");
     setAvailabilityMessage("");
+    renderTimeSlots();
 }
 
 function setVisitPanelsVisibility(visitType) {
@@ -833,6 +1003,29 @@ function normalizeText(value) {
     return (value || "").trim();
 }
 
+function setupTimeSlotSelector() {
+    const container = document.getElementById("time-slot-list");
+    if (!container) {
+        return;
+    }
+
+    container.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement) || !target.dataset.slot || target.disabled) {
+            return;
+        }
+
+        const parsedSlot = parseSlotValue(target.dataset.slot);
+        if (!parsedSlot) {
+            return;
+        }
+
+        availabilityState.selectedSlot = parsedSlot;
+        renderTimeSlots();
+        updateScheduledForValue();
+    });
+}
+
 function setupMechanicAvailabilityListener() {
     const select = document.getElementById("mechanic-select");
     if (!select) {
@@ -899,7 +1092,7 @@ async function submitAppointment(event) {
     }
 
     if (!scheduledValue) {
-        showFormFeedback("Selecciona un día disponible para la visita.", "error");
+        showFormFeedback("Selecciona un día y horario disponible para la visita.", "error");
         return;
     }
 
@@ -908,11 +1101,13 @@ async function submitAppointment(event) {
         return;
     }
 
-    const scheduledDate = parseDateKey(scheduledValue);
-    if (!(scheduledDate instanceof Date) || Number.isNaN(scheduledDate.getTime())) {
-        showFormFeedback("La fecha seleccionada no es válida.", "error");
+    const parsedSchedule = parseDateTimeInput(scheduledValue);
+    if (!parsedSchedule) {
+        showFormFeedback("La fecha u horario seleccionado no es válido.", "error");
         return;
     }
+
+    const { date: scheduledDate, slot: scheduledSlot } = parsedSchedule;
 
     let locationDetail = "";
     if (visitType === "presencial") {
@@ -959,7 +1154,7 @@ async function submitAppointment(event) {
             mechanicId,
             service,
             visitType,
-            scheduledFor: formatDateKey(scheduledDate),
+            scheduledFor: formatDateTimeValue(scheduledDate, scheduledSlot),
             notes,
             address: locationDetail,
         };
@@ -992,6 +1187,7 @@ async function submitAppointment(event) {
         form.reset();
         setVisitPanelsVisibility("presencial");
         calendarState.selectedDate = null;
+        resetSlotSelection();
         if (calendarState.startOfTodayMonth) {
             calendarState.currentMonth = new Date(calendarState.startOfTodayMonth);
         }
@@ -1072,6 +1268,7 @@ function initializeAppointmentPage() {
     setupVisitTypeRadios();
     setupWorkshopSelection();
     setupCalendar();
+    setupTimeSlotSelector();
     setupMechanicAvailabilityListener();
     setupAuthVisibilityControls();
     updateMechanicWorkshopInfo(null);
