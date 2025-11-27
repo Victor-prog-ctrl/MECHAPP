@@ -1135,6 +1135,9 @@ function setupWorkshopManagement(profile) {
     const form = panel.querySelector("[data-workshop-form]");
     const feedbackElement = panel.querySelector("[data-workshop-feedback]");
     const submitButton = panel.querySelector("[data-workshop-submit]");
+    const deleteSection = panel.querySelector("[data-workshop-delete-section]");
+    const deleteButton = panel.querySelector("[data-workshop-delete]");
+    const deleteFeedback = panel.querySelector("[data-workshop-delete-feedback]");
 
     const overviewElements = {
         container: panel.querySelector("[data-workshop-overview]") || null,
@@ -1160,6 +1163,15 @@ function setupWorkshopManagement(profile) {
         }
 
         populateWorkshopOverview(overviewElements, null);
+        if (deleteSection) {
+            deleteSection.hidden = true;
+        }
+        if (deleteButton) {
+            deleteButton.disabled = true;
+        }
+        if (deleteFeedback) {
+            updateMessage(deleteFeedback, "", "info");
+        }
     }
 
     function hideEmptyState() {
@@ -1238,6 +1250,12 @@ function setupWorkshopManagement(profile) {
             hideEmptyState();
             populateWorkshopOverview(overviewElements, workshop);
             populateWorkshopForm(form, workshop);
+            if (deleteSection) {
+                deleteSection.hidden = false;
+            }
+            if (deleteButton) {
+                deleteButton.disabled = false;
+            }
 
             if (feedbackElement) {
                 updateMessage(feedbackElement, "", "info");
@@ -1432,6 +1450,111 @@ function setupWorkshopManagement(profile) {
         }
     }
 
+    async function handleDelete() {
+        if (!workshopState.id) {
+            return;
+        }
+
+        const confirmation = window.confirm(
+            "¿Estás seguro de eliminar tu taller? Se borrarán todos tus datos y dejará de aparecer en la página.",
+        );
+
+        if (!confirmation) {
+            return;
+        }
+
+        if (deleteFeedback) {
+            updateMessage(deleteFeedback, "Eliminando tu taller...", "info");
+        }
+        if (deleteButton) {
+            deleteButton.disabled = true;
+        }
+
+        try {
+            const response = await fetch(`/api/workshops/${encodeURIComponent(workshopState.id)}`, {
+                method: "DELETE",
+            });
+
+            if (response.status === 401) {
+                window.location.href = "./login.html";
+                return;
+            }
+
+            const result = await response.json().catch(() => ({}));
+
+            if (response.status === 403) {
+                updateMessage(
+                    deleteFeedback,
+                    result?.error || "No tienes permisos para eliminar este taller.",
+                    "error",
+                );
+                return;
+            }
+
+            if (response.status === 404) {
+                updateMessage(deleteFeedback, "No encontramos tu taller. Quizás ya fue eliminado.", "error");
+                return;
+            }
+
+            if (!response.ok) {
+                updateMessage(
+                    deleteFeedback,
+                    result?.error || "No pudimos eliminar tu taller. Intenta nuevamente más tarde.",
+                    "error",
+                );
+                return;
+            }
+
+            workshopState.id = null;
+            workshopState.data = null;
+            workshopState.loaded = false;
+            populateWorkshopOverview(overviewElements, null);
+
+            if (form) {
+                form.reset();
+                form.hidden = true;
+            }
+
+            showEmptyState(
+                'Tu taller fue eliminado. Puedes <a href="./registro-taller.html">crear uno nuevo</a> cuando quieras.',
+            );
+
+            if (deleteSection) {
+                deleteSection.hidden = true;
+            }
+
+            if (feedbackElement) {
+                updateMessage(feedbackElement, "", "info");
+            }
+
+            if (deleteFeedback) {
+                updateMessage(
+                    deleteFeedback,
+                    result?.message || "Taller eliminado correctamente.",
+                    "success",
+                );
+            }
+
+            if (currentProfile) {
+                currentProfile.mechanicWorkshop = null;
+                renderAverageRatingMetric(null);
+            }
+        } catch (error) {
+            console.error(error);
+            if (deleteFeedback) {
+                updateMessage(
+                    deleteFeedback,
+                    "No se pudo eliminar el taller por un error inesperado. Inténtalo nuevamente.",
+                    "error",
+                );
+            }
+        } finally {
+            if (deleteButton) {
+                deleteButton.disabled = false;
+            }
+        }
+    }
+
     function openPanel() {
         panel.hidden = false;
         panel.classList.remove("is-collapsed");
@@ -1475,6 +1598,10 @@ function setupWorkshopManagement(profile) {
 
     if (form) {
         form.addEventListener("submit", handleSubmit);
+    }
+
+    if (deleteButton) {
+        deleteButton.addEventListener("click", handleDelete);
     }
 }
 
