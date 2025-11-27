@@ -109,25 +109,18 @@
     window.location.href = './paginainicio.html';
   }
 
-  async function updateScheduleButtonVisibility() {
+  function updateScheduleButtonVisibility() {
     const scheduleButton = document.querySelector('[data-schedule-button]');
     if (!scheduleButton) {
       return;
     }
 
-    try {
-      const response = await fetch('/api/profile', { credentials: 'same-origin' });
-      if (!response.ok) {
-        return;
-      }
-
-      const profile = await response.json();
-      if (profile?.accountType === 'cliente') {
-        scheduleButton.removeAttribute('hidden');
-      }
-    } catch (error) {
-      console.error('No se pudo verificar el perfil del usuario:', error);
+    if (window.user?.role === 'client') {
+      scheduleButton.removeAttribute('hidden');
+      return;
     }
+
+    scheduleButton.remove();
   }
 
   async function fetchWorkshop(id) {
