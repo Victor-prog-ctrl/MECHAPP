@@ -109,6 +109,27 @@
     window.location.href = './paginainicio.html';
   }
 
+  async function updateScheduleButtonVisibility() {
+    const scheduleButton = document.querySelector('[data-schedule-button]');
+    if (!scheduleButton) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/profile', { credentials: 'same-origin' });
+      if (!response.ok) {
+        throw new Error('No autenticado');
+      }
+
+      const profile = await response.json();
+      if (profile?.accountType !== 'mecanico') {
+        scheduleButton.removeAttribute('hidden');
+      }
+    } catch (error) {
+      scheduleButton.removeAttribute('hidden');
+    }
+  }
+
   async function fetchWorkshop(id) {
     const response = await fetch(`/api/workshops/${encodeURIComponent(id)}`);
     if (!response.ok) {
@@ -138,5 +159,8 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', initializeWorkshopProfile);
+  document.addEventListener('DOMContentLoaded', () => {
+    updateScheduleButtonVisibility();
+    initializeWorkshopProfile();
+  });
 })();
