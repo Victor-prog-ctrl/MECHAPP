@@ -57,6 +57,27 @@
         </div>
 
         <form id="appointment-form" class="form-section" novalidate>
+          <div class="field" id="workshop-select-field" hidden>
+            <label for="workshop-select">Seleccionar taller</label>
+            <select id="workshop-select" name="workshop">
+              <option value="">Selecciona un taller registrado</option>
+            </select>
+            <small id="workshop-helper">Elige un taller para ver los mecánicos disponibles.</small>
+          </div>
+
+          <div class="field">
+            <label for="mechanic-select">Mecánico</label>
+            <select id="mechanic-select" name="mechanic" required>
+              <option value="">Selecciona un mecánico disponible</option>
+            </select>
+            <small id="mechanic-helper">Solo se muestran mecánicos validados.</small>
+          </div>
+
+          <div class="field" id="mechanic-workshop-field" hidden>
+            <label>Taller del mecánico</label>
+            <p id="mechanic-workshop-text" class="field-helper"></p>
+          </div>
+
           <div class="field">
             <label for="service">Servicio requerido</label>
             <input type="text" id="service" name="service" list="service-suggestions"
@@ -83,27 +104,6 @@
                 Visita a domicilio
               </label>
             </div>
-          </div>
-
-          <div class="field" id="workshop-select-field" hidden>
-            <label for="workshop-select">Seleccionar taller</label>
-            <select id="workshop-select" name="workshop">
-              <option value="">Selecciona un taller registrado</option>
-            </select>
-            <small id="workshop-helper">Elige un taller para ver los mecánicos disponibles.</small>
-          </div>
-
-          <div class="field">
-            <label for="mechanic-select">Mecánico</label>
-            <select id="mechanic-select" name="mechanic" required>
-              <option value="">Selecciona un mecánico disponible</option>
-            </select>
-            <small id="mechanic-helper">Solo se muestran mecánicos validados.</small>
-          </div>
-
-          <div class="field" id="mechanic-workshop-field" hidden>
-            <label>Taller del mecánico</label>
-            <p id="mechanic-workshop-text" class="field-helper"></p>
           </div>
 
           <input type="hidden" id="workshop-detail" name="workshop-detail" />
