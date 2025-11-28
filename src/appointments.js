@@ -91,6 +91,7 @@ const availabilityState = {
     requestId: 0,
     selectedSlot: null,
     unavailableSlots: new Set(),
+    unavailableSlotsByDate: new Map(),
     timeSlots: DEFAULT_TIME_SLOTS,
     scheduleConfig: DEFAULT_SCHEDULE_CONFIG,
 };
@@ -238,6 +239,7 @@ function syncScheduleWithSelection() {
     availabilityState.timeSlots = slots;
     availabilityState.totalSlots = slots.length;
     availabilityState.unavailableSlots = new Set();
+    availabilityState.unavailableSlotsByDate = new Map();
     availabilityState.selectedSlot = null;
     calendarState.unavailableDates = new Set();
     calendarState.selectedDate = null;
@@ -437,6 +439,24 @@ function updateSlotHelper(message) {
     }
 }
 
+function updateSubmitButtonState() {
+    const submitButton = document.querySelector("button[type=submit]");
+    const scheduledInput = document.getElementById("scheduled-for");
+    const serviceSelect = document.getElementById("service");
+
+    const mechanicId = getSelectedMechanicId();
+
+    if (!submitButton) {
+        return;
+    }
+
+    const hasSchedule = Boolean(scheduledInput?.value);
+    const hasMechanic = Number.isInteger(mechanicId) && mechanicId > 0;
+    const hasService = Boolean(serviceSelect?.value);
+
+    submitButton.disabled = !(hasSchedule && hasMechanic && hasService);
+}
+
 function updateScheduledForValue() {
     const scheduledInput = document.getElementById("scheduled-for");
     const dateInput = document.getElementById("visit-date");
@@ -457,6 +477,7 @@ function updateScheduledForValue() {
         updateCalendarHelper("Selecciona un día disponible para tu visita.");
         updateSlotHelper("Selecciona un día para ver los horarios disponibles.");
         setAvailabilityMessage("");
+        updateSubmitButtonState();
         return;
     }
 
@@ -464,6 +485,7 @@ function updateScheduledForValue() {
         scheduledInput.value = "";
         updateCalendarHelper(`Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}.`);
         updateSlotHelper("Elige una hora disponible para confirmar tu cita.");
+        updateSubmitButtonState();
         return;
     }
 
@@ -472,15 +494,27 @@ function updateScheduledForValue() {
 
     updateCalendarHelper(`Seleccionaste el ${date.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })} a las ${slot} hrs.`);
     updateSlotHelper("Puedes cambiar la hora si necesitas otro horario.");
+    updateSubmitButtonState();
+}
+
+
+function getUnavailableSlotsForSelectedDate() {
+    if (!(calendarState.selectedDate instanceof Date)) {
+        return new Set();
+    }
+
+    const dateKey = formatDateKey(calendarState.selectedDate);
+    const cached = availabilityState.unavailableSlotsByDate.get(dateKey);
+
+    return cached instanceof Set ? cached : new Set();
 }
 
 
 function renderTimeSlots() {
     const container = document.getElementById("time-slot-list");
     const date = calendarState.selectedDate;
-    const unavailable = availabilityState.unavailableSlots instanceof Set
-        ? availabilityState.unavailableSlots
-        : new Set();
+    const unavailable = getUnavailableSlotsForSelectedDate();
+    availabilityState.unavailableSlots = unavailable;
 
     if (!container) {
         return;
@@ -532,6 +566,7 @@ function renderTimeSlots() {
 function resetSlotSelection() {
     availabilityState.selectedSlot = null;
     availabilityState.unavailableSlots = new Set();
+    availabilityState.unavailableSlotsByDate = new Map();
     renderTimeSlots();
     updateScheduledForValue();
 }
@@ -594,6 +629,12 @@ async function fetchDayAvailability({ mechanicId, date }) {
                 .filter((value) => typeof value === "string"),
         );
 
+        if (!isSameDate(calendarState.selectedDate, parsedDate)) {
+            return;
+        }
+
+        availabilityState.unavailableSlotsByDate.set(dateKey, normalizedUnavailable);
+
         const reservedCount = normalizedUnavailable.size;
         const capacityFromServer = Number.parseInt(data?.totalSlots, 10);
         const totalSlots = Number.isInteger(capacityFromServer) && capacityFromServer > 0
@@ -655,7 +696,7 @@ function selectCalendarDate(dateKey) {
     }
     calendarState.selectedDate = parsed;
     availabilityState.selectedSlot = null;
-    availabilityState.unavailableSlots = new Set();
+    availabilityState.unavailableSlots = getUnavailableSlotsForSelectedDate();
     renderTimeSlots();
     updateScheduledForValue();
     renderCalendar();
@@ -665,6 +706,8 @@ function selectCalendarDate(dateKey) {
 async function fetchUnavailableDates(mechanicId) {
     const requestedId = Number.isInteger(mechanicId) && mechanicId > 0 ? mechanicId : null;
     calendarState.mechanicId = requestedId;
+    availabilityState.unavailableSlotsByDate = new Map();
+    availabilityState.unavailableSlots = new Set();
 
     if (!requestedId) {
         calendarState.unavailableDates = new Set();
@@ -865,6 +908,8 @@ function resetServiceSelect(message) {
     if (helper && message) {
         helper.textContent = message;
     }
+
+    updateSubmitButtonState();
 }
 
 function updateServiceOptions(workshopId) {
@@ -905,6 +950,8 @@ function updateServiceOptions(workshopId) {
     if (helper) {
         helper.textContent = "Selecciona un servicio disponible para tu cita.";
     }
+
+    updateSubmitButtonState();
 }
 
 function updateMechanicHelperMessage(visitType, workshopId, mechanicsCount) {
@@ -1258,6 +1305,15 @@ function setupWorkshopSelection() {
     });
 }
 
+function setupServiceSelection() {
+    const select = document.getElementById("service");
+    if (!select) {
+        return;
+    }
+
+    select.addEventListener("change", updateSubmitButtonState);
+}
+
 async function submitAppointment(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -1470,12 +1526,14 @@ async function initializeAppointmentPage() {
     setVisitPanelsVisibility("presencial");
     setupVisitTypeRadios();
     setupWorkshopSelection();
+    setupServiceSelection();
     setupCalendar();
     setupTimeSlotSelector();
     setupMechanicAvailabilityListener();
     updateMechanicWorkshopInfo(null);
     fetchWorkshops();
     fetchMechanics();
+    updateSubmitButtonState();
 
     const form = document.getElementById("appointment-form");
     if (form) {
