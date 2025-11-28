@@ -782,14 +782,11 @@ function setVisitPanelsVisibility(visitType) {
     }
 
     if (workshopField) {
-        workshopField.hidden = visitType !== "presencial";
+        workshopField.hidden = false;
     }
     if (workshopSelect) {
         workshopSelect.required = visitType === "presencial";
-        if (visitType !== "presencial") {
-            workshopSelect.value = "";
-            updateWorkshopDetailInput(null);
-        }
+        workshopSelect.disabled = false;
     }
 
     applyMechanicFilters({ preserveSelection: visitType === "presencial" });
@@ -848,6 +845,66 @@ function updateWorkshopDetailInput(workshopId) {
     }
     const workshop = workshopId ? workshopRegistry.get(workshopId) : null;
     hiddenInput.value = formatWorkshopDescription(workshop);
+}
+
+function resetServiceSelect(message) {
+    const select = document.getElementById("service");
+    const helper = document.getElementById("service-helper");
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = message || "Selecciona un taller para ver los servicios";
+    select.appendChild(placeholder);
+    select.value = "";
+    select.disabled = true;
+
+    if (helper && message) {
+        helper.textContent = message;
+    }
+}
+
+function updateServiceOptions(workshopId) {
+    const select = document.getElementById("service");
+    const helper = document.getElementById("service-helper");
+    if (!select) {
+        return;
+    }
+
+    const workshop = workshopId ? workshopRegistry.get(workshopId) : null;
+    const services = Array.isArray(workshop?.services)
+        ? workshop.services.map((service) => (typeof service === "string" ? service.trim() : "")).filter(Boolean)
+        : [];
+
+    if (!workshop || !services.length) {
+        const message = workshop
+            ? "Este taller aún no registra servicios disponibles."
+            : "Selecciona un taller para ver los servicios disponibles.";
+        resetServiceSelect(message);
+        return;
+    }
+
+    select.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Selecciona un servicio disponible";
+    select.appendChild(placeholder);
+
+    services.forEach((service) => {
+        const option = document.createElement("option");
+        option.value = service;
+        option.textContent = service;
+        select.appendChild(option);
+    });
+
+    select.disabled = false;
+
+    if (helper) {
+        helper.textContent = "Selecciona un servicio disponible para tu cita.";
+    }
 }
 
 function updateMechanicHelperMessage(visitType, workshopId, mechanicsCount) {
@@ -1062,6 +1119,9 @@ async function fetchWorkshops() {
             const normalizedSlots = Array.isArray(workshop.timeSlots)
                 ? workshop.timeSlots.map((slot) => parseSlotValue(slot)).filter(Boolean)
                 : [];
+            const normalizedServices = Array.isArray(workshop.services)
+                ? workshop.services.map((service) => (typeof service === "string" ? service.trim() : "")).filter(Boolean)
+                : [];
             const normalizedWorkshop = {
                 id: normalizedId,
                 name: workshop.name || "",
@@ -1069,6 +1129,7 @@ async function fetchWorkshops() {
                 schedule: workshop.schedule || "",
                 scheduleConfig: workshop.scheduleConfig || DEFAULT_SCHEDULE_CONFIG,
                 timeSlots: normalizedSlots.length ? normalizedSlots : buildSlotsFromSchedule(workshop.scheduleConfig),
+                services: normalizedServices,
             };
 
             if (normalizedId) {
@@ -1085,6 +1146,7 @@ async function fetchWorkshops() {
         });
 
         updateWorkshopDetailInput(getSelectedWorkshopId());
+        updateServiceOptions(getSelectedWorkshopId());
         applyMechanicFilters({ preserveSelection: true });
 
         if (helper) {
@@ -1102,6 +1164,7 @@ async function fetchWorkshops() {
             select.appendChild(option);
         }
         updateWorkshopDetailInput(null);
+        resetServiceSelect("No se pudieron cargar los servicios disponibles del taller.");
         if (helper) {
             helper.textContent = "No pudimos cargar los talleres registrados. Intenta más tarde.";
         }
@@ -1189,6 +1252,7 @@ function setupWorkshopSelection() {
     select.addEventListener("change", () => {
         const workshopId = getSelectedWorkshopId();
         updateWorkshopDetailInput(workshopId);
+        updateServiceOptions(workshopId);
         applyMechanicFilters({ preserveSelection: false });
         syncScheduleWithSelection();
     });
@@ -1402,6 +1466,7 @@ async function initializeAppointmentPage() {
         return;
     }
 
+    resetServiceSelect();
     setVisitPanelsVisibility("presencial");
     setupVisitTypeRadios();
     setupWorkshopSelection();

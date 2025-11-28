@@ -80,16 +80,10 @@
 
           <div class="field">
             <label for="service">Servicio requerido</label>
-            <input type="text" id="service" name="service" list="service-suggestions"
-              placeholder="Ej. Diagnóstico eléctrico" autocomplete="off" required />
-            <datalist id="service-suggestions">
-              <option value="Mantenimiento preventivo"></option>
-              <option value="Revisión general"></option>
-              <option value="Diagnóstico eléctrico"></option>
-              <option value="Frenos y suspensión"></option>
-              <option value="Alineación y balanceo"></option>
-              <option value="Cambio de aceite"></option>
-            </datalist>
+            <select id="service" name="service" required disabled>
+              <option value="">Selecciona un taller para ver los servicios</option>
+            </select>
+            <small id="service-helper">Elige un taller y luego selecciona un servicio disponible.</small>
           </div>
 
           <div class="field">
