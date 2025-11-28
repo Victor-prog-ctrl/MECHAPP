@@ -8,6 +8,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
+const { sendWelcomeEmail, sendRequestAcceptedEmail } = require('./mailer');
+
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -2022,6 +2024,7 @@ app.post('/api/register', async (req, res) => {
     const certificateUploadedValue = isMechanic && certificatePath ? 1 : 0;
     const certificateStatusValue = isMechanic ? 'pendiente' : 'validado';
 
+    // 👉 guardamos el resultado por si luego lo necesitas
     insert.run(
       name.trim(),
       normalizedEmail,
@@ -2035,6 +2038,17 @@ app.post('/api/register', async (req, res) => {
     const successMessage = isMechanic
       ? 'Tu registro se envió correctamente. Un administrador validará tu certificado antes de habilitar tu cuenta.'
       : 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
+
+    // 👉 intentar enviar correo de bienvenida (sin romper el registro si falla)
+    try {
+      await sendWelcomeEmail({
+        to: normalizedEmail,
+        nombre: name.trim(),
+        tipoCuenta: accountType,
+      });
+    } catch (emailError) {
+      console.error('Error enviando correo de bienvenida:', emailError);
+    }
 
     return res.status(201).json({ message: successMessage });
   } catch (error) {
@@ -2053,6 +2067,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(500).json({ error: 'Ocurrió un error al registrar el usuario.' });
   }
 });
+
 
 app.post('/api/login', async (req, res) => {
   try {
@@ -2679,7 +2694,7 @@ app.post('/api/appointments/requests/:id/dismiss', requireAuth, requireMechanic,
   }
 });
 
-app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, res) => {
+app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async (req, res) => {
   const requestId = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(requestId) || requestId <= 0) {
@@ -2705,7 +2720,7 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
 
   try {
     const existing = db
-      .prepare('SELECT status, scheduled_for FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
+      .prepare('SELECT status, scheduled_for, service, address FROM appointments WHERE id = ? AND mechanic_id = ? LIMIT 1')
       .get(requestId, req.session.userId);
 
     if (!existing) {
@@ -2767,12 +2782,39 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, (req, 
       return res.status(404).json({ error: 'Solicitud no encontrada tras la actualización.' });
     }
 
+    // 👉 si el nuevo estado es "confirmado", intentamos mandar correo al cliente
+    if (requestedStatus === 'confirmado' && updated.client_email) {
+      try {
+        const fechaFormateada =
+          formatNotificationDate(updated.scheduled_for, { includeTime: false }) ||
+          updated.scheduled_for;
+        const hora = extractSlotFromValue(updated.scheduled_for) || '';
+
+        const workshop = getMechanicWorkshopSummary(req.session.userId);
+        const nombreTaller = workshop?.name || 'tu taller en MechApp';
+
+        await sendRequestAcceptedEmail({
+          to: updated.client_email,
+          nombreCliente: updated.client_name,
+          nombreTaller,
+          fecha: fechaFormateada,
+          hora,
+          direccion: updated.address,
+          servicio: updated.service,
+        });
+      } catch (emailError) {
+        console.error('Error enviando correo de solicitud aceptada:', emailError);
+      }
+    }
+
     res.json({ request: mapAppointmentRequest(updated) });
   } catch (error) {
     console.error('Error actualizando la solicitud de cita', error);
     res.status(500).json({ error: 'No se pudo actualizar la solicitud de cita.' });
   }
 });
+
+
 
 // ====== ENDPOINTS PayPal ======
 // Confirmar en backend y guardar en BD
