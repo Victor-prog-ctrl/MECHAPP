@@ -253,6 +253,19 @@ main {
     max-width: 48ch;
 }
 
+.hero-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.16);
+    color: #fee2e2;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    max-width: 54ch;
+    font-weight: 600;
+}
+
 /* ===== LAYOUT Y TARJETAS ===== */
 
 .layout {
