@@ -109,18 +109,26 @@
     window.location.href = './paginainicio.html';
   }
 
-  function updateScheduleButtonVisibility() {
+  async function updateScheduleButtonVisibility() {
     const scheduleButton = document.querySelector('[data-schedule-button]');
     if (!scheduleButton) {
       return;
     }
 
-    if (window.user?.role === 'cliente') {
-      scheduleButton.removeAttribute('hidden');
-      return;
+    try {
+      const response = await fetch('/api/profile', { credentials: 'same-origin' });
+      if (response.ok) {
+        const profile = await response.json();
+        if (profile?.accountType === 'mecanico') {
+          scheduleButton.remove();
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('No se pudo determinar el rol del usuario', error);
     }
 
-    scheduleButton.remove();
+    scheduleButton.removeAttribute('hidden');
   }
 
   async function fetchWorkshop(id) {
@@ -152,8 +160,8 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    updateScheduleButtonVisibility();
+  document.addEventListener('DOMContentLoaded', async () => {
+    await updateScheduleButtonVisibility();
     initializeWorkshopProfile();
   });
 })();
