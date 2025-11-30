@@ -2024,7 +2024,6 @@ app.post('/api/register', async (req, res) => {
     const certificateUploadedValue = isMechanic && certificatePath ? 1 : 0;
     const certificateStatusValue = isMechanic ? 'pendiente' : 'validado';
 
-    // 👉 guardamos el resultado por si luego lo necesitas
     insert.run(
       name.trim(),
       normalizedEmail,
@@ -2044,7 +2043,6 @@ app.post('/api/register', async (req, res) => {
       await sendWelcomeEmail({
         to: normalizedEmail,
         nombre: name.trim(),
-        tipoCuenta: accountType,
       });
     } catch (emailError) {
       console.error('Error enviando correo de bienvenida:', emailError);
@@ -2204,7 +2202,7 @@ app.post('/api/profile/request-mechanic', requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (newCertificatePath) {
-      await deleteCertificateFile(newCertificatePath).catch(() => {});
+      await deleteCertificateFile(newCertificatePath).catch(() => { });
     }
     console.error('Error al solicitar cambio de rol', error);
     res.status(500).json({ error: 'No se pudo procesar tu solicitud en este momento.' });
