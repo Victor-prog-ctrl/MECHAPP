@@ -549,6 +549,14 @@ main {
     line-height: 1.4;
 }
 
+.history-reschedule {
+    color: #1d4ed8;
+    font-size: 0.9rem;
+    margin: 6px 0 0;
+    max-width: 520px;
+    line-height: 1.4;
+}
+
 .history-dismiss {
     border: none;
     background: transparent;
@@ -601,6 +609,158 @@ main {
 .status.cancelled {
     background: rgba(248, 113, 113, 0.12);
     color: #b91c1c;
+}
+
+.appointment-dialog-backdrop,
+.cancel-dialog-backdrop,
+.reschedule-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    z-index: 1400;
+    backdrop-filter: blur(4px);
+}
+
+.appointment-dialog,
+.cancel-dialog,
+.reschedule-dialog {
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-lg);
+    width: min(720px, 100%);
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.32);
+}
+
+.appointment-dialog {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.appointment-dialog__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.appointment-dialog__label,
+.reschedule-dialog__label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.appointment-dialog__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 0;
+}
+
+.appointment-dialog__meta dt {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.appointment-dialog__meta dd {
+    margin: 6px 0 0;
+    font-weight: 600;
+}
+
+.appointment-dialog__reason {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.appointment-dialog__reason--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.appointment-dialog__helper {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.appointment-dialog__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.cancel-dialog {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.cancel-dialog__details {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.cancel-dialog__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.reschedule-dialog {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reschedule-dialog__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.reschedule-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reschedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.reschedule-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.reschedule-hint {
+    margin: 0;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
 }
 
 .mechanic-rating {
