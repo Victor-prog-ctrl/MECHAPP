@@ -133,6 +133,22 @@ body {
     color: var(--text);
 }
 
+.request-detail__reschedule {
+    display: grid;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md);
+    color: #1d4ed8;
+}
+
+.request-detail__reschedule-date {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 600;
+}
+
 .request-detail__notes h2 {
     font-size: 1.1rem;
 }
