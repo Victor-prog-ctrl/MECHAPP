@@ -348,6 +348,138 @@
     </main>
 
     <div
+        class="appointment-dialog-backdrop"
+        data-appointment-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="appointment-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <section class="appointment-dialog" aria-live="polite">
+            <header class="appointment-dialog__header">
+                <div>
+                    <p class="appointment-dialog__label">Detalle de tu cita</p>
+                    <h2 id="appointment-dialog-title" data-appointment-title></h2>
+                </div>
+                <button type="button" class="dialog-close" data-appointment-close aria-label="Cerrar">×</button>
+            </header>
+
+            <dl class="appointment-dialog__meta">
+                <div>
+                    <dt>Estado</dt>
+                    <dd><span class="status" data-appointment-status></span></dd>
+                </div>
+                <div>
+                    <dt>Fecha y hora</dt>
+                    <dd data-appointment-schedule>—</dd>
+                </div>
+                <div>
+                    <dt>Tipo de visita</dt>
+                    <dd data-appointment-type>—</dd>
+                </div>
+                <div>
+                    <dt>Dirección</dt>
+                    <dd data-appointment-address>—</dd>
+                </div>
+                <div>
+                    <dt>Taller o mecánico</dt>
+                    <dd data-appointment-partner>—</dd>
+                </div>
+            </dl>
+
+            <p class="appointment-dialog__reason" data-appointment-reason hidden></p>
+            <p class="appointment-dialog__reason appointment-dialog__reason--info" data-appointment-reschedule-note hidden></p>
+
+            <p class="appointment-dialog__helper" data-appointment-helper hidden></p>
+
+            <div class="appointment-dialog__actions">
+                <button type="button" class="button ghost" data-appointment-reschedule>Reagendar cita</button>
+                <button type="button" class="button danger" data-appointment-cancel>Cancelar cita</button>
+                <button type="button" class="button" data-appointment-close>Volver</button>
+            </div>
+        </section>
+    </div>
+
+    <div
+        class="cancel-dialog-backdrop"
+        data-cancel-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cancel-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <section class="cancel-dialog">
+            <h2 id="cancel-dialog-title">Seguro que quieres cancelar tu cita?</h2>
+            <p class="cancel-dialog__details" data-cancel-details></p>
+            <div class="cancel-dialog__actions">
+                <button type="button" class="button danger" data-cancel-confirm>Aceptar</button>
+                <button type="button" class="button ghost" data-cancel-close>Rechazar</button>
+            </div>
+            <p class="form-message" data-cancel-feedback hidden></p>
+        </section>
+    </div>
+
+    <div
+        class="reschedule-dialog-backdrop"
+        data-reschedule-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reschedule-dialog-title"
+        hidden
+        tabindex="-1"
+    >
+        <section class="reschedule-dialog">
+            <header class="reschedule-dialog__header">
+                <div>
+                    <p class="reschedule-dialog__label">Reagendar cita</p>
+                    <h2 id="reschedule-dialog-title">Proponer una nueva fecha</h2>
+                </div>
+                <button type="button" class="dialog-close" data-reschedule-close aria-label="Cerrar">×</button>
+            </header>
+
+            <form class="reschedule-form" data-reschedule-form novalidate>
+                <label class="form-field form-field--wide">
+                    <span>Motivo del reagendamiento</span>
+                    <textarea
+                        name="reschedule-reason"
+                        rows="3"
+                        maxlength="500"
+                        data-reschedule-reason
+                        placeholder="Ej. Surgió un imprevisto y necesito mover la visita a otro día."
+                        required
+                    ></textarea>
+                </label>
+
+                <div class="reschedule-grid">
+                    <label class="form-field">
+                        <span>Nueva fecha</span>
+                        <input type="date" name="reschedule-date" data-reschedule-date required />
+                        <small data-reschedule-date-helper>El calendario muestra solo días hábiles con cupos disponibles.</small>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Horario disponible</span>
+                        <select name="reschedule-slot" data-reschedule-slot required>
+                            <option value="">Selecciona una hora</option>
+                        </select>
+                        <small data-reschedule-slot-helper>Elige una hora libre en la agenda del mecánico.</small>
+                    </label>
+                </div>
+
+                <p class="form-message" data-reschedule-feedback hidden></p>
+                <p class="reschedule-hint">Deberás esperar la confirmación del mecánico para el reagendamiento de cita.</p>
+
+                <div class="reschedule-actions">
+                    <button type="button" class="button ghost" data-reschedule-close>Cancelar</button>
+                    <button type="submit" class="button" data-reschedule-submit>Enviar solicitud</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div
         class="role-upgrade-dialog-backdrop"
         data-role-upgrade-dialog
         role="dialog"

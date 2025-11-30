@@ -391,6 +391,9 @@ function renderRequest(request, { preserveFeedback = false } = {}) {
     const location = container.querySelector("[data-request-location]");
     const notesWrapper = container.querySelector("[data-request-notes-wrapper]");
     const notes = container.querySelector("[data-request-notes]");
+    const rescheduleWrapper = container.querySelector("[data-request-reschedule]");
+    const rescheduleReason = container.querySelector("[data-request-reschedule-reason]");
+    const rescheduleDate = container.querySelector("[data-request-reschedule-date]");
 
     if (service) {
         service.textContent = request.service || "Servicio solicitado";
@@ -438,6 +441,24 @@ function renderRequest(request, { preserveFeedback = false } = {}) {
         notesWrapper.hidden = false;
     } else if (notesWrapper) {
         notesWrapper.hidden = true;
+    }
+
+    const hasRescheduleRequest = Boolean(request?.rescheduleReason || request?.rescheduleRequestedAt);
+    if (rescheduleWrapper) {
+        if (hasRescheduleRequest) {
+            const formattedDate = formatDateTime(request.scheduledFor);
+            rescheduleWrapper.hidden = false;
+            if (rescheduleReason) {
+                rescheduleReason.textContent = request.rescheduleReason || "El cliente solicitó cambiar la fecha.";
+            }
+            if (rescheduleDate) {
+                rescheduleDate.textContent = formattedDate
+                    ? `Nueva fecha propuesta: ${formattedDate}`
+                    : "Nueva fecha pendiente de confirmar.";
+            }
+        } else {
+            rescheduleWrapper.hidden = true;
+        }
     }
 
     if (!preserveFeedback) {

@@ -84,6 +84,25 @@ function canRequestBeCompleted(request) {
     return scheduledDate.getTime() <= Date.now();
 }
 
+function canClientUpdateAppointment(record) {
+    if (!record) {
+        return false;
+    }
+
+    const normalized = typeof record.status === "string" ? record.status.toLowerCase() : "";
+    return !["cancelado", "completado", "rechazado"].includes(normalized);
+}
+
+function getPartnerLabel(record) {
+    if (record?.workshop?.name) {
+        return record.workshop.name;
+    }
+    if (record?.mechanic?.name) {
+        return record.mechanic.name;
+    }
+    return "Taller";
+}
+
 function parseDate(dateString) {
     if (!dateString) {
         return null;
@@ -138,6 +157,39 @@ function formatDate(dateString) {
         console.error("No se pudo formatear la fecha", error);
         return String(dateString || "");
     }
+}
+
+function formatDateInputValue(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return "";
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function parseSlotValue(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const match = value.trim().match(/^(\d{2}):(\d{2})/);
+    if (!match) {
+        return null;
+    }
+
+    const hours = Number.parseInt(match[1], 10);
+    const minutes = Number.parseInt(match[2], 10);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+        return null;
+    }
+
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return null;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 function getInitials(name) {
@@ -265,6 +317,7 @@ const DISMISSED_HISTORY_STORAGE_KEY = "profile.dismissedHistory";
 const dismissedHistoryIds = new Set(readPersistedIds(DISMISSED_HISTORY_STORAGE_KEY));
 const DEFAULT_MECHANIC_EMPTY_MESSAGE =
     "No tienes solicitudes pendientes por ahora. Cuando un cliente agende contigo aparecerá aquí.";
+const DEFAULT_TIME_SLOTS = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
 
 let clientHistoryRecords = [];
 let mechanicRequestRecords = [];
@@ -277,6 +330,45 @@ const completionDialogState = {
     requestId: null,
     triggerButton: null,
     busy: false,
+};
+
+const appointmentDialogState = {
+    record: null,
+    container: null,
+    helper: null,
+    status: null,
+    title: null,
+    schedule: null,
+    type: null,
+    address: null,
+    partner: null,
+    reason: null,
+    reschedule: null,
+    cancelButton: null,
+    rescheduleButton: null,
+};
+
+const rescheduleDialogState = {
+    container: null,
+    form: null,
+    reason: null,
+    date: null,
+    slot: null,
+    feedback: null,
+    submit: null,
+    helperDate: null,
+    helperSlot: null,
+    appointmentId: null,
+    mechanicId: null,
+    unavailableDays: new Set(),
+};
+
+const cancelDialogState = {
+    container: null,
+    details: null,
+    feedback: null,
+    confirm: null,
+    close: null,
 };
 
 function setCompletionDialogFeedback(message, type = "info") {
@@ -889,6 +981,13 @@ function renderClientHistory(history, { errorMessage } = {}) {
             info.appendChild(reasonDetail);
         }
 
+        if (record?.rescheduleReason) {
+            const rescheduleDetail = document.createElement("p");
+            rescheduleDetail.className = "history-reschedule";
+            rescheduleDetail.textContent = `Solicitud de cambio: ${record.rescheduleReason}`;
+            info.appendChild(rescheduleDetail);
+        }
+
         article.appendChild(info);
 
         const actions = document.createElement("div");
@@ -904,6 +1003,15 @@ function renderClientHistory(history, { errorMessage } = {}) {
         statusWrapper.appendChild(statusBadge);
 
         actions.appendChild(statusWrapper);
+
+        const viewButton = document.createElement("button");
+        viewButton.type = "button";
+        viewButton.className = "button ghost";
+        viewButton.textContent = "Ver más";
+        viewButton.addEventListener("click", () => {
+            openAppointmentDialog(record);
+        });
+        actions.appendChild(viewButton);
 
         const recordId = record?.id;
         if (recordId !== null && recordId !== undefined) {
@@ -928,6 +1036,445 @@ function renderClientHistory(history, { errorMessage } = {}) {
 
     container.innerHTML = "";
     container.appendChild(fragment);
+}
+
+function updateHistoryRecord(updatedRecord) {
+    const recordId = updatedRecord?.id;
+    if (recordId === null || recordId === undefined) {
+        return;
+    }
+
+    const normalizedId = String(recordId);
+    let replaced = false;
+
+    clientHistoryRecords = clientHistoryRecords.map((record) => {
+        const currentId = record?.id !== null && record?.id !== undefined ? String(record.id) : "";
+        if (currentId && currentId === normalizedId) {
+            replaced = true;
+            return { ...record, ...updatedRecord };
+        }
+        return record;
+    });
+
+    if (!replaced) {
+        clientHistoryRecords = [updatedRecord, ...clientHistoryRecords];
+    }
+
+    renderClientHistory(clientHistoryRecords);
+}
+
+function toggleAppointmentDialog(visible) {
+    if (!appointmentDialogState.container) {
+        return;
+    }
+    appointmentDialogState.container.hidden = !visible;
+    if (!visible) {
+        appointmentDialogState.record = null;
+    }
+}
+
+function toggleCancelDialog(visible) {
+    if (!cancelDialogState.container) {
+        return;
+    }
+    cancelDialogState.container.hidden = !visible;
+    if (!visible && cancelDialogState.feedback) {
+        cancelDialogState.feedback.hidden = true;
+    }
+}
+
+function toggleRescheduleDialog(visible) {
+    if (!rescheduleDialogState.container) {
+        return;
+    }
+    rescheduleDialogState.container.hidden = !visible;
+    if (!visible && rescheduleDialogState.feedback) {
+        rescheduleDialogState.feedback.hidden = true;
+        rescheduleDialogState.feedback.textContent = "";
+    }
+}
+
+function populateAppointmentDialog(record) {
+    if (!record || !appointmentDialogState.container) {
+        return;
+    }
+
+    appointmentDialogState.record = record;
+
+    if (appointmentDialogState.title) {
+        const workshopName = record?.workshop?.name || "";
+        const mechanicName = record?.mechanic?.name || "";
+        appointmentDialogState.title.textContent = record.service || workshopName || mechanicName || "Detalle de la cita";
+    }
+
+    if (appointmentDialogState.status) {
+        const statusText = getStatusLabel(record.status);
+        appointmentDialogState.status.textContent = statusText;
+        appointmentDialogState.status.className = `status ${getStatusClass(record.status)}`;
+    }
+
+    if (appointmentDialogState.schedule) {
+        appointmentDialogState.schedule.textContent = formatDateTime(record.scheduledFor) || "Sin fecha definida";
+    }
+
+    if (appointmentDialogState.type) {
+        appointmentDialogState.type.textContent = getVisitTypeLabel(record.visitType);
+    }
+
+    if (appointmentDialogState.address) {
+        appointmentDialogState.address.textContent = record.address || "Sin dirección";
+    }
+
+    if (appointmentDialogState.partner) {
+        appointmentDialogState.partner.textContent = getPartnerLabel(record);
+    }
+
+    if (appointmentDialogState.reason) {
+        appointmentDialogState.reason.hidden = !record?.rejectionReason;
+        appointmentDialogState.reason.textContent = record?.rejectionReason
+            ? `Mensaje del taller: ${record.rejectionReason}`
+            : "";
+    }
+
+    if (appointmentDialogState.reschedule) {
+        const hasReschedule = Boolean(record?.rescheduleReason || record?.rescheduleRequestedAt);
+        appointmentDialogState.reschedule.hidden = !hasReschedule;
+        appointmentDialogState.reschedule.textContent = hasReschedule
+            ? `Solicitud de reagendamiento: ${record.rescheduleReason}`
+            : "";
+    }
+
+    const canModify = canClientUpdateAppointment(record);
+    if (appointmentDialogState.helper) {
+        appointmentDialogState.helper.hidden = canModify;
+        appointmentDialogState.helper.textContent = canModify
+            ? ""
+            : "Las citas finalizadas, canceladas o rechazadas ya no se pueden modificar.";
+    }
+
+    if (appointmentDialogState.cancelButton) {
+        appointmentDialogState.cancelButton.disabled = !canModify;
+    }
+
+    if (appointmentDialogState.rescheduleButton) {
+        const hasMechanic = record?.mechanic?.id || record?.workshop?.id;
+        appointmentDialogState.rescheduleButton.disabled = !canModify || !hasMechanic;
+    }
+}
+
+function openAppointmentDialog(record) {
+    populateAppointmentDialog(record);
+    toggleAppointmentDialog(true);
+}
+
+function handleAppointmentDialogClose() {
+    toggleAppointmentDialog(false);
+}
+
+async function handleCancelAppointment() {
+    const record = appointmentDialogState.record;
+    const appointmentId = record?.id;
+
+    if (!cancelDialogState.details || !appointmentId) {
+        return;
+    }
+
+    if (cancelDialogState.feedback) {
+        cancelDialogState.feedback.hidden = true;
+        cancelDialogState.feedback.textContent = "";
+    }
+    cancelDialogState.details.textContent = formatDateTime(record?.scheduledFor)
+        ? `${record?.service || "Cita"} · ${formatDateTime(record?.scheduledFor)}`
+        : record?.service || "Cita";
+
+    toggleCancelDialog(true);
+}
+
+function setCancelFeedback(message, tone = "info") {
+    if (!cancelDialogState.feedback) {
+        return;
+    }
+    cancelDialogState.feedback.textContent = message || "";
+    cancelDialogState.feedback.hidden = !message;
+    cancelDialogState.feedback.dataset.state = tone;
+}
+
+async function confirmCancelAppointment() {
+    const appointmentId = appointmentDialogState.record?.id;
+    if (!appointmentId || !cancelDialogState.confirm) {
+        return;
+    }
+
+    cancelDialogState.confirm.disabled = true;
+    setCancelFeedback("Cancelando cita...", "info");
+
+    try {
+        const updated = await cancelAppointmentRequest(appointmentId);
+        if (updated) {
+            updateHistoryRecord(updated);
+            populateAppointmentDialog(updated);
+            setCancelFeedback("Tu cita se canceló correctamente.", "success");
+            setTimeout(() => {
+                toggleCancelDialog(false);
+                toggleAppointmentDialog(false);
+            }, 600);
+        }
+    } catch (error) {
+        console.error(error);
+        setCancelFeedback(
+            error instanceof Error ? error.message : "No pudimos cancelar tu cita. Inténtalo nuevamente.",
+            "error",
+        );
+    } finally {
+        cancelDialogState.confirm.disabled = false;
+    }
+}
+
+function setRescheduleFeedback(message, tone = "info") {
+    if (!rescheduleDialogState.feedback) {
+        return;
+    }
+    rescheduleDialogState.feedback.textContent = message || "";
+    rescheduleDialogState.feedback.hidden = !message;
+    rescheduleDialogState.feedback.dataset.state = tone;
+}
+
+function resetRescheduleForm() {
+    if (rescheduleDialogState.reason) {
+        rescheduleDialogState.reason.value = "";
+    }
+    if (rescheduleDialogState.date) {
+        rescheduleDialogState.date.value = "";
+    }
+    if (rescheduleDialogState.slot) {
+        rescheduleDialogState.slot.innerHTML = '<option value="">Selecciona una hora</option>';
+    }
+}
+
+async function loadUnavailableDays(mechanicId) {
+    if (!mechanicId) {
+        return new Set();
+    }
+
+    const params = new URLSearchParams({ mechanicId: String(mechanicId) });
+    const response = await fetch(`/api/appointments/unavailable-days?${params.toString()}`, {
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return new Set();
+    }
+
+    if (!response.ok) {
+        throw new Error("No pudimos cargar el calendario del mecánico.");
+    }
+
+    const data = await response.json();
+    const unavailable = Array.isArray(data?.unavailableDays) ? data.unavailableDays : [];
+    return new Set(unavailable);
+}
+
+async function loadUnavailableSlots({ mechanicId, date }) {
+    if (!mechanicId || !date) {
+        return new Set();
+    }
+
+    const params = new URLSearchParams({ mechanicId: String(mechanicId), date });
+    const response = await fetch(`/api/appointments/unavailable-slots?${params.toString()}`, {
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return new Set();
+    }
+
+    if (!response.ok) {
+        throw new Error("No pudimos obtener los horarios disponibles.");
+    }
+
+    const data = await response.json();
+    const unavailableSlots = Array.isArray(data?.unavailableSlots) ? data.unavailableSlots : [];
+    const normalized = unavailableSlots
+        .map((slot) => parseSlotValue(typeof slot === "string" ? slot.slice(0, 5) : ""))
+        .filter(Boolean);
+    return new Set(normalized);
+}
+
+async function updateRescheduleSlots() {
+    if (!rescheduleDialogState.date || !rescheduleDialogState.slot) {
+        return;
+    }
+
+    const selectedDateValue = rescheduleDialogState.date.value;
+    if (!selectedDateValue) {
+        rescheduleDialogState.slot.innerHTML = '<option value="">Selecciona una hora</option>';
+        setRescheduleFeedback("Selecciona una fecha para ver los horarios disponibles.", "info");
+        return;
+    }
+
+    const parsedDate = parseDate(selectedDateValue);
+    if (!(parsedDate instanceof Date)) {
+        setRescheduleFeedback("Selecciona una fecha válida.", "error");
+        return;
+    }
+
+    const weekday = parsedDate.getDay();
+    if (weekday === 0 || weekday === 6) {
+        setRescheduleFeedback("El taller atiende de lunes a viernes. Selecciona otro día.", "error");
+        rescheduleDialogState.slot.innerHTML = '<option value="">Sin horarios</option>';
+        return;
+    }
+
+    const dateKey = formatDateInputValue(parsedDate);
+    if (rescheduleDialogState.unavailableDays.has(dateKey)) {
+        setRescheduleFeedback("Este día ya no tiene cupos disponibles. Elige otra fecha.", "error");
+        rescheduleDialogState.slot.innerHTML = '<option value="">Sin horarios</option>';
+        return;
+    }
+
+    setRescheduleFeedback("Cargando horarios disponibles...", "info");
+
+    try {
+        const unavailableSlots = await loadUnavailableSlots({
+            mechanicId: rescheduleDialogState.mechanicId,
+            date: dateKey,
+        });
+        const availableSlots = DEFAULT_TIME_SLOTS.filter((slot) => !unavailableSlots.has(slot));
+
+        if (!availableSlots.length) {
+            rescheduleDialogState.slot.innerHTML = '<option value="">Sin horarios</option>';
+            setRescheduleFeedback("No quedan horarios para este día. Elige otra fecha.", "error");
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(new Option("Selecciona una hora", ""));
+        availableSlots.forEach((slot) => {
+            fragment.appendChild(new Option(slot, slot));
+        });
+        rescheduleDialogState.slot.innerHTML = "";
+        rescheduleDialogState.slot.appendChild(fragment);
+        setRescheduleFeedback("Selecciona la hora que más te acomode.", "info");
+    } catch (error) {
+        console.error(error);
+        setRescheduleFeedback(
+            error instanceof Error ? error.message : "No pudimos cargar los horarios. Intenta nuevamente.",
+            "error",
+        );
+    }
+}
+
+async function openRescheduleDialog() {
+    const record = appointmentDialogState.record;
+    const mechanicId = record?.mechanic?.id;
+
+    if (!record || !mechanicId) {
+        return;
+    }
+
+    rescheduleDialogState.appointmentId = record.id || null;
+    rescheduleDialogState.mechanicId = mechanicId;
+    rescheduleDialogState.unavailableDays = new Set();
+
+    if (rescheduleDialogState.reason) {
+        rescheduleDialogState.reason.value = record?.rescheduleReason || "";
+    }
+
+    if (rescheduleDialogState.date) {
+        const today = new Date();
+        const minValue = formatDateInputValue(today);
+        rescheduleDialogState.date.min = minValue;
+        rescheduleDialogState.date.value = "";
+    }
+
+    if (rescheduleDialogState.slot) {
+        rescheduleDialogState.slot.innerHTML = '<option value="">Selecciona una hora</option>';
+    }
+
+    setRescheduleFeedback("Cargando disponibilidad...", "info");
+    toggleRescheduleDialog(true);
+
+    try {
+        rescheduleDialogState.unavailableDays = await loadUnavailableDays(mechanicId);
+        setRescheduleFeedback("Selecciona la fecha y hora que prefieras.", "info");
+    } catch (error) {
+        console.error(error);
+        setRescheduleFeedback(
+            error instanceof Error ? error.message : "No pudimos cargar la disponibilidad. Inténtalo más tarde.",
+            "error",
+        );
+    }
+}
+
+async function handleRescheduleSubmit(event) {
+    event.preventDefault();
+
+    const appointmentId = rescheduleDialogState.appointmentId;
+    if (!appointmentId || !rescheduleDialogState.form) {
+        return;
+    }
+
+    const reason = rescheduleDialogState.reason?.value.trim() || "";
+    const dateValue = rescheduleDialogState.date?.value || "";
+    const slotValue = rescheduleDialogState.slot?.value || "";
+
+    if (!reason) {
+        setRescheduleFeedback("Describe el motivo del reagendamiento.", "error");
+        rescheduleDialogState.reason?.focus();
+        return;
+    }
+
+    if (!dateValue) {
+        setRescheduleFeedback("Selecciona la nueva fecha para tu cita.", "error");
+        rescheduleDialogState.date?.focus();
+        return;
+    }
+
+    if (!slotValue) {
+        setRescheduleFeedback("Elige la hora disponible que prefieras.", "error");
+        rescheduleDialogState.slot?.focus();
+        return;
+    }
+
+    const submitButton = rescheduleDialogState.submit;
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+    setRescheduleFeedback("Enviando solicitud de reagendamiento...", "info");
+
+    try {
+        const updated = await rescheduleAppointmentRequest(appointmentId, {
+            reason,
+            date: dateValue,
+            slot: slotValue,
+        });
+
+        if (updated) {
+            updateHistoryRecord(updated);
+            populateAppointmentDialog(updated);
+            setRescheduleFeedback(
+                "Tu solicitud fue enviada. Deberás esperar la confirmación del mecánico.",
+                "success",
+            );
+            setTimeout(() => {
+                toggleRescheduleDialog(false);
+            }, 800);
+        }
+    } catch (error) {
+        console.error(error);
+        setRescheduleFeedback(
+            error instanceof Error
+                ? error.message
+                : "No pudimos enviar tu solicitud de reagendamiento. Inténtalo nuevamente.",
+            "error",
+        );
+    } finally {
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+    }
 }
 
 function renderCompletedAppointmentsMetric(isMechanic, metrics) {
@@ -1680,6 +2227,57 @@ async function fetchClientHistory() {
     return Array.isArray(data?.history) ? data.history : [];
 }
 
+async function cancelAppointmentRequest(appointmentId) {
+    const response = await fetch(`/api/appointments/${encodeURIComponent(appointmentId)}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return null;
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.status === 404) {
+        throw new Error(data.error || "No encontramos la cita que intentas cancelar.");
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || "No se pudo cancelar la cita.");
+    }
+
+    return data?.appointment || null;
+}
+
+async function rescheduleAppointmentRequest(appointmentId, payload) {
+    const response = await fetch(`/api/appointments/${encodeURIComponent(appointmentId)}/reschedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+    });
+
+    if (response.status === 401) {
+        window.location.href = "./login.html";
+        return null;
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.status === 404) {
+        throw new Error(data.error || "No encontramos la cita que intentas reagendar.");
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || "No se pudo reagendar la cita.");
+    }
+
+    return data?.appointment || null;
+}
+
 function applyRoleUpgradeStatus(status, elements) {
     const normalized = typeof status === "string" ? status.toLowerCase() : "";
     const { statusElement, helperElement, triggerButton } = elements;
@@ -1875,6 +2473,7 @@ function setupRoleUpgradeFlow(profile) {
 
 async function setupProfilePage() {
     try {
+        setupAppointmentDialogs();
         const profile = await fetchProfile();
         if (!profile) {
             return;
@@ -1939,6 +2538,60 @@ async function handleLogout() {
         console.error(error);
         alert("No se pudo cerrar sesión. Intenta de nuevo.");
     }
+}
+
+function setupAppointmentDialogs() {
+    const dialog = document.querySelector("[data-appointment-dialog]");
+    appointmentDialogState.container = dialog;
+    appointmentDialogState.helper = dialog?.querySelector("[data-appointment-helper]") || null;
+    appointmentDialogState.status = dialog?.querySelector("[data-appointment-status]") || null;
+    appointmentDialogState.title = dialog?.querySelector("[data-appointment-title]") || null;
+    appointmentDialogState.schedule = dialog?.querySelector("[data-appointment-schedule]") || null;
+    appointmentDialogState.type = dialog?.querySelector("[data-appointment-type]") || null;
+    appointmentDialogState.address = dialog?.querySelector("[data-appointment-address]") || null;
+    appointmentDialogState.partner = dialog?.querySelector("[data-appointment-partner]") || null;
+    appointmentDialogState.reason = dialog?.querySelector("[data-appointment-reason]") || null;
+    appointmentDialogState.reschedule = dialog?.querySelector("[data-appointment-reschedule-note]") || null;
+    appointmentDialogState.cancelButton = dialog?.querySelector("[data-appointment-cancel]") || null;
+    appointmentDialogState.rescheduleButton = dialog?.querySelector("[data-appointment-reschedule]") || null;
+
+    dialog?.querySelectorAll("[data-appointment-close]")?.forEach((button) => {
+        button.addEventListener("click", handleAppointmentDialogClose);
+    });
+
+    appointmentDialogState.cancelButton?.addEventListener("click", handleCancelAppointment);
+    appointmentDialogState.rescheduleButton?.addEventListener("click", openRescheduleDialog);
+
+    const cancelDialog = document.querySelector("[data-cancel-dialog]");
+    cancelDialogState.container = cancelDialog;
+    cancelDialogState.details = cancelDialog?.querySelector("[data-cancel-details]") || null;
+    cancelDialogState.feedback = cancelDialog?.querySelector("[data-cancel-feedback]") || null;
+    cancelDialogState.confirm = cancelDialog?.querySelector("[data-cancel-confirm]") || null;
+    cancelDialogState.close = cancelDialog?.querySelector("[data-cancel-close]") || null;
+
+    cancelDialogState.confirm?.addEventListener("click", confirmCancelAppointment);
+    cancelDialogState.close?.addEventListener("click", () => toggleCancelDialog(false));
+
+    const rescheduleDialog = document.querySelector("[data-reschedule-dialog]");
+    rescheduleDialogState.container = rescheduleDialog;
+    rescheduleDialogState.form = rescheduleDialog?.querySelector("[data-reschedule-form]") || null;
+    rescheduleDialogState.reason = rescheduleDialog?.querySelector("[data-reschedule-reason]") || null;
+    rescheduleDialogState.date = rescheduleDialog?.querySelector("[data-reschedule-date]") || null;
+    rescheduleDialogState.slot = rescheduleDialog?.querySelector("[data-reschedule-slot]") || null;
+    rescheduleDialogState.feedback = rescheduleDialog?.querySelector("[data-reschedule-feedback]") || null;
+    rescheduleDialogState.submit = rescheduleDialog?.querySelector("[data-reschedule-submit]") || null;
+    rescheduleDialogState.helperDate = rescheduleDialog?.querySelector("[data-reschedule-date-helper]") || null;
+    rescheduleDialogState.helperSlot = rescheduleDialog?.querySelector("[data-reschedule-slot-helper]") || null;
+
+    rescheduleDialog?.querySelectorAll("[data-reschedule-close]")?.forEach((button) => {
+        button.addEventListener("click", () => {
+            resetRescheduleForm();
+            toggleRescheduleDialog(false);
+        });
+    });
+
+    rescheduleDialogState.form?.addEventListener("submit", handleRescheduleSubmit);
+    rescheduleDialogState.date?.addEventListener("change", updateRescheduleSlots);
 }
 
 function showSubscriptionFeedback(element, message, type = "success") {
