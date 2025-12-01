@@ -8,7 +8,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
-const { sendWelcomeEmail, sendRequestAcceptedEmail } = require('./mailer');
+const {
+  sendWelcomeEmail,
+  sendRequestAcceptedEmail,
+  sendRequestRejectedEmail,
+  sendDepositPaidEmailToMechanic,
+} = require('./mailer');
+
 
 
 const PORT = process.env.PORT || 3000;
@@ -1116,7 +1122,7 @@ function getMechanicNotifications(mechanicId) {
       type: 'info',
       message: hasRescheduleRequest
         ? `Solicitud de reagendamiento para ${row.service || 'servicio'}${scheduledLabel ? ` el ${scheduledLabel}` : ''}.` +
-          (rescheduleReason ? ` Motivo: ${rescheduleReason}.` : '')
+        (rescheduleReason ? ` Motivo: ${rescheduleReason}.` : '')
         : scheduledLabel
           ? `Nueva solicitud de ${row.service || 'servicio'} propuesta para ${scheduledLabel}.`
           : `Tienes una nueva solicitud de ${row.service || 'servicio'}.`,
@@ -3037,6 +3043,29 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
         console.error('Error enviando correo de solicitud aceptada:', emailError);
       }
     }
+    // 👉 si el nuevo estado es "rechazado", avisamos al cliente por correo
+    if (requestedStatus === 'rechazado' && updated.client_email) {
+      try {
+        const fechaFormateada =
+          formatNotificationDate(updated.scheduled_for, { includeTime: false }) ||
+          updated.scheduled_for;
+
+        const workshop = getMechanicWorkshopSummary(req.session.userId);
+        const nombreTaller = workshop?.name || 'tu taller en MechApp';
+
+        await sendRequestRejectedEmail({
+          to: updated.client_email,
+          nombreCliente: updated.client_name,
+          nombreTaller,
+          fecha: fechaFormateada,
+          servicio: updated.service,
+          motivo: updated.rejection_reason,
+        });
+      } catch (emailError) {
+        console.error('Error enviando correo de solicitud rechazada:', emailError);
+      }
+    }
+
 
     res.json({ request: mapAppointmentRequest(updated) });
   } catch (error) {
@@ -3083,7 +3112,9 @@ app.post('/api/paypal/capture', async (req, res) => {
 
     let appointmentUpdated = false;
     const appointmentIdNumber = Number(appointmentId);
+
     if (Number.isFinite(appointmentIdNumber)) {
+      // Marcamos la cita como abono pagado y confirmada (tal como ya lo tenías)
       const result = db
         .prepare(
           `UPDATE appointments
@@ -3097,6 +3128,48 @@ app.post('/api/paypal/capture', async (req, res) => {
         .run(appointmentIdNumber);
 
       appointmentUpdated = result.changes > 0;
+
+      // 👉 Si se actualizó la cita, intentamos avisar al mecánico por correo
+      if (appointmentUpdated) {
+        try {
+          const row = db
+            .prepare(
+              `SELECT
+                 a.id,
+                 a.service,
+                 a.scheduled_for,
+                 m.name AS mechanic_name,
+                 m.email AS mechanic_email,
+                 u.name AS client_name
+               FROM appointments a
+               JOIN users m ON m.id = a.mechanic_id
+               JOIN users u ON u.id = a.client_id
+               WHERE a.id = ?
+               LIMIT 1`
+            )
+            .get(appointmentIdNumber);
+
+          if (row && row.mechanic_email) {
+            // Usamos el mismo formateador de fechas que ya tienes
+            const fechaFormateada =
+              formatNotificationDate(row.scheduled_for, { includeTime: true }) ||
+              row.scheduled_for;
+
+            await sendDepositPaidEmailToMechanic({
+              to: row.mechanic_email,
+              nombreMecanico: row.mechanic_name,
+              nombreCliente: row.client_name,
+              servicio: row.service,
+              fecha: fechaFormateada,
+              monto: amount,
+              moneda: currency,
+            });
+          }
+        } catch (emailError) {
+          console.error('Error enviando correo de abono pagado al mecánico:', emailError);
+          // No rompemos la respuesta al front si falla el correo
+        }
+      }
     }
 
     // 4) Responder al front
@@ -3106,7 +3179,7 @@ app.post('/api/paypal/capture', async (req, res) => {
       amount,
       currency,
       payerEmail,
-      appointmentUpdated
+      appointmentUpdated,
     });
   } catch (e) {
     console.error('PayPal capture error:', e);
