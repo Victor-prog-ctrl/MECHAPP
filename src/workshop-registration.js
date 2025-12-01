@@ -46,6 +46,9 @@
   const selectedServicesContainer = form.querySelector('[data-selected-services]');
   const selectedServicesList = selectedServicesContainer?.querySelector('[data-selected-services-list]');
   const selectedServicesEmpty = selectedServicesContainer?.querySelector('[data-selected-services-empty]');
+  const otherServiceToggle = form.querySelector('[data-other-service-toggle]');
+  const otherServiceField = form.querySelector('[data-other-service-field]');
+  const otherServiceInput = form.querySelector('[data-other-service-input]');
 
   function escapeSelector(value) {
     if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
@@ -267,13 +270,34 @@
     return Array.from(serviceTrack.querySelectorAll('input[name="services"]:checked'));
   }
 
+  function getOtherServiceValue() {
+    if (!otherServiceToggle || !otherServiceInput || !otherServiceToggle.checked) {
+      return '';
+    }
+
+    return otherServiceInput.value.trim();
+  }
+
+  function updateOtherServiceVisibility() {
+    if (!otherServiceField || !otherServiceToggle) {
+      return;
+    }
+
+    otherServiceField.hidden = !otherServiceToggle.checked;
+
+    if (!otherServiceToggle.checked && otherServiceInput) {
+      otherServiceInput.value = '';
+    }
+  }
+
   function renderSelectedServices() {
     if (!selectedServicesContainer || !selectedServicesList) {
       return;
     }
 
     const checked = getCheckedServices();
-    const hasSelections = checked.length > 0;
+    const otherServiceValue = getOtherServiceValue();
+    const hasSelections = checked.length > 0 || Boolean(otherServiceValue);
 
     selectedServicesContainer.hidden = false;
 
@@ -307,10 +331,29 @@
       fragment.appendChild(item);
     });
 
+    if (otherServiceValue) {
+      const item = document.createElement('span');
+      item.className = 'selected-services__item';
+
+      const text = document.createElement('span');
+      text.textContent = `Otro: ${otherServiceValue}`;
+
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.dataset.removeOtherService = 'true';
+      removeButton.setAttribute('aria-label', 'Quitar el servicio personalizado');
+      removeButton.textContent = 'Quitar';
+
+      item.appendChild(text);
+      item.appendChild(removeButton);
+      fragment.appendChild(item);
+    }
+
     selectedServicesList.appendChild(fragment);
   }
 
   renderServiceOptions();
+  updateOtherServiceVisibility();
 
   if (servicePrevButton) {
     servicePrevButton.addEventListener('click', () => scrollServices(-1));
@@ -340,8 +383,15 @@
         return;
       }
 
-      const button = target.closest('button[data-remove-service]');
+      const button = target.closest('button[data-remove-service], button[data-remove-other-service]');
       if (!button) {
+        return;
+      }
+
+      if (button.dataset.removeOtherService && otherServiceToggle) {
+        otherServiceToggle.checked = false;
+        updateOtherServiceVisibility();
+        renderSelectedServices();
         return;
       }
 
@@ -361,6 +411,20 @@
 
   window.addEventListener('resize', updateServiceNavButtons);
 
+  if (otherServiceToggle) {
+    otherServiceToggle.addEventListener('change', () => {
+      updateOtherServiceVisibility();
+      renderSelectedServices();
+      if (otherServiceToggle.checked && otherServiceInput) {
+        otherServiceInput.focus();
+      }
+    });
+  }
+
+  if (otherServiceInput) {
+    otherServiceInput.addEventListener('input', renderSelectedServices);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -370,7 +434,15 @@
     try {
       const formData = new FormData(form);
       const selectedServices = formData.getAll('services');
-      const services = Array.from(new Set(parseTextList(selectedServices)));
+      const otherServiceValue = getOtherServiceValue();
+      const services = Array.from(
+        new Set([...parseTextList(selectedServices), ...(otherServiceValue ? [otherServiceValue] : [])]),
+      );
+
+      if (otherServiceToggle?.checked && !otherServiceValue) {
+        showFeedback('Describe el servicio adicional en el campo "Otro".', 'error');
+        return;
+      }
 
       const scheduleConfig = getSchedulePayload();
       if (!scheduleConfig) {
@@ -426,6 +498,7 @@
 
       form.reset();
       renderServiceOptions();
+      updateOtherServiceVisibility();
       showFeedback('Tu taller se registró correctamente. Pronto aparecerá en el listado público.', 'success');
 
       window.location.assign('./paginainicio.html');
