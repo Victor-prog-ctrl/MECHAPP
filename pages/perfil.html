@@ -80,39 +80,6 @@
                 </article>
             </div>
 
-            <!-- ===== Suscripción (ajustada para profile.js) ===== -->
-            <aside class="subscription-card" aria-label="Formulario de suscripción a novedades">
-                <h2>Suscríbete y recibe novedades</h2>
-                <p>Mantente al día con promociones, recordatorios y novedades personalizadas.</p>
-
-                <form
-                    class="subscription-form"
-                    id="subscribe-form"
-                    action="#"
-                    method="post"
-                    data-emailjs-service-id="service_yn5lpjl"
-                    data-emailjs-template-id="template_gkufg9e"
-                    data-emailjs-public-key="uZw4YfdppiljaIHqe"
-                >
-                    <label class="subscription-label" for="subscription-email">Correo electrónico</label>
-                    <div class="subscription-input-group">
-                        <input
-                            type="email"
-                            id="subscription-email"
-                            name="subscriber_email"
-                            placeholder="tucorreo@ejemplo.com"
-                            required
-                            autocomplete="email"
-                        />
-                        <button type="submit" id="subscribe-btn" class="button">Suscribirme</button>
-                    </div>
-                    <p class="subscription-note">Puedes darte de baja cuando quieras desde cualquier correo que recibas.</p>
-                    <!-- feedback para profile.js -->
-                    <small id="subscribe-msg" data-subscription-feedback aria-live="polite" hidden></small>
-                </form>
-            </aside>
-            <!-- ===== Fin suscripción ===== -->
-
         </section>
 
         <section
@@ -554,11 +521,7 @@
         <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@autoserv.com">soporte@autoserv.com</a></p>
     </footer>
 
-    <!-- Cargar EmailJS ANTES de profile.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
-
     <script src="../src/chatbot.js" defer></script>
-    <!-- Tu JS de la página (usa EmailJS y lee los data-atributos del form) -->
     <script src="../src/profile.js" defer></script>
 </body>
 </html>
