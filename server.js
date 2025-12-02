@@ -2007,7 +2007,9 @@ app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
   }
 
   try {
-    const workshop = db.prepare(`SELECT id FROM workshops WHERE id = ?`).get(workshopId);
+    const workshop = db
+      .prepare(`SELECT id, owner_id FROM workshops WHERE id = ?`)
+      .get(workshopId);
     if (!workshop) return res.status(404).json({ error: 'El taller seleccionado no existe.' });
 
     const user = db
@@ -2016,6 +2018,20 @@ app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
     if (!user) return res.status(401).json({ error: 'No autorizado.' });
     if (user.account_type !== 'cliente') {
       return res.status(403).json({ error: 'Solo los clientes pueden publicar reseñas.' });
+    }
+
+    const hasCompletedAppointment = db
+      .prepare(
+        `SELECT COUNT(*) AS total
+           FROM appointments
+          WHERE client_id = ?
+            AND mechanic_id = ?
+            AND LOWER(COALESCE(status, '')) = 'completado'`
+      )
+      .get(user.id, workshop.owner_id || -1);
+
+    if (!hasCompletedAppointment?.total) {
+      return res.status(403).json({ error: 'Solo puedes reseñar talleres con los que hayas tenido una cita completada.' });
     }
 
     const {
