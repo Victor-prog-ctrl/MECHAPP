@@ -362,13 +362,35 @@ main {
 
 .history,
 .mechanic-rating,
-.role-upgrade {
+.role-upgrade,
+.commissions-cta {
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 36px 40px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.commissions-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.commissions-cta__content {
+    display: grid;
+    gap: 6px;
+}
+
+.commissions-cta h2 {
+    color: var(--text);
+}
+
+.commissions-cta p {
+    color: var(--text-muted);
+    max-width: 680px;
 }
 
 .role-upgrade__body {
@@ -1292,7 +1314,8 @@ main {
     .profile-summary,
     .history,
     .mechanic-rating,
-    .mechanic-requests {
+    .mechanic-requests,
+    .commissions-cta {
         padding: 28px;
     }
 
@@ -1304,5 +1327,10 @@ main {
 
     .workshop-overview {
         grid-template-columns: 1fr;
+    }
+
+    .commissions-cta {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
