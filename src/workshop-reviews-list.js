@@ -241,5 +241,60 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', renderReviews);
+  function setupAuthVisibility() {
+    const targets = document.querySelectorAll('[data-auth-visibility], [data-visible-for]');
+    if (!targets.length) {
+      return;
+    }
+
+    const unauthenticatedOnly = document.querySelectorAll('[data-auth-visibility="unauthenticated"]');
+    const authenticatedOnly = document.querySelectorAll('[data-auth-visibility="authenticated"]');
+    const mechanicOnly = document.querySelectorAll('[data-visible-for="mecanico"]');
+    const userOnly = document.querySelectorAll('[data-visible-for="usuario"]');
+
+    const visibilityState = {
+      isAuthenticated: false,
+      isMechanic: false,
+    };
+
+    const setVisibility = (element, visible) => {
+      if (visible) {
+        element.removeAttribute('hidden');
+      } else {
+        element.setAttribute('hidden', '');
+      }
+    };
+
+    const applyVisibility = () => {
+      const { isAuthenticated, isMechanic } = visibilityState;
+
+      unauthenticatedOnly.forEach((element) => setVisibility(element, !isAuthenticated));
+      authenticatedOnly.forEach((element) => setVisibility(element, isAuthenticated));
+      mechanicOnly.forEach((element) => setVisibility(element, isAuthenticated && isMechanic));
+      userOnly.forEach((element) => setVisibility(element, isAuthenticated && !isMechanic));
+    };
+
+    applyVisibility();
+
+    fetch('/api/profile', { credentials: 'same-origin' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('No autenticado');
+        }
+        return response.json();
+      })
+      .then((profile) => {
+        visibilityState.isAuthenticated = true;
+        visibilityState.isMechanic = profile?.accountType === 'mecanico';
+        applyVisibility();
+      })
+      .catch(() => {
+        applyVisibility();
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setupAuthVisibility();
+    renderReviews();
+  });
 })();
