@@ -32,6 +32,7 @@ if (typeof fetch !== 'function') {
 const PAYPAL_API_BASE = process.env.PAYPAL_API || 'https://api-m.sandbox.paypal.com';
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg';
 const PAYPAL_SECRET = process.env.PAYPAL_SECRET || 'EDX3en15c1djJA8af0H_bDoqzysgedMIwwWtig2sa61XKMTaCTpXdqwMeNpWYEo0OTIwd5vAvbhnZHm1';
+const COMMISSION_PERCENT = Number.parseFloat(process.env.MECHANIC_COMMISSION_PERCENT || '10');
 
 // Helpers PayPal
 async function getPayPalAccessToken() {
@@ -1206,6 +1207,8 @@ function ensureAppointmentLocationColumns() {
   const hasDepositPaid = columns.some((column) => column.name === 'abono_pagado');
   const hasRescheduleReason = columns.some((column) => column.name === 'reschedule_reason');
   const hasRescheduleRequestedAt = columns.some((column) => column.name === 'reschedule_requested_at');
+  const hasFinalPrice = columns.some((column) => column.name === 'final_price');
+  const hasCompletedAt = columns.some((column) => column.name === 'completed_at');
 
   if (!hasLatitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
@@ -1230,8 +1233,87 @@ function ensureAppointmentLocationColumns() {
   if (!hasRescheduleRequestedAt) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN reschedule_requested_at TEXT`).run();
   }
+
+  if (!hasFinalPrice) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN final_price REAL`).run();
+  }
+
+  if (!hasCompletedAt) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN completed_at TEXT`).run();
+  }
 }
 ensureAppointmentLocationColumns();
+
+function ensureCommissionsTable() {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS commissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      appointment_id INTEGER NOT NULL UNIQUE,
+      mechanic_id INTEGER NOT NULL,
+      service TEXT,
+      category TEXT,
+      work_price REAL NOT NULL,
+      commission_percent REAL NOT NULL,
+      commission_amount REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pendiente',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      paid_at TEXT,
+      FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+      FOREIGN KEY (mechanic_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `).run();
+}
+ensureCommissionsTable();
+
+function tableExists(tableName) {
+  const row = db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`).get(tableName);
+  return Boolean(row?.name);
+}
+
+function getServiceMinimumPrice(serviceName) {
+  if (!serviceName || !tableExists('service_categories')) {
+    return null;
+  }
+
+  const row = db
+    .prepare(`SELECT min_price FROM service_categories WHERE LOWER(name) = LOWER(?) LIMIT 1`)
+    .get(serviceName);
+
+  return row?.min_price != null ? Number(row.min_price) : null;
+}
+
+function getHistoricalAveragePrice(serviceName) {
+  if (!serviceName) {
+    return null;
+  }
+
+  const row = db
+    .prepare(
+      `SELECT AVG(final_price) AS average_price
+       FROM appointments
+       WHERE status = 'completado'
+         AND final_price IS NOT NULL
+         AND LOWER(service) = LOWER(?)`
+    )
+    .get(serviceName);
+
+  return row?.average_price != null ? Number(row.average_price) : null;
+}
+
+function createCommissionRecord({ appointmentId, mechanicId, service, workPrice, category }) {
+  if (!appointmentId || !mechanicId || !Number.isFinite(workPrice)) {
+    return null;
+  }
+
+  const percent = Number.isFinite(COMMISSION_PERCENT) ? COMMISSION_PERCENT : 0;
+  const amount = Number(((workPrice * percent) / 100).toFixed(2));
+
+  db.prepare(
+    `INSERT OR IGNORE INTO commissions
+      (appointment_id, mechanic_id, service, category, work_price, commission_percent, commission_amount)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(appointmentId, mechanicId, service || null, category || null, workPrice, percent, amount);
+}
 
 function ensureMechanicDismissedRequestsTable() {
   db.prepare(`
@@ -1430,6 +1512,10 @@ const noSecurityHeaders = (req, res, next) => {
 // Sirve la página sin Helmet ni CSP para aislar el problema
 app.get('/pages/agendar-cita.html', noSecurityHeaders, (req, res) => {
   res.sendFile(path.join(__dirname, 'pages', 'agendar-cita.html'));
+});
+
+app.get('/mecanico/comisiones-pendientes', (req, res) => {
+  res.sendFile(path.join(__dirname, 'pages', 'comisionesPendientes.html'));
 });
 
 // ===== Middlewares =====
@@ -2825,6 +2911,8 @@ const APPOINTMENT_REQUEST_BASE_QUERY = `
     a.notes,
     a.status,
     a.rejection_reason,
+    a.final_price,
+    a.completed_at,
     a.reschedule_reason,
     a.reschedule_requested_at,
     a.created_at,
@@ -2853,6 +2941,8 @@ function mapAppointmentRequest(row) {
     notes: row.notes,
     status: row.status,
     rejectionReason: rejectionReason || null,
+    finalPrice: row.final_price != null ? Number(row.final_price) : null,
+    completedAt: row.completed_at || null,
     rescheduleReason: rescheduleReason || null,
     rescheduleRequestedAt: row.reschedule_requested_at || null,
     createdAt: row.created_at,
@@ -2867,6 +2957,28 @@ function mapAppointmentRequest(row) {
           longitude: row.client_longitude,
         }
         : null,
+  };
+}
+
+function mapCommission(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    appointmentId: row.appointment_id,
+    mechanicId: row.mechanic_id,
+    service: row.service,
+    category: row.category,
+    workPrice: row.work_price != null ? Number(row.work_price) : null,
+    commissionPercent: row.commission_percent != null ? Number(row.commission_percent) : null,
+    commissionAmount: row.commission_amount != null ? Number(row.commission_amount) : null,
+    status: row.status,
+    createdAt: row.created_at,
+    paidAt: row.paid_at || null,
+    scheduledFor: row.scheduled_for || null,
+    finalPrice: row.final_price != null ? Number(row.final_price) : null,
   };
 }
 
@@ -2957,6 +3069,8 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
   const allowedStatuses = new Set(['confirmado', 'rechazado', 'completado']);
   const requestedStatus = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
   const rejectionReason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const finalPriceInput = req.body?.finalPrice;
+  const finalPrice = requestedStatus === 'completado' ? Number.parseFloat(finalPriceInput) : null;
 
   if (!allowedStatuses.has(requestedStatus)) {
     return res.status(400).json({ error: 'Estado de solicitud no válido.' });
@@ -2981,6 +3095,7 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
     }
 
     const normalizedExisting = existing.status ? existing.status.toLowerCase() : '';
+    const serviceName = existing.service || '';
 
     const isSameStatus = normalizedExisting === requestedStatus;
     let canTransition = false;
@@ -2997,6 +3112,24 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
     }
 
     if (requestedStatus === 'completado') {
+      if (!Number.isFinite(finalPrice) || finalPrice <= 0) {
+        return res.status(400).json({ error: 'Debes ingresar el precio final del trabajo.' });
+      }
+
+      const minimumPrice = getServiceMinimumPrice(serviceName);
+      if (Number.isFinite(minimumPrice) && finalPrice < minimumPrice) {
+        return res
+          .status(400)
+          .json({ error: `El precio no puede ser menor al mínimo (${minimumPrice}).` });
+      }
+
+      const historicalAverage = getHistoricalAveragePrice(serviceName);
+      if (Number.isFinite(historicalAverage) && historicalAverage > 0 && finalPrice < historicalAverage * 0.5) {
+        return res
+          .status(400)
+          .json({ error: 'El precio está por debajo del 50% del promedio histórico.' });
+      }
+
       const scheduledDate = existing?.scheduled_for ? new Date(existing.scheduled_for) : null;
       if (scheduledDate && !Number.isNaN(scheduledDate.getTime())) {
         const now = new Date();
@@ -3021,6 +3154,12 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
 
       fields.push('reschedule_reason = NULL', 'reschedule_requested_at = NULL');
 
+      if (requestedStatus === 'completado') {
+        fields.push('final_price = ?');
+        fields.push('completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP)');
+        params.push(finalPrice);
+      }
+
       db.prepare(`UPDATE appointments SET ${fields.join(', ')} WHERE id = ? AND mechanic_id = ?`)
         .run(...params, requestId, req.session.userId);
     }
@@ -3035,6 +3174,16 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
 
     if (!updated) {
       return res.status(404).json({ error: 'Solicitud no encontrada tras la actualización.' });
+    }
+
+    if (requestedStatus === 'completado') {
+      createCommissionRecord({
+        appointmentId: updated.id,
+        mechanicId: req.session.userId,
+        service: updated.service,
+        workPrice: finalPrice,
+        category: serviceName,
+      });
     }
 
     // 👉 si el nuevo estado es "confirmado", intentamos mandar correo al cliente
@@ -3092,6 +3241,216 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
   }
 });
 
+app.get('/api/mechanic/commissions', requireAuth, requireMechanic, (req, res) => {
+  try {
+    const statusFilter = typeof req.query?.status === 'string' ? req.query.status.trim().toLowerCase() : '';
+
+    const params = [req.session.userId];
+    let query = `
+      SELECT
+        c.*, a.scheduled_for, a.service AS appointment_service, a.final_price
+      FROM commissions c
+      JOIN appointments a ON a.id = c.appointment_id
+      WHERE c.mechanic_id = ?
+    `;
+
+    if (statusFilter) {
+      query += ' AND LOWER(c.status) = LOWER(?)';
+      params.push(statusFilter);
+    }
+
+    query += ' ORDER BY datetime(c.created_at) DESC';
+
+    const rows = db.prepare(query).all(...params);
+    const commissions = rows.map((row) =>
+      mapCommission({ ...row, service: row.appointment_service || row.service })
+    );
+
+    res.json({ commissions });
+  } catch (error) {
+    console.error('Error obteniendo comisiones', error);
+    res.status(500).json({ error: 'No se pudieron obtener las comisiones.' });
+  }
+});
+
+app.post('/api/comisiones/:id/pagar', requireAuth, requireMechanic, (req, res) => {
+  const commissionId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(commissionId) || commissionId <= 0) {
+    return res.status(400).json({ error: 'Identificador de comisión no válido.' });
+  }
+
+  try {
+    const commission = db
+      .prepare(
+        `SELECT c.*, a.scheduled_for, a.service AS appointment_service, a.final_price
+         FROM commissions c
+         JOIN appointments a ON a.id = c.appointment_id
+         WHERE c.id = ? AND c.mechanic_id = ?`
+      )
+      .get(commissionId, req.session.userId);
+
+    if (!commission) {
+      return res.status(404).json({ error: 'Comisión no encontrada.' });
+    }
+
+    if ((commission.status || '').toLowerCase() === 'pagada') {
+      return res.status(400).json({ error: 'Esta comisión ya está pagada.' });
+    }
+
+    db.prepare(`
+      UPDATE commissions
+         SET status = 'pagada',
+             paid_at = COALESCE(paid_at, CURRENT_TIMESTAMP)
+       WHERE id = ? AND mechanic_id = ?
+    `).run(commissionId, req.session.userId);
+
+    const updated = db
+      .prepare(
+        `SELECT c.*, a.scheduled_for, a.service AS appointment_service, a.final_price
+         FROM commissions c
+         JOIN appointments a ON a.id = c.appointment_id
+         WHERE c.id = ? AND c.mechanic_id = ?
+         LIMIT 1`
+      )
+      .get(commissionId, req.session.userId);
+
+    res.json({ commission: mapCommission({ ...updated, service: updated?.appointment_service }) });
+  } catch (error) {
+    console.error('Error pagando comisión', error);
+    res.status(500).json({ error: 'No se pudo actualizar la comisión.' });
+  }
+});
+
+app.post('/api/comisiones/:id/paypal', requireAuth, requireMechanic, async (req, res) => {
+  const commissionId = Number.parseInt(req.params.id, 10);
+  const { orderID } = req.body || {};
+
+  if (!Number.isInteger(commissionId) || commissionId <= 0) {
+    return res.status(400).json({ error: 'Identificador de comisión no válido.' });
+  }
+
+  if (!orderID) {
+    return res.status(400).json({ error: 'orderID requerido' });
+  }
+
+  try {
+    const commission = db
+      .prepare(
+        `SELECT c.*, a.scheduled_for, a.service AS appointment_service, a.final_price
+         FROM commissions c
+         JOIN appointments a ON a.id = c.appointment_id
+         WHERE c.id = ? AND c.mechanic_id = ?
+         LIMIT 1`
+      )
+      .get(commissionId, req.session.userId);
+
+    if (!commission) {
+      return res.status(404).json({ error: 'Comisión no encontrada.' });
+    }
+
+    const data = await capturePayPalOrder(orderID);
+    const pu = data?.purchase_units?.[0];
+    const cap = pu?.payments?.captures?.[0];
+
+    const status = cap?.status || data?.status || 'COMPLETADO';
+    const amount = cap?.amount?.value || pu?.amount?.value || null;
+    const currency = cap?.amount?.currency_code || pu?.amount?.currency_code || null;
+    const payerEmail = data?.payer?.email_address || null;
+
+    db.prepare(`
+      INSERT OR IGNORE INTO payments
+        (provider, order_id, status, payer_email, amount_value, amount_currency, raw_json)
+      VALUES ('paypal_commission', ?, ?, ?, ?, ?, ?)
+    `).run(String(data.id), String(status), payerEmail, amount, currency, JSON.stringify(data));
+
+    db.prepare(`
+      UPDATE commissions
+         SET status = 'pagada',
+             paid_at = COALESCE(paid_at, CURRENT_TIMESTAMP)
+       WHERE id = ? AND mechanic_id = ?
+    `).run(commissionId, req.session.userId);
+
+    const updated = db
+      .prepare(
+        `SELECT c.*, a.scheduled_for, a.service AS appointment_service, a.final_price
+         FROM commissions c
+         JOIN appointments a ON a.id = c.appointment_id
+         WHERE c.id = ? AND c.mechanic_id = ?
+         LIMIT 1`
+      )
+      .get(commissionId, req.session.userId);
+
+    res.json({
+      commission: mapCommission({ ...updated, service: updated?.appointment_service }),
+      payment: {
+        orderId: data.id,
+        status,
+        amount,
+        currency,
+        payerEmail,
+      },
+    });
+  } catch (error) {
+    console.error('Error pagando comisión con PayPal', error);
+    res.status(500).json({ error: 'No se pudo completar el pago en PayPal.' });
+  }
+});
+
+
+
+function determineAutoFinalPrice(serviceName) {
+  const minPrice = getServiceMinimumPrice(serviceName);
+  const averagePrice = getHistoricalAveragePrice(serviceName);
+
+  const candidates = [minPrice, averagePrice].filter((value) => Number.isFinite(value) && value > 0);
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  return Math.max(...candidates);
+}
+
+function autoFinalizeOverdueAppointments() {
+  try {
+    const overdue = db
+      .prepare(`
+        SELECT id, mechanic_id, service
+          FROM appointments
+         WHERE status IN ('pendiente', 'confirmado')
+           AND datetime(scheduled_for) <= datetime('now', '-48 hours')
+      `)
+      .all();
+
+    overdue.forEach((appointment) => {
+      const price = determineAutoFinalPrice(appointment.service);
+      const workPrice = Number.isFinite(price) && price > 0 ? price : 0;
+
+      db.prepare(`
+        UPDATE appointments
+           SET status = 'completado',
+               final_price = COALESCE(?, final_price, 0),
+               completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP)
+         WHERE id = ?
+           AND status IN ('pendiente', 'confirmado')
+      `).run(workPrice, appointment.id);
+
+      createCommissionRecord({
+        appointmentId: appointment.id,
+        mechanicId: appointment.mechanic_id,
+        service: appointment.service,
+        workPrice,
+        category: appointment.service,
+      });
+    });
+  } catch (error) {
+    console.error('Error finalizando citas automáticamente', error);
+  }
+}
+
+const AUTO_FINALIZE_INTERVAL_MS = 30 * 60 * 1000;
+setInterval(autoFinalizeOverdueAppointments, AUTO_FINALIZE_INTERVAL_MS);
+autoFinalizeOverdueAppointments();
 
 
 // ====== ENDPOINTS PayPal ======
