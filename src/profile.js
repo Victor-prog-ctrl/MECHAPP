@@ -327,6 +327,8 @@ const completionDialogState = {
     cancelButton: null,
     detailsElement: null,
     feedbackElement: null,
+    priceInput: null,
+    helperElement: null,
     requestId: null,
     triggerButton: null,
     busy: false,
@@ -392,7 +394,7 @@ function setCompletionDialogFeedback(message, type = "info") {
 function setCompletionDialogBusy(busy) {
     completionDialogState.busy = busy;
 
-    const { confirmButton, cancelButton, container } = completionDialogState;
+    const { confirmButton, cancelButton, container, priceInput } = completionDialogState;
 
     if (confirmButton) {
         confirmButton.disabled = busy;
@@ -400,6 +402,10 @@ function setCompletionDialogBusy(busy) {
 
     if (cancelButton) {
         cancelButton.disabled = busy;
+    }
+
+    if (priceInput) {
+        priceInput.disabled = busy;
     }
 
     if (container) {
@@ -425,6 +431,14 @@ function closeCompletionDialog() {
     if (completionDialogState.detailsElement) {
         completionDialogState.detailsElement.textContent = "";
         completionDialogState.detailsElement.hidden = true;
+    }
+
+    if (completionDialogState.priceInput) {
+        completionDialogState.priceInput.value = "";
+    }
+
+    if (completionDialogState.helperElement) {
+        completionDialogState.helperElement.textContent = "Ingresa el valor final cobrado al cliente.";
     }
 
     const trigger = completionDialogState.triggerButton;
@@ -475,12 +489,14 @@ function openCompletionDialog(request, triggerButton) {
         container.focus();
     }
 
-    if (confirmButton && typeof confirmButton.focus === "function") {
+    if (completionDialogState.priceInput && typeof completionDialogState.priceInput.focus === "function") {
+        completionDialogState.priceInput.focus();
+    } else if (confirmButton && typeof confirmButton.focus === "function") {
         confirmButton.focus();
     }
 }
 
-async function updateMechanicRequestStatus(requestId, status) {
+async function updateMechanicRequestStatus(requestId, status, extra = {}) {
     if (!requestId) {
         throw new Error("Identificador de solicitud no válido.");
     }
@@ -489,7 +505,7 @@ async function updateMechanicRequestStatus(requestId, status) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...extra }),
     });
 
     if (response.status === 401) {
@@ -506,7 +522,9 @@ async function updateMechanicRequestStatus(requestId, status) {
     }
 
     if (!response.ok) {
-        throw new Error("No se pudo actualizar la solicitud.");
+        const data = await response.json().catch(() => null);
+        const message = data?.error || "No se pudo actualizar la solicitud.";
+        throw new Error(message);
     }
 
     const data = await response.json();
@@ -543,10 +561,21 @@ async function handleCompleteRequestConfirmation() {
     setCompletionDialogBusy(true);
     setCompletionDialogFeedback("Finalizando cita...", "info");
 
+    const priceValue = completionDialogState.priceInput
+        ? Number.parseFloat(completionDialogState.priceInput.value)
+        : Number.NaN;
+
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
+        setCompletionDialogFeedback("Ingresa un precio válido para finalizar la cita.", "error");
+        setCompletionDialogBusy(false);
+        return;
+    }
+
     try {
         const updatedRequest = await updateMechanicRequestStatus(
             completionDialogState.requestId,
             "completado",
+            { finalPrice: priceValue },
         );
 
         if (!updatedRequest) {
@@ -603,12 +632,16 @@ function setupCompletionDialog() {
     const cancelButton = container.querySelector("[data-complete-cancel]");
     const detailsElement = container.querySelector("[data-complete-details]");
     const feedbackElement = container.querySelector("[data-complete-feedback]");
+    const priceInput = container.querySelector("[data-complete-price]");
+    const helperElement = container.querySelector("[data-complete-helper]");
 
     completionDialogState.container = container;
     completionDialogState.confirmButton = confirmButton;
     completionDialogState.cancelButton = cancelButton;
     completionDialogState.detailsElement = detailsElement;
     completionDialogState.feedbackElement = feedbackElement;
+    completionDialogState.priceInput = priceInput;
+    completionDialogState.helperElement = helperElement;
 
     if (detailsElement) {
         detailsElement.hidden = true;

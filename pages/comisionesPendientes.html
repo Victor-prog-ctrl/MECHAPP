@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comisiones pendientes · MechApp</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+    <script
+        src="https://www.paypal.com/sdk/js?client-id=ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg&currency=USD&intent=capture&components=buttons,marks"
+        defer>
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            background: #0b0f19;
+            color: #e5e7eb;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 16px 48px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        p.description {
+            color: #9ca3af;
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #111827;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #1f2937;
+            color: #d1d5db;
+            font-weight: 600;
+        }
+
+        tr:nth-child(odd) {
+            background: #0f172a;
+        }
+
+        tr:nth-child(even) {
+            background: #111827;
+        }
+
+        .button {
+            background: linear-gradient(90deg, #00b4d8, #0096c7);
+            border: none;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback[data-state="info"] {
+            display: block;
+            background: #0ea5e9;
+            color: #0b1021;
+        }
+
+        .feedback[data-state="error"] {
+            display: block;
+            background: #f87171;
+            color: #1f2937;
+        }
+
+        .paypal-container {
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <h1>Comisiones pendientes</h1>
+        <p class="description">Administra tus comisiones de trabajos completados y paga directamente con PayPal.</p>
+
+        <p class="feedback" data-commissions-feedback hidden></p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cita</th>
+                        <th>Fecha</th>
+                        <th>Comisión</th>
+                        <th>Precio del trabajo</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody data-commissions-body></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="../src/commissions.js" defer></script>
+</body>
+
+</html>

@@ -509,6 +509,13 @@
                 Si le das a aceptar es porque su cita con el cliente ya se completó de manera eficiente.
             </p>
             <p class="completion-dialog__details" data-complete-details hidden></p>
+            <label class="form-field form-field--wide completion-dialog__field">
+                <span>Monto final del trabajo</span>
+                <input type="number" min="0" step="0.01" inputmode="decimal" data-complete-price />
+                <small class="completion-dialog__helper" data-complete-helper>
+                    Ingresa el valor final cobrado al cliente.
+                </small>
+            </label>
             <p class="completion-dialog__feedback" data-complete-feedback hidden></p>
             <div class="completion-dialog__actions">
                 <button type="button" class="button" data-complete-confirm>Aceptar</button>
