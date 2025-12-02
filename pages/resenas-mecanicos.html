@@ -31,7 +31,7 @@
       </nav>
       <div class="header-actions">
         <a href="./login.html" class="button button-primary" data-auth-visibility="unauthenticated">Iniciar sesión</a>
-        <a href="./registro.html" class="button button-primary">Crear Cuenta</a>
+        <a href="./registro.html" class="button button-primary" data-auth-visibility="unauthenticated">Crear Cuenta</a>
       </div>
     </header>
 
@@ -66,11 +66,11 @@
         </div>
       </section>
 
-      <section class="review-grid" aria-label="Listado de reseñas de mecánicos" data-review-grid aria-live="polite">
-        <p class="review-empty" data-review-empty hidden>Aún no hay reseñas publicadas. Sé la primera persona en compartir tu experiencia.</p>
-      </section>
-    </main>
-    <script src="../src/workshop-reviews-list.js" defer></script>
+    <section class="review-grid" aria-label="Listado de reseñas de mecánicos" data-review-grid aria-live="polite">
+      <p class="review-empty" data-review-empty hidden>Aún no hay reseñas publicadas. Sé la primera persona en compartir tu experiencia.</p>
+    </section>
+  </main>
+  <script src="../src/workshop-reviews-list.js" defer></script>
     <script src="../src/chatbot.js" defer></script>
   </body>
 </html>
