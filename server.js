@@ -33,6 +33,7 @@ const PAYPAL_API_BASE = process.env.PAYPAL_API || 'https://api-m.sandbox.paypal.
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'ATK6vMKNkGN9nrBunM83FLJ8_6rR82v28x35yp7YpKHyajQORbwHoAhjpzmZyy9SDpUGQqf4taf0uNhg';
 const PAYPAL_SECRET = process.env.PAYPAL_SECRET || 'EDX3en15c1djJA8af0H_bDoqzysgedMIwwWtig2sa61XKMTaCTpXdqwMeNpWYEo0OTIwd5vAvbhnZHm1';
 const COMMISSION_PERCENT = Number.parseFloat(process.env.MECHANIC_COMMISSION_PERCENT || '10');
+const MINIMUM_COMPLETION_PRICE = 20;
 
 // Helpers PayPal
 async function getPayPalAccessToken() {
@@ -3192,6 +3193,12 @@ app.patch('/api/appointments/requests/:id', requireAuth, requireMechanic, async 
     if (requestedStatus === 'completado') {
       if (!Number.isFinite(finalPrice) || finalPrice <= 0) {
         return res.status(400).json({ error: 'Debes ingresar el precio final del trabajo.' });
+      }
+
+      if (finalPrice < MINIMUM_COMPLETION_PRICE) {
+        return res
+          .status(400)
+          .json({ error: `El precio no puede ser menor a ${MINIMUM_COMPLETION_PRICE}.` });
       }
 
       const minimumPrice = getServiceMinimumPrice(serviceName);
