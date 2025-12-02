@@ -62,7 +62,9 @@
     select.disabled = true;
 
     try {
-      const response = await fetch('/api/workshops');
+      const response = await fetch('/api/workshops', {
+        credentials: 'same-origin',
+      });
       if (!response.ok) {
         throw new Error('No se pudieron cargar los talleres.');
       }
@@ -129,6 +131,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify(payload),
       });
 
