@@ -365,6 +365,8 @@ const rescheduleDialogState = {
     unavailableDays: new Set(),
 };
 
+const MIN_COMPLETION_PRICE = 20;
+
 const cancelDialogState = {
     container: null,
     details: null,
@@ -438,7 +440,8 @@ function closeCompletionDialog() {
     }
 
     if (completionDialogState.helperElement) {
-        completionDialogState.helperElement.textContent = "Ingresa el valor final cobrado al cliente.";
+        completionDialogState.helperElement.textContent =
+            "Ingresa el valor final cobrado al cliente (mínimo $20).";
     }
 
     const trigger = completionDialogState.triggerButton;
@@ -565,8 +568,11 @@ async function handleCompleteRequestConfirmation() {
         ? Number.parseFloat(completionDialogState.priceInput.value)
         : Number.NaN;
 
-    if (!Number.isFinite(priceValue) || priceValue <= 0) {
-        setCompletionDialogFeedback("Ingresa un precio válido para finalizar la cita.", "error");
+    if (!Number.isFinite(priceValue) || priceValue < MIN_COMPLETION_PRICE) {
+        setCompletionDialogFeedback(
+            `Ingresa un precio válido (mínimo $${MIN_COMPLETION_PRICE.toFixed(2)}) para finalizar la cita.`,
+            "error",
+        );
         setCompletionDialogBusy(false);
         return;
     }
@@ -642,6 +648,10 @@ function setupCompletionDialog() {
     completionDialogState.feedbackElement = feedbackElement;
     completionDialogState.priceInput = priceInput;
     completionDialogState.helperElement = helperElement;
+
+    if (priceInput) {
+        priceInput.min = String(MIN_COMPLETION_PRICE);
+    }
 
     if (detailsElement) {
         detailsElement.hidden = true;
