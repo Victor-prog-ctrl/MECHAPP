@@ -1194,6 +1194,7 @@ function ensureCertificateStatusColumn() {
     ).run();
   }
 }
+
 function ensureCertificatePathColumn() {
   const columns = db.prepare(`PRAGMA table_info(users)`).all();
   const hasCertificatePath = columns.some((column) => column.name === 'certificate_path');
@@ -1201,8 +1202,31 @@ function ensureCertificatePathColumn() {
     db.prepare(`ALTER TABLE users ADD COLUMN certificate_path TEXT`).run();
   }
 }
+
+/**
+ * Columnas para recuperación de contraseña:
+ * - reset_token: token aleatorio
+ * - reset_token_expires: fecha/hora de expiración (ISO string)
+ */
+function ensurePasswordResetColumns() {
+  const columns = db.prepare(`PRAGMA table_info(users)`).all();
+
+  const hasResetToken = columns.some((column) => column.name === 'reset_token');
+  const hasResetExpires = columns.some((column) => column.name === 'reset_token_expires');
+
+  if (!hasResetToken) {
+    db.prepare(`ALTER TABLE users ADD COLUMN reset_token TEXT`).run();
+  }
+
+  if (!hasResetExpires) {
+    db.prepare(`ALTER TABLE users ADD COLUMN reset_token_expires TEXT`).run();
+  }
+}
+
 ensureCertificateStatusColumn();
 ensureCertificatePathColumn();
+ensurePasswordResetColumns();
+
 
 function ensureWorkshopOwnerColumn() {
   const columns = db.prepare(`PRAGMA table_info(workshops)`).all();
@@ -2153,6 +2177,64 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: 'Ocurrió un error al iniciar sesión.' });
   }
 });
+app.post('/api/password/forgot', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: 'Ingresa tu correo electrónico.' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // Buscar usuario por correo
+    const user = db
+      .prepare(`SELECT id, email FROM users WHERE email = ?`)
+      .get(normalizedEmail);
+
+    // Por seguridad, respondemos lo mismo aunque no exista
+    if (!user) {
+      return res.json({
+        message:
+          'Si el correo está registrado, te enviaremos un enlace para restablecer la contraseña.',
+      });
+    }
+
+    // 1) Generar token aleatorio
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // 2) Expiración del token: 1 hora a partir de ahora
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    // 3) Guardar en la base de datos
+    db.prepare(`
+      UPDATE users
+      SET reset_token = ?, reset_token_expires = ?
+      WHERE id = ?
+    `).run(token, expires, user.id);
+
+    // 4) Construir URL de restablecimiento
+    //    Ejemplo: http://localhost:3000/pages/restablecer-contrasena.html?token=XYZ
+    // baseUrl igual que antes
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    // 👇 ahora apuntamos a restablecer-contrasena.html y mandamos token + email
+    const resetUrl = `${baseUrl}/restablecer-contrasena.html?token=${encodeURIComponent(
+      token
+    )}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    // 5) Devolver al front un mensaje genérico + el link para el correo
+    return res.json({
+      message:
+        'Si el correo está registrado, te enviaremos un enlace para restablecer la contraseña.',
+      resetUrl, // 👈 ESTE es el link que usará EmailJS
+    });
+
+  } catch (error) {
+    console.error('Error en /api/password/forgot', error);
+    res.status(500).json({ error: 'Ocurrió un error al procesar la solicitud.' });
+  }
+});
+
 
 app.post('/api/logout', (req, res) => {
   req.session.destroy((error) => {
@@ -3268,6 +3350,66 @@ app.put('/api/profile/password', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Ocurrió un error al actualizar la contraseña.' });
   }
 });
+// Restablecer contraseña usando token (flujo "olvidé mi contraseña")
+app.post('/api/password/reset', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: 'Faltan el token y/o la nueva contraseña.' });
+    }
+
+    if (String(newPassword).length < 8) {
+      return res
+        .status(400)
+        .json({ error: 'La nueva contraseña debe tener al menos 8 caracteres.' });
+    }
+
+    // Buscar usuario por token
+    const user = db
+      .prepare(
+        `SELECT id, reset_token_expires
+         FROM users
+         WHERE reset_token = ?`
+      )
+      .get(token);
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: 'El enlace de restablecimiento no es válido o ya fue usado.' });
+    }
+
+    // Validar que no esté expirado
+    const expires = user.reset_token_expires
+      ? new Date(user.reset_token_expires)
+      : null;
+
+    if (!expires || Number.isNaN(expires.getTime()) || expires < new Date()) {
+      return res
+        .status(400)
+        .json({ error: 'El enlace de restablecimiento ha expirado. Solicita uno nuevo.' });
+    }
+
+    // Hashear nueva contraseña
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+
+    // Actualizar contraseña y limpiar token
+    db.prepare(
+      `UPDATE users
+       SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL
+       WHERE id = ?`
+    ).run(hashedPassword, user.id);
+
+    return res.json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error en /api/password/reset', error);
+    res.status(500).json({ error: 'Ocurrió un error al restablecer la contraseña.' });
+  }
+});
+
 
 app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
   try {

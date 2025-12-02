@@ -1,163 +1,176 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>MechApp · Recuperar contraseña</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel="icon" type="image/png" href="/assets/logo.png" />
-    <meta
-      name="description"
-      content="Recupera el acceso a tu cuenta de AutoServ solicitando un enlace de restablecimiento de contraseña."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../Styles/auth.css" />
-    <link rel="stylesheet" href="../Styles/chatbot.css" />
-  </head>
-  <body>
-    <main>
-      <section class="auth-card" aria-labelledby="recovery-title">
-        <div class="brand" aria-label="AutoServ">
-          <img src="../assets/logo-rojo.png" alt="Logo Mechapp" width="90" height="90">
-          <span>Mechapp</span>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>MechApp · Recuperar contraseña</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <meta name="description"
+    content="Recupera el acceso a tu cuenta de MechApp solicitando un enlace de restablecimiento de contraseña." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../Styles/auth.css" />
+  <link rel="stylesheet" href="../Styles/chatbot.css" />
+</head>
+
+<body>
+  <main>
+    <section class="auth-card" aria-labelledby="recovery-title">
+      <div class="brand" aria-label="MechApp">
+        <img src="../assets/logo-rojo.png" alt="Logo MechApp" width="90" height="90" />
+        <span>MechApp</span>
+      </div>
+
+      <header class="auth-header">
+        <h1 id="recovery-title">Recupera tu acceso</h1>
+        <p>
+          Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para crear una nueva
+          contraseña.
+        </p>
+      </header>
+
+      <!-- data-atributos para EmailJS -->
+      <form id="recovery-form" data-form="recovery" novalidate data-emailjs-service-id="service_yn5lpjl"
+        data-emailjs-template-id="template_4cnqp07" data-emailjs-public-key="uZw4YfdppiljaIHqe" data-app-name="MechApp">
+        <div class="field">
+          <label for="recovery-email">Correo electrónico</label>
+          <input type="email" id="recovery-email" name="email" placeholder="nombre@correo.com" autocomplete="email"
+            required aria-describedby="recovery-email-error" pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$" />
+          <p class="error-message" id="recovery-email-error" aria-live="polite"></p>
         </div>
 
-        <header class="auth-header">
-          <h1 id="recovery-title">Recupera tu acceso</h1>
-          <p>
-            Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para crear una nueva
+        <div class="actions">
+          <button type="submit" class="button" id="recovery-btn" disabled aria-disabled="true">
+            Enviar instrucciones
+          </button>
+          <p class="hint">
+            Al enviar la solicitud recibirás un correo con los pasos para restablecer tu
             contraseña.
           </p>
-        </header>
-
-        <!-- AGREGO data-atributos para EmailJS -->
-        <form
-          id="recovery-form"
-          data-form="recovery"
-          novalidate
-          data-emailjs-service-id="service_yn5lpjl"
-          data-emailjs-template-id="template_4cnqp07"
-          data-emailjs-public-key="uZw4YfdppiljaIHqe"
-          data-app-name="MechApp"
-        >
-          <div class="field">
-            <label for="recovery-email">Correo electrónico</label>
-            <input
-              type="email"
-              id="recovery-email"
-              name="email"
-              placeholder="nombre@correo.com"
-              autocomplete="email"
-              required
-              aria-describedby="recovery-email-error"
-              pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
-            />
-            <p class="error-message" id="recovery-email-error" aria-live="polite"></p>
-          </div>
-
-          <div class="actions">
-            <button type="submit" class="button" id="recovery-btn" disabled aria-disabled="true">
-              Enviar instrucciones
-            </button>
-            <p class="hint">
-              Al enviar la solicitud recibirás un correo con los pasos para restablecer tu contraseña.
-            </p>
-            <!-- feedback de estado -->
-            <small id="recovery-msg" aria-live="polite" hidden></small>
-          </div>
-        </form>
-
-        <div class="auxiliary">
-          <a href="./login.html">Volver a iniciar sesión</a>
+          <!-- feedback de estado -->
+          <small id="recovery-msg" aria-live="polite" hidden></small>
         </div>
-      </section>
-    </main>
+      </form>
 
-    <!-- SDK de EmailJS ANTES del script inline -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+      <div class="auxiliary">
+        <a href="./login.html">Volver a iniciar sesión</a>
+      </div>
+    </section>
+  </main>
 
-    <script src="../src/chatbot.js" defer></script>
+  <!-- SDK de EmailJS ANTES del script inline -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 
-    <!-- Script inline: igual estilo que en perfil -->
-    <script defer>
-      document.addEventListener("DOMContentLoaded", () => {
-        const form = document.getElementById("recovery-form");
-        const emailInput = document.getElementById("recovery-email");
-        const errorEl = document.getElementById("recovery-email-error");
-        const btn = document.getElementById("recovery-btn");
-        const msg = document.getElementById("recovery-msg");
+  <script src="../src/chatbot.js" defer></script>
 
-        if (!form || !emailInput || !btn) return;
+  <!-- Script inline -->
 
-        // Habilitar/deshabilitar botón según validez
-        const toggleBtn = () => {
-          const valid = emailInput.checkValidity();
-          btn.disabled = !valid;
-          btn.setAttribute("aria-disabled", String(!valid));
-          errorEl.textContent = valid ? "" : "Ingresa un correo válido.";
-        };
-        emailInput.addEventListener("input", toggleBtn);
-        toggleBtn();
+  <script defer>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("recovery-form");
+      const emailInput = document.getElementById("recovery-email");
+      const errorEl = document.getElementById("recovery-email-error");
+      const btn = document.getElementById("recovery-btn");
+      const msg = document.getElementById("recovery-msg");
 
-        // Credenciales desde data-atributos
-        const serviceId  = form.dataset.emailjsServiceId;
-        const templateId = form.dataset.emailjsTemplateId;
-        const publicKey  = form.dataset.emailjsPublicKey;
-        const appName    = form.dataset.appName || "MechApp";
+      if (!form || !emailInput || !btn) return;
 
-        if (!window.emailjs) {
-          console.error("EmailJS no disponible.");
+      const toggleBtn = () => {
+        const valid = emailInput.checkValidity();
+        btn.disabled = !valid;
+        btn.setAttribute("aria-disabled", String(!valid));
+        errorEl.textContent = valid ? "" : "Ingresa un correo válido.";
+      };
+      emailInput.addEventListener("input", toggleBtn);
+      toggleBtn();
+
+      const serviceId = form.dataset.emailjsServiceId;
+      const templateId = form.dataset.emailjsTemplateId;
+      const publicKey = form.dataset.emailjsPublicKey;
+      const appName = form.dataset.appName || "MechApp";
+
+      if (!window.emailjs) {
+        console.error("EmailJS no disponible.");
+        return;
+      }
+      if (!serviceId || !templateId || !publicKey) {
+        console.warn("Faltan credenciales de EmailJS en los data-atributos del formulario.");
+        return;
+      }
+
+      emailjs.init({ publicKey });
+
+      const setMsg = (text, type = "success") => {
+        msg.hidden = false;
+        msg.textContent = text;
+        msg.classList.remove("error", "success");
+        msg.classList.add(type);
+      };
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!emailInput.checkValidity()) {
+          emailInput.reportValidity();
           return;
         }
-        if (!serviceId || !templateId || !publicKey) {
-          console.warn("Faltan credenciales de EmailJS en los data-atributos del formulario.");
-          return;
-        }
 
-        emailjs.init({ publicKey });
+        btn.disabled = true;
+        btn.setAttribute("aria-disabled", "true");
+        setMsg("Generando enlace de restablecimiento…", "success");
 
-        const setMsg = (text, type = "success") => {
-          msg.hidden = false;
-          msg.textContent = text;
-          msg.classList.remove("error", "success");
-          msg.classList.add(type);
-        };
+        try {
+          // 1) Pedimos al backend que genere el token y el link
+          const res = await fetch("/api/password/forgot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailInput.value }),
+          });
 
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          if (!emailInput.checkValidity()) { emailInput.reportValidity(); return; }
-
-          btn.disabled = true;
-          setMsg("Enviando instrucciones…", "success");
-
-          try {
-            // Si en tu template usas un enlace con token real, cámbialo por el que te entregue tu backend.
-            const resetUrl = window.location.origin + "/resetear-contrasena.html";
-
-            // IMPORTANTE: en tu template EmailJS, To Email debe ser {{reset_email}}
-            await emailjs.send(serviceId, templateId, {
-              reset_email: emailInput.value,
-              reset_url: resetUrl,
-              app_name: appName,
-            });
-
-            setMsg("¡Listo! Revisa tu bandeja de entrada.", "success");
-            form.reset();
-            toggleBtn();
-          } catch (err) {
-            console.error(err);
-            setMsg("No se pudo enviar. Intenta nuevamente más tarde.", "error");
-          } finally {
-            btn.disabled = false;
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "No se pudo generar el enlace.");
           }
-        });
+
+          // 👇 AHORA OBLIGAMOS A QUE VENGA DESDE EL BACK
+          if (!data.resetUrl) {
+            console.error("Respuesta backend:", data);
+            throw new Error("El backend no devolvió el enlace de restablecimiento.");
+          }
+
+          const resetUrl = data.resetUrl;
+
+          setMsg("Enviando instrucciones al correo…", "success");
+
+          await emailjs.send(serviceId, templateId, {
+            reset_email: emailInput.value,
+            reset_url: resetUrl,
+            app_name: appName,
+          });
+
+          setMsg(
+            "¡Listo! Si el correo está registrado, revisa tu bandeja de entrada.",
+            "success"
+          );
+          form.reset();
+          toggleBtn();
+        } catch (err) {
+          console.error(err);
+          setMsg(
+            "No se pudo enviar el correo de recuperación. Intenta nuevamente más tarde.",
+            "error"
+          );
+        } finally {
+          btn.disabled = false;
+          btn.setAttribute("aria-disabled", "false");
+        }
       });
-    </script>
-  </body>
+    });
+  </script>
+
+</body>
+
 </html>

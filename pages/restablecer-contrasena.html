@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>MechApp · Restablecer contraseña</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+    <meta
+      name="description"
+      content="Crea una nueva contraseña para tu cuenta de MechApp utilizando el enlace de recuperación."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../Styles/auth.css" />
+    <link rel="stylesheet" href="../Styles/chatbot.css" />
+  </head>
+  <body>
+    <main>
+      <section class="auth-card" aria-labelledby="reset-title">
+        <div class="brand" aria-label="MechApp">
+          <img src="../assets/logo-rojo.png" alt="Logo MechApp" width="90" height="90" />
+          <span>MechApp</span>
+        </div>
+
+        <header class="auth-header">
+          <h1 id="reset-title">Crea una nueva contraseña</h1>
+          <p>
+            Elige una nueva contraseña para tu cuenta. Asegúrate de que sea fácil de recordar para
+            ti y difícil de adivinar para otros.
+          </p>
+        </header>
+
+        <form id="reset-form" novalidate>
+          <div class="field">
+            <label for="new-password">Nueva contraseña</label>
+            <input
+              type="password"
+              id="new-password"
+              name="newPassword"
+              minlength="8"
+              required
+              autocomplete="new-password"
+              aria-describedby="new-password-error"
+              placeholder="Mínimo 8 caracteres"
+            />
+            <p class="error-message" id="new-password-error" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="confirm-password">Confirmar contraseña</label>
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirmPassword"
+              minlength="8"
+              required
+              autocomplete="new-password"
+              aria-describedby="confirm-password-error"
+              placeholder="Repite la nueva contraseña"
+            />
+            <p class="error-message" id="confirm-password-error" aria-live="polite"></p>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="button" id="reset-btn" disabled aria-disabled="true">
+              Guardar nueva contraseña
+            </button>
+            <p class="hint">
+              Tu contraseña debe tener al menos 8 caracteres. Te recomendamos combinar letras,
+              números y símbolos.
+            </p>
+            <small id="reset-msg" aria-live="polite" hidden></small>
+          </div>
+        </form>
+
+        <div class="auxiliary">
+          <a href="./login.html">Volver a iniciar sesión</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../src/chatbot.js" defer></script>
+
+    <script defer>
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("reset-form");
+        const newPasswordInput = document.getElementById("new-password");
+        const confirmPasswordInput = document.getElementById("confirm-password");
+        const newPassError = document.getElementById("new-password-error");
+        const confirmPassError = document.getElementById("confirm-password-error");
+        const btn = document.getElementById("reset-btn");
+        const msg = document.getElementById("reset-msg");
+
+        if (!form || !newPasswordInput || !confirmPasswordInput || !btn) return;
+
+        // Leer token desde la URL
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+
+        const setMsg = (text, type = "success") => {
+          msg.hidden = false;
+          msg.textContent = text;
+          msg.classList.remove("error", "success");
+          msg.classList.add(type);
+        };
+
+        // Si no hay token, bloqueamos todo
+        if (!token) {
+          setMsg(
+            "El enlace para restablecer la contraseña no es válido o ha expirado.",
+            "error"
+          );
+          newPasswordInput.disabled = true;
+          confirmPasswordInput.disabled = true;
+          btn.disabled = true;
+          btn.setAttribute("aria-disabled", "true");
+          return;
+        }
+
+        const validate = () => {
+          const newPass = newPasswordInput.value;
+          const confirmPass = confirmPasswordInput.value;
+
+          let isValid = true;
+
+          // Validar nueva contraseña
+          if (!newPass || newPass.length < 8) {
+            newPassError.textContent = "La contraseña debe tener al menos 8 caracteres.";
+            isValid = false;
+          } else {
+            newPassError.textContent = "";
+          }
+
+          // Validar coincidencia
+          if (confirmPass && newPass !== confirmPass) {
+            confirmPassError.textContent = "Las contraseñas no coinciden.";
+            isValid = false;
+          } else if (!confirmPass) {
+            confirmPassError.textContent = "";
+          } else if (newPass === confirmPass && newPass.length >= 8) {
+            confirmPassError.textContent = "";
+          }
+
+          btn.disabled = !isValid;
+          btn.setAttribute("aria-disabled", String(!isValid));
+        };
+
+        newPasswordInput.addEventListener("input", validate);
+        confirmPasswordInput.addEventListener("input", validate);
+        validate();
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          validate();
+
+          if (btn.disabled) return;
+
+          const newPass = newPasswordInput.value;
+
+          btn.disabled = true;
+          btn.setAttribute("aria-disabled", "true");
+          setMsg("Actualizando tu contraseña…", "success");
+
+          try {
+            const res = await fetch("/api/password/reset", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token,
+                newPassword: newPass,
+              }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+              throw new Error(data.error || "No se pudo restablecer la contraseña.");
+            }
+
+            setMsg(
+              "Tu contraseña se actualizó correctamente. Ahora puedes iniciar sesión con tus nuevos datos.",
+              "success"
+            );
+
+            // Opcional: redirigir al login después de unos segundos
+            setTimeout(() => {
+              window.location.href = "./login.html";
+            }, 2500);
+          } catch (error) {
+            console.error(error);
+            setMsg(
+              "No se pudo restablecer la contraseña. Es posible que el enlace haya expirado. Solicita uno nuevo.",
+              "error"
+            );
+          } finally {
+            btn.disabled = false;
+            btn.setAttribute("aria-disabled", "false");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
