@@ -1182,6 +1182,7 @@ function ensureAppointmentsTable() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_id INTEGER NOT NULL,
       mechanic_id INTEGER NOT NULL,
+      workshop_id TEXT REFERENCES workshops(id),
       service TEXT NOT NULL,
       visit_type TEXT NOT NULL CHECK (visit_type IN ('presencial','domicilio')),
       scheduled_for TEXT NOT NULL,
@@ -1209,6 +1210,7 @@ function ensureAppointmentLocationColumns() {
   const hasRescheduleRequestedAt = columns.some((column) => column.name === 'reschedule_requested_at');
   const hasFinalPrice = columns.some((column) => column.name === 'final_price');
   const hasCompletedAt = columns.some((column) => column.name === 'completed_at');
+  const hasWorkshopId = columns.some((column) => column.name === 'workshop_id');
 
   if (!hasLatitude) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN client_latitude REAL`).run();
@@ -1241,8 +1243,33 @@ function ensureAppointmentLocationColumns() {
   if (!hasCompletedAt) {
     db.prepare(`ALTER TABLE appointments ADD COLUMN completed_at TEXT`).run();
   }
+
+  if (!hasWorkshopId) {
+    db.prepare(`ALTER TABLE appointments ADD COLUMN workshop_id TEXT REFERENCES workshops(id)`).run();
+  }
 }
 ensureAppointmentLocationColumns();
+
+function backfillAppointmentWorkshopIds() {
+  try {
+    const columns = db.prepare(`PRAGMA table_info(appointments)`).all();
+    const hasWorkshopId = columns.some((column) => column.name === 'workshop_id');
+    if (!hasWorkshopId) {
+      return;
+    }
+
+    db.prepare(`
+      UPDATE appointments
+         SET workshop_id = (
+           SELECT id FROM workshops WHERE owner_id = appointments.mechanic_id LIMIT 1
+         )
+       WHERE workshop_id IS NULL
+    `).run();
+  } catch (error) {
+    console.error('No se pudieron sincronizar los IDs de taller en las citas', error);
+  }
+}
+backfillAppointmentWorkshopIds();
 
 function ensureCommissionsTable() {
   db.prepare(`
@@ -2025,10 +2052,13 @@ app.post('/api/workshops/:id/reviews', requireAuth, (req, res) => {
         `SELECT COUNT(*) AS total
            FROM appointments
           WHERE client_id = ?
-            AND mechanic_id = ?
-            AND LOWER(COALESCE(status, '')) = 'completado'`
+            AND LOWER(COALESCE(status, '')) = 'completado'
+            AND (
+              workshop_id = ?
+              OR (workshop_id IS NULL AND mechanic_id = ?)
+            )`
       )
-      .get(user.id, workshop.owner_id || -1);
+      .get(user.id, workshopId, workshop.owner_id || -1);
 
     if (!hasCompletedAppointment?.total) {
       return res.status(403).json({ error: 'Solo puedes reseñar talleres con los que hayas tenido una cita completada.' });
@@ -2778,6 +2808,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       address,
       clientLatitude,
       clientLongitude,
+      workshopId,
     } = req.body;
 
     const parsedMechanicId = Number.parseInt(mechanicId, 10);
@@ -2785,6 +2816,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     const normalizedVisitType = visitType === 'domicilio' ? 'domicilio' : 'presencial';
     const normalizedAddress = typeof address === 'string' ? address.trim() : '';
     const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
+    const normalizedWorkshopId = typeof workshopId === 'string' ? workshopId.trim() : '';
 
     if (!Number.isInteger(parsedMechanicId) || parsedMechanicId <= 0) {
       return res.status(400).json({ error: 'Selecciona un mecánico válido.' });
@@ -2815,6 +2847,29 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       .get(parsedMechanicId);
     if (!mechanic) {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
+    }
+
+    const mechanicWorkshop = db
+      .prepare(`SELECT id, owner_id FROM workshops WHERE owner_id = ? LIMIT 1`)
+      .get(parsedMechanicId);
+
+    if (normalizedVisitType === 'presencial') {
+      if (!normalizedWorkshopId) {
+        return res.status(400).json({ error: 'Selecciona un taller para la visita presencial.' });
+      }
+
+      const workshop = db
+        .prepare(`SELECT id, owner_id FROM workshops WHERE id = ? LIMIT 1`)
+        .get(normalizedWorkshopId);
+
+      if (!workshop || Number(workshop.owner_id) !== parsedMechanicId) {
+        return res.status(400).json({ error: 'El taller seleccionado no coincide con el mecánico elegido.' });
+      }
+    } else if (
+      normalizedWorkshopId &&
+      (!mechanicWorkshop || String(mechanicWorkshop.id) !== String(normalizedWorkshopId))
+    ) {
+      return res.status(400).json({ error: 'El taller seleccionado no coincide con el mecánico elegido.' });
     }
 
     const parseCoordinate = (value) => {
@@ -2885,6 +2940,7 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       `INSERT INTO appointments (
         client_id,
         mechanic_id,
+        workshop_id,
         service,
         visit_type,
         scheduled_for,
@@ -2892,12 +2948,18 @@ app.post('/api/appointments', requireAuth, (req, res) => {
         notes,
         client_latitude,
         client_longitude
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
+
+    const resolvedWorkshopId =
+      normalizedVisitType === 'presencial'
+        ? normalizedWorkshopId
+        : mechanicWorkshop?.id || normalizedWorkshopId || null;
 
     const result = insert.run(
       currentUser.id,
       parsedMechanicId,
+      resolvedWorkshopId,
       normalizedService,
       normalizedVisitType,
       scheduledValue,

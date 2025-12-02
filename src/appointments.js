@@ -1400,6 +1400,7 @@ async function submitAppointment(event) {
             scheduledFor: formatDateTimeValue(scheduledDate, scheduledSlot),
             notes,
             address: locationDetail,
+            workshopId: workshopId || null,
         };
 
         const response = await fetch("/api/appointments", {
