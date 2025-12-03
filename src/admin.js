@@ -9,6 +9,8 @@ const MAX_VISIBLE_COMMISSIONS = 3;
 const dashboardState = {
   users: [],
   pendingCommissions: [],
+  workshops: [],
+  workshopStats: null,
 };
 
 function formatDate(dateString) {
@@ -95,6 +97,11 @@ async function fetchPendingCommissions() {
   return data?.pending ?? [];
 }
 
+async function fetchWorkshops() {
+  const data = await fetchWithHandling('/api/admin/workshops');
+  return { workshops: data?.workshops ?? [], stats: data?.stats ?? null };
+}
+
 function updateStatusIndicator(indicator, status) {
   indicator.className = 'status-indicator';
   if (statusClassMap[status]) {
@@ -122,7 +129,7 @@ function createStatCard({ title, value, footnote }) {
   return container;
 }
 
-function renderStats(users) {
+function renderStats(users, workshopStats = null) {
   const statsContainer = document.getElementById('dashboard-stats');
   if (!statsContainer) return;
 
@@ -144,6 +151,18 @@ function renderStats(users) {
       footnote: `${pendingCertificates} pendientes de revisión`,
     },
   ];
+
+  if (workshopStats) {
+    const totalWorkshops = workshopStats.totalWorkshops || 0;
+    const specialties = workshopStats.uniqueSpecialties || 0;
+    const totalReviews = workshopStats.totalReviews || 0;
+
+    stats.push({
+      title: 'Talleres registrados',
+      value: totalWorkshops,
+      footnote: `${specialties} especialidades · ${totalReviews} reseñas`,
+    });
+  }
 
   statsContainer.replaceChildren(...stats.map(createStatCard));
 }
@@ -356,6 +375,89 @@ function renderPendingCommissions(commissions) {
       mechanicsCount === 1 ? '' : 's'
     } con comisiones pendientes.`;
   }
+}
+
+function renderWorkshops(workshops) {
+  const tbody = document.getElementById('workshops-table-body');
+  const emptyState = document.getElementById('workshops-empty-state');
+
+  if (!tbody) return;
+
+  if (!workshops.length) {
+    tbody.replaceChildren();
+    if (emptyState) emptyState.hidden = false;
+    return;
+  }
+
+  if (emptyState) emptyState.hidden = true;
+
+  const rows = workshops.map((workshop) => {
+    const row = document.createElement('tr');
+    row.dataset.workshopId = workshop.id;
+
+    const workshopCell = document.createElement('td');
+    const workshopMeta = document.createElement('div');
+    workshopMeta.className = 'user-meta';
+
+    const workshopName = document.createElement('span');
+    workshopName.className = 'user-meta__name';
+    workshopName.textContent = workshop.name;
+
+    const workshopSlug = document.createElement('span');
+    workshopSlug.className = 'user-meta__email';
+    workshopSlug.textContent = `ID: ${workshop.id}`;
+
+    workshopMeta.append(workshopName, workshopSlug);
+    workshopCell.append(workshopMeta);
+
+    const ownerCell = document.createElement('td');
+    const ownerMeta = document.createElement('div');
+    ownerMeta.className = 'user-meta';
+
+    const ownerName = document.createElement('span');
+    ownerName.className = 'user-meta__name';
+    ownerName.textContent = workshop.ownerName;
+
+    const ownerEmail = document.createElement('span');
+    ownerEmail.className = 'user-meta__email';
+    ownerEmail.textContent = workshop.ownerEmail;
+
+    ownerMeta.append(ownerName, ownerEmail);
+    ownerCell.append(ownerMeta);
+
+    const contactCell = document.createElement('td');
+    const address = document.createElement('p');
+    address.className = 'table-subtext';
+    address.textContent = workshop.address || 'Dirección no registrada';
+
+    const phoneEmail = document.createElement('p');
+    phoneEmail.className = 'table-subtext';
+    const phoneLabel = workshop.phone ? `Tel: ${workshop.phone}` : null;
+    const emailLabel = workshop.email || null;
+    phoneEmail.textContent = [phoneLabel, emailLabel].filter(Boolean).join(' · ') || 'Sin contacto';
+
+    contactCell.append(address, phoneEmail);
+
+    const specialtiesCell = document.createElement('td');
+    specialtiesCell.className = 'table-subtext';
+    const specialties = Array.isArray(workshop.specialties) ? workshop.specialties : [];
+    specialtiesCell.textContent = specialties.length
+      ? specialties.slice(0, 3).join(', ') + (specialties.length > 3 ? '…' : '')
+      : 'Sin especialidades declaradas';
+
+    const reviewsCell = document.createElement('td');
+    reviewsCell.className = 'table-subtext';
+    const ratingLabel = workshop.averageRating ? `${workshop.averageRating} ★` : 'Sin calificación';
+    const reviewsLabel = `${workshop.reviewsCount || 0} reseña${
+      workshop.reviewsCount === 1 ? '' : 's'
+    }`;
+    reviewsCell.textContent = `${ratingLabel} · ${reviewsLabel}`;
+
+    row.append(workshopCell, ownerCell, contactCell, specialtiesCell, reviewsCell);
+    return row;
+  });
+
+  tbody.replaceChildren(...rows);
 }
 
 function toggleCommissionList(button) {
@@ -607,7 +709,7 @@ function setupSectionNavigation() {
 }
 
 function refreshDashboard() {
-  renderStats(dashboardState.users);
+  renderStats(dashboardState.users, dashboardState.workshopStats);
   const filtered = applyFilters(dashboardState.users);
   renderUsers(filtered);
 }
@@ -622,18 +724,22 @@ async function initAdminDashboard() {
       return;
     }
 
-    const [users, pendingCommissions] = await Promise.all([
+    const [users, pendingCommissions, workshopData] = await Promise.all([
       fetchUsers(),
       fetchPendingCommissions(),
+      fetchWorkshops(),
     ]);
 
     if (!users) return;
 
     dashboardState.users = users;
     dashboardState.pendingCommissions = pendingCommissions || [];
+    dashboardState.workshops = workshopData?.workshops || [];
+    dashboardState.workshopStats = workshopData?.stats || null;
 
     refreshDashboard();
     renderPendingCommissions(dashboardState.pendingCommissions);
+    renderWorkshops(dashboardState.workshops);
     setupFilters();
     wireTableActions();
     wirePendingCommissionActions();
