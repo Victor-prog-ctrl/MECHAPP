@@ -561,7 +561,7 @@ async function updateAccountType(row) {
 }
 
 function wireTableActions() {
-  const table = document.querySelector('.admin-table');
+  const table = document.querySelector('#usuarios .admin-table');
   if (!table) return;
 
   table.addEventListener('click', async (event) => {
