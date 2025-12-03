@@ -29,6 +29,7 @@
         <a href="#resumen" class="nav-link active">Resumen</a>
         <a href="#cotizaciones" class="nav-link">Comisiones</a>
         <a href="#usuarios" class="nav-link">Usuarios</a>
+        <a href="#workshops" class="nav-link">Talleres</a>
       </nav>
       <div class="header-actions">
         <button class="button button-primary" id="logout-button" type="button">Cerrar sesión</button>
@@ -117,6 +118,35 @@
           </table>
           <div id="users-empty-state" class="empty-state" hidden>
             <p>No se encontraron usuarios con los filtros seleccionados.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card" id="workshops" aria-labelledby="workshops-title">
+        <div class="card-header">
+          <div>
+            <h2 id="workshops-title">Talleres registrados</h2>
+            <p class="card-subtitle">
+              Consulta los talleres creados en la plataforma y los datos de sus propietarios.
+            </p>
+          </div>
+        </div>
+
+        <div class="table-container" role="region" aria-live="polite">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th scope="col">Taller</th>
+                <th scope="col">Propietario</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">Especialidades</th>
+                <th scope="col">Reseñas</th>
+              </tr>
+            </thead>
+            <tbody id="workshops-table-body"></tbody>
+          </table>
+          <div id="workshops-empty-state" class="empty-state" hidden>
+            <p>Por ahora no hay talleres registrados en la plataforma.</p>
           </div>
         </div>
       </section>
