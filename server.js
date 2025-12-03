@@ -677,6 +677,20 @@ function mapWorkshopDetail(row) {
   };
 }
 
+function mapWorkshopAdminRow(row) {
+  const summary = mapWorkshopSummary(row);
+  return {
+    ...summary,
+    ownerId: row.owner_id || null,
+    ownerName: row.owner_name || 'Sin asignar',
+    ownerEmail: row.owner_email || '—',
+    address: row.address,
+    phone: row.phone,
+    email: row.email,
+    servicesCount: Array.isArray(summary.services) ? summary.services.length : 0,
+  };
+}
+
 const WORKSHOP_WITH_STATS_QUERY = `
   WITH review_stats AS (
     SELECT
@@ -716,6 +730,7 @@ const WORKSHOP_WITH_STATS_QUERY = `
     w.services,
     w.certifications,
     w.photo,
+    w.owner_id,
     COALESCE(rs.reviews_count, 0) AS reviews_count,
     rs.average_rating,
     lr.rating AS latest_rating,
@@ -725,10 +740,13 @@ const WORKSHOP_WITH_STATS_QUERY = `
     lr.visit_date AS latest_visit_date,
     lr.visit_type AS latest_visit_type,
     lr.created_at AS latest_created_at,
-    lr.latest_client_name AS latest_client_name
+    lr.latest_client_name AS latest_client_name,
+    u.name AS owner_name,
+    u.email AS owner_email
   FROM workshops w
   LEFT JOIN review_stats rs ON rs.workshop_id = w.id
   LEFT JOIN latest_reviews lr ON lr.workshop_id = w.id AND lr.row_number = 1
+  LEFT JOIN users u ON u.id = w.owner_id
 `;
 
 function computeWorkshopStats(rows) {
@@ -3654,6 +3672,19 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, (req, res) => {
   } catch (e) {
     console.error('payments admin list error', e);
     res.status(500).json({ error: 'No se pudieron obtener los pagos.' });
+  }
+});
+
+app.get('/api/admin/workshops', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const rows = db.prepare(`${WORKSHOP_WITH_STATS_QUERY} ORDER BY w.name COLLATE NOCASE`).all();
+    const workshops = rows.map(mapWorkshopAdminRow);
+    const stats = computeWorkshopStats(rows);
+
+    res.json({ workshops, stats });
+  } catch (error) {
+    console.error('Error obteniendo talleres para administración', error);
+    res.status(500).json({ error: 'No se pudieron obtener los talleres registrados.' });
   }
 });
 
