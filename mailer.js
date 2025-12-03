@@ -19,31 +19,37 @@ function buildWelcomeEmail(name) {
         <div style="font-weight:700;font-size:18px;">MechApp</div>
       </div>
 
-      <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
-        ¡Bienvenido a MechApp, ${safeName}! 👋
-      </h1>
+   <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
+  ¡Bienvenido a MechApp, ${safeName}! 👋
+</h1>
 
-      <p style="margin:0 0 8px;color:#4b5563;">
-        Gracias por registrarte en <strong>MechApp</strong>.
-      </p>
+<p style="margin:0 0 8px;color:#4b5563;">
+  Gracias por registrarte en <strong>MechApp</strong>.
+</p>
 
-      <p style="margin:0 0 8px;color:#4b5563;">
-        Desde ahora podrás:
-      </p>
+<p style="margin:0 0 8px;color:#4b5563;">
+  Desde ahora podrás:
+</p>
 
-      <ul style="margin:0 0 8px 18px;color:#4b5563;padding:0;">
-        <li>Encontrar talleres de confianza cerca de ti.</li>
-        <li>Agendar citas por día y hora.</li>
-        <li>Revisar el estado de tus solicitudes.</li>
-      </ul>
+<ul style="margin:0 0 8px 18px;color:#4b5563;padding:0;">
+  <li>Encontrar talleres de confianza cerca de ti.</li>
+  <li>Agendar citas por día y hora.</li>
+  <li>Revisar el estado de tus solicitudes.</li>
+</ul>
 
-      <p style="margin:16px 0 0;color:#6b7280;font-size:12px;">
-        Si no fuiste tú quien creó esta cuenta, puedes ignorar este correo.
-      </p>
+<p style="margin:0 0 8px;color:#4b5563;">
+  Y si eres <strong>mecánico registrado</strong>, podrás crear el perfil de tu taller,
+  gestionar tus citas y recibir nuevos clientes desde la plataforma.
+</p>
 
-      <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
-        © ${new Date().getFullYear()} MechApp
-      </p>
+<p style="margin:16px 0 0;color:#6b7280;font-size:12px;">
+  Si no fuiste tú quien creó esta cuenta, puedes ignorar este correo.
+</p>
+
+<p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
+  © ${new Date().getFullYear()} MechApp
+</p>
+
     </div>
   </div>`;
 }
@@ -180,11 +186,10 @@ function buildRequestRejectedEmail({ clientName, service, dateLabel }) {
         <strong>${service || "tu servicio"}</strong>.
       </p>
 
-      ${
-        dateLabel
-          ? `<p style="margin:0 0 8px;color:#4b5563;">Fecha solicitada: ${dateLabel}</p>`
-          : ""
-      }
+      ${dateLabel
+      ? `<p style="margin:0 0 8px;color:#4b5563;">Fecha solicitada: ${dateLabel}</p>`
+      : ""
+    }
 
       <p style="margin:0 0 8px;color:#4b5563;">
         Te invitamos a ingresar nuevamente a MechApp para elegir otra fecha u otro taller disponible.
