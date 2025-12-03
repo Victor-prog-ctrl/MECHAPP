@@ -277,7 +277,7 @@ function renderPendingCommissions(commissions) {
   if (!grouped.length) {
     tbody.replaceChildren();
     if (emptyState) emptyState.hidden = false;
-    if (summary) summary.textContent = 'Sin cotizaciones pendientes.';
+    if (summary) summary.textContent = 'Sin comisiones pendientes.';
     return;
   }
 
@@ -354,7 +354,7 @@ function renderPendingCommissions(commissions) {
     const mechanicsCount = grouped.length;
     summary.textContent = `${mechanicsCount} mecánico${
       mechanicsCount === 1 ? '' : 's'
-    } con cotizaciones pendientes.`;
+    } con comisiones pendientes.`;
   }
 }
 
