@@ -3664,6 +3664,34 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, (req, res) => {
   }
 });
 
+app.get('/api/admin/commissions/pending', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const rows = db
+      .prepare(
+        `SELECT
+          c.*, a.scheduled_for, a.service AS appointment_service, a.final_price,
+          u.name AS mechanic_name, u.email AS mechanic_email
+         FROM commissions c
+         JOIN users u ON u.id = c.mechanic_id
+         JOIN appointments a ON a.id = c.appointment_id
+        WHERE LOWER(c.status) = 'pendiente'
+        ORDER BY datetime(c.created_at) DESC`
+      )
+      .all();
+
+    const pending = rows.map((row) => ({
+      ...mapCommission({ ...row, service: row.appointment_service || row.service }),
+      mechanicName: row.mechanic_name,
+      mechanicEmail: row.mechanic_email,
+    }));
+
+    res.json({ pending });
+  } catch (error) {
+    console.error('Error obteniendo comisiones pendientes para administración', error);
+    res.status(500).json({ error: 'No se pudieron obtener las cotizaciones pendientes.' });
+  }
+});
+
 app.put('/api/profile/name', requireAuth, (req, res) => {
   try {
     const { name } = req.body;

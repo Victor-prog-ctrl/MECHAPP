@@ -6,6 +6,7 @@ const statusClassMap = {
 
 const dashboardState = {
   users: [],
+  pendingCommissions: [],
 };
 
 function formatDate(dateString) {
@@ -21,6 +22,25 @@ function formatDate(dateString) {
   } catch (error) {
     console.error('No se pudo formatear la fecha de registro', error);
     return dateString;
+  }
+}
+
+function formatCurrency(amount) {
+  const numericValue = Number.parseFloat(amount);
+  if (!Number.isFinite(numericValue)) {
+    return '$0.00';
+  }
+
+  try {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numericValue);
+  } catch (error) {
+    console.error('No se pudo formatear el monto', error);
+    return `$${numericValue.toFixed(2)}`;
   }
 }
 
@@ -66,6 +86,11 @@ async function fetchProfile() {
 async function fetchUsers() {
   const data = await fetchWithHandling('/api/admin/users');
   return data?.users ?? [];
+}
+
+async function fetchPendingCommissions() {
+  const data = await fetchWithHandling('/api/admin/commissions/pending');
+  return data?.pending ?? [];
 }
 
 function updateStatusIndicator(indicator, status) {
@@ -206,6 +231,98 @@ function applyFilters(users) {
       selectedCertificate === 'todos' || user.certificate_status === selectedCertificate;
     return matchesAccount && matchesCertificate;
   });
+}
+
+function groupCommissionsByMechanic(commissions) {
+  if (!Array.isArray(commissions)) return [];
+
+  const grouped = new Map();
+
+  commissions.forEach((commission) => {
+    const mechanicId = commission.mechanicId || commission.mechanic_id;
+    const current = grouped.get(mechanicId) || {
+      mechanicId,
+      mechanicName: commission.mechanicName || 'Mecánico',
+      mechanicEmail: commission.mechanicEmail || '',
+      commissions: [],
+    };
+
+    current.commissions.push(commission);
+    grouped.set(mechanicId, current);
+  });
+
+  return Array.from(grouped.values()).map((entry) => ({
+    ...entry,
+    pendingCount: entry.commissions.length,
+    totalAmount: entry.commissions.reduce(
+      (sum, item) => sum + (Number.parseFloat(item.commissionAmount) || 0),
+      0
+    ),
+  }));
+}
+
+function renderPendingCommissions(commissions) {
+  const tbody = document.getElementById('pending-commissions-body');
+  const emptyState = document.getElementById('pending-commissions-empty');
+  const summary = document.getElementById('pending-commissions-summary');
+
+  if (!tbody) return;
+
+  const grouped = groupCommissionsByMechanic(commissions).sort(
+    (a, b) => b.totalAmount - a.totalAmount
+  );
+
+  if (!grouped.length) {
+    tbody.replaceChildren();
+    if (emptyState) emptyState.hidden = false;
+    if (summary) summary.textContent = 'Sin cotizaciones pendientes.';
+    return;
+  }
+
+  if (emptyState) emptyState.hidden = true;
+
+  const rows = grouped.map((group) => {
+    const row = document.createElement('tr');
+    const commissionDetails = group.commissions
+      .map((item) => {
+        const appointmentLabel = item.appointmentId
+          ? `Cita #${item.appointmentId}`
+          : 'Cita';
+        const serviceLabel = item.service || 'Servicio';
+        const amountLabel = formatCurrency(item.commissionAmount || 0);
+        const dateLabel = item.scheduledFor ? formatDate(item.scheduledFor) : 'Fecha pendiente';
+
+        return `<li>${appointmentLabel} · ${serviceLabel} · ${amountLabel} (${dateLabel})</li>`;
+      })
+      .join('');
+
+    row.innerHTML = `
+      <td>
+        <div class="user-meta">
+          <span class="user-meta__name">${group.mechanicName || 'Mecánico'}</span>
+          <span class="user-meta__email">${group.mechanicEmail || ''}</span>
+        </div>
+      </td>
+      <td>${group.pendingCount}</td>
+      <td>${formatCurrency(group.totalAmount)}</td>
+      <td>
+        <ul class="pending-list">
+          ${commissionDetails}
+        </ul>
+      </td>
+    `;
+
+    return row;
+  });
+
+  tbody.replaceChildren(...rows);
+
+  if (summary) {
+    const mechanicsCount = grouped.length;
+    summary.textContent = `${mechanicsCount} mecánico${
+      mechanicsCount === 1 ? '' : 's'
+    } con cotizaciones pendientes.`;
+  }
 }
 
 function showRowFeedback(row, message, type = 'success') {
@@ -432,11 +549,18 @@ async function initAdminDashboard() {
       return;
     }
 
-    const users = await fetchUsers();
+    const [users, pendingCommissions] = await Promise.all([
+      fetchUsers(),
+      fetchPendingCommissions(),
+    ]);
+
     if (!users) return;
 
     dashboardState.users = users;
+    dashboardState.pendingCommissions = pendingCommissions || [];
+
     refreshDashboard();
+    renderPendingCommissions(dashboardState.pendingCommissions);
     setupFilters();
     wireTableActions();
     wireLogoutButton();
