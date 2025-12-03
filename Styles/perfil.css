@@ -393,6 +393,11 @@ main {
     max-width: 680px;
 }
 
+.commissions-cta__warning {
+    color: #c81d25;
+    font-weight: 600;
+}
+
 .role-upgrade__body {
     display: grid;
     gap: 16px;
