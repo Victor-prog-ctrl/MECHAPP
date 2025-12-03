@@ -27,6 +27,7 @@
       </div>
       <nav class="main-nav admin-nav" aria-label="Secciones del panel">
         <a href="#resumen" class="nav-link active">Resumen</a>
+        <a href="#cotizaciones" class="nav-link">Cotizaciones</a>
         <a href="#usuarios" class="nav-link">Usuarios</a>
       </nav>
       <div class="header-actions">
@@ -41,6 +42,35 @@
           <p class="card-subtitle">Monitorea usuarios y certificados en tiempo real.</p>
         </div>
         <div class="stats-grid" id="dashboard-stats" aria-live="polite"></div>
+      </section>
+
+      <section class="admin-card" id="cotizaciones" aria-labelledby="cotizaciones-title">
+        <div class="card-header">
+          <div>
+            <h2 id="cotizaciones-title">Cotizaciones pendientes</h2>
+            <p class="card-subtitle">
+              Revisa las comisiones pendientes por mecánico para saber quién falta por pagar.
+            </p>
+          </div>
+          <p class="card-subtitle" id="pending-commissions-summary">Sin cotizaciones pendientes.</p>
+        </div>
+
+        <div class="table-container" role="region" aria-live="polite">
+          <table class="admin-table admin-table--compact">
+            <thead>
+              <tr>
+                <th scope="col">Mecánico</th>
+                <th scope="col">Cotizaciones pendientes</th>
+                <th scope="col">Monto adeudado</th>
+                <th scope="col">Detalle</th>
+              </tr>
+            </thead>
+            <tbody id="pending-commissions-body"></tbody>
+          </table>
+          <div id="pending-commissions-empty" class="empty-state" hidden>
+            <p>No hay cotizaciones pendientes en este momento.</p>
+          </div>
+        </div>
       </section>
 
       <section class="admin-card" id="usuarios" aria-labelledby="usuarios-title">
