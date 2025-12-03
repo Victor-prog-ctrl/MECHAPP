@@ -4,6 +4,8 @@ const statusClassMap = {
   rechazado: 'status-rechazado',
 };
 
+const MAX_VISIBLE_COMMISSIONS = 3;
+
 const dashboardState = {
   users: [],
   pendingCommissions: [],
@@ -283,34 +285,65 @@ function renderPendingCommissions(commissions) {
 
   const rows = grouped.map((group) => {
     const row = document.createElement('tr');
-    const commissionDetails = group.commissions
-      .map((item) => {
-        const appointmentLabel = item.appointmentId
-          ? `Cita #${item.appointmentId}`
-          : 'Cita';
-        const serviceLabel = item.service || 'Servicio';
-        const amountLabel = formatCurrency(item.commissionAmount || 0);
-        const dateLabel = item.scheduledFor ? formatDate(item.scheduledFor) : 'Fecha pendiente';
+    row.dataset.mechanicId = group.mechanicId;
 
-        return `<li>${appointmentLabel} · ${serviceLabel} · ${amountLabel} (${dateLabel})</li>`;
-      })
-      .join('');
+    const mechanicCell = document.createElement('td');
+    const mechanicMeta = document.createElement('div');
+    mechanicMeta.className = 'user-meta';
 
-    row.innerHTML = `
-      <td>
-        <div class="user-meta">
-          <span class="user-meta__name">${group.mechanicName || 'Mecánico'}</span>
-          <span class="user-meta__email">${group.mechanicEmail || ''}</span>
-        </div>
-      </td>
-      <td>${group.pendingCount}</td>
-      <td>${formatCurrency(group.totalAmount)}</td>
-      <td>
-        <ul class="pending-list">
-          ${commissionDetails}
-        </ul>
-      </td>
-    `;
+    const mechanicName = document.createElement('span');
+    mechanicName.className = 'user-meta__name';
+    mechanicName.textContent = group.mechanicName || 'Mecánico';
+
+    const mechanicEmail = document.createElement('span');
+    mechanicEmail.className = 'user-meta__email';
+    mechanicEmail.textContent = group.mechanicEmail || '';
+
+    mechanicMeta.append(mechanicName, mechanicEmail);
+    mechanicCell.append(mechanicMeta);
+
+    const pendingCell = document.createElement('td');
+    pendingCell.textContent = group.pendingCount;
+
+    const amountCell = document.createElement('td');
+    amountCell.textContent = formatCurrency(group.totalAmount);
+
+    const detailCell = document.createElement('td');
+    const commissionList = document.createElement('ul');
+    commissionList.className = 'pending-list';
+
+    group.commissions.forEach((item, index) => {
+      const appointmentLabel = item.appointmentId
+        ? `Cita #${item.appointmentId}`
+        : 'Cita';
+      const serviceLabel = item.service || 'Servicio';
+      const amountLabel = formatCurrency(item.commissionAmount || 0);
+      const dateLabel = item.scheduledFor ? formatDate(item.scheduledFor) : 'Fecha pendiente';
+
+      const listItem = document.createElement('li');
+      listItem.textContent = `${appointmentLabel} · ${serviceLabel} · ${amountLabel} (${dateLabel})`;
+
+      if (index >= MAX_VISIBLE_COMMISSIONS) {
+        listItem.hidden = true;
+        listItem.dataset.extraCommission = 'true';
+      }
+
+      commissionList.append(listItem);
+    });
+
+    detailCell.append(commissionList);
+
+    if (group.pendingCount > MAX_VISIBLE_COMMISSIONS) {
+      const toggleButton = document.createElement('button');
+      toggleButton.type = 'button';
+      toggleButton.className = 'link-button';
+      toggleButton.dataset.action = 'toggle-commissions';
+      toggleButton.dataset.totalCount = String(group.pendingCount);
+      toggleButton.textContent = `Ver todas (${group.pendingCount})`;
+      detailCell.append(toggleButton);
+    }
+
+    row.append(mechanicCell, pendingCell, amountCell, detailCell);
 
     return row;
   });
@@ -323,6 +356,32 @@ function renderPendingCommissions(commissions) {
       mechanicsCount === 1 ? '' : 's'
     } con cotizaciones pendientes.`;
   }
+}
+
+function toggleCommissionList(button) {
+  const row = button.closest('tr');
+  if (!row) return;
+
+  const list = row.querySelector('.pending-list');
+  if (!list) return;
+
+  const hiddenItems = Array.from(list.querySelectorAll('[data-extra-commission]'));
+  if (!hiddenItems.length) {
+    button.hidden = true;
+    return;
+  }
+
+  const isExpanded = button.dataset.expanded === 'true';
+  const nextExpanded = !isExpanded;
+
+  hiddenItems.forEach((item) => {
+    item.hidden = !nextExpanded;
+  });
+
+  button.dataset.expanded = String(nextExpanded);
+  button.textContent = nextExpanded
+    ? 'Ver menos'
+    : `Ver todas (${button.dataset.totalCount || hiddenItems.length})`;
 }
 
 function showRowFeedback(row, message, type = 'success') {
@@ -449,6 +508,20 @@ function wireTableActions() {
   });
 }
 
+function wirePendingCommissionActions() {
+  const tbody = document.getElementById('pending-commissions-body');
+  if (!tbody) return;
+
+  tbody.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+
+    if (target.dataset.action === 'toggle-commissions') {
+      toggleCommissionList(target);
+    }
+  });
+}
+
 function setupFilters() {
   const accountFilter = document.getElementById('filter-account-type');
   const certificateFilter = document.getElementById('filter-certificate-status');
@@ -563,6 +636,7 @@ async function initAdminDashboard() {
     renderPendingCommissions(dashboardState.pendingCommissions);
     setupFilters();
     wireTableActions();
+    wirePendingCommissionActions();
     wireLogoutButton();
     setupSectionNavigation();
   } catch (error) {

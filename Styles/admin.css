@@ -269,6 +269,22 @@ body {
   line-height: 1.4;
 }
 
+.link-button {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 0.35rem;
+}
+
+.link-button:hover,
+.link-button:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
 .status-indicator {
   width: 0.75rem;
   height: 0.75rem;
