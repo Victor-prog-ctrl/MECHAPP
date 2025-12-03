@@ -13,6 +13,7 @@ const {
   sendRequestAcceptedEmail,
   sendRequestRejectedEmail,
   sendDepositPaidEmailToMechanic,
+  sendNewAppointmentRequestEmail,
 } = require('./mailer');
 
 
@@ -2790,10 +2791,10 @@ const parseDateOnly = (value) => {
   return date;
 };
 
-app.post('/api/appointments', requireAuth, (req, res) => {
+app.post('/api/appointments', requireAuth, async (req, res) => {
   try {
     const currentUser = db
-      .prepare(`SELECT id, account_type FROM users WHERE id = ?`)
+      .prepare(`SELECT id, name, email, account_type FROM users WHERE id = ?`)
       .get(req.session.userId);
     if (!currentUser) return res.status(401).json({ error: 'No autorizado.' });
     if (currentUser.account_type === 'mecanico') {
@@ -2809,7 +2810,6 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       address,
       clientLatitude,
       clientLongitude,
-      workshopId,
     } = req.body;
 
     const parsedMechanicId = Number.parseInt(mechanicId, 10);
@@ -2817,7 +2817,6 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     const normalizedVisitType = visitType === 'domicilio' ? 'domicilio' : 'presencial';
     const normalizedAddress = typeof address === 'string' ? address.trim() : '';
     const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
-    const normalizedWorkshopId = typeof workshopId === 'string' ? workshopId.trim() : '';
 
     if (!Number.isInteger(parsedMechanicId) || parsedMechanicId <= 0) {
       return res.status(400).json({ error: 'Selecciona un mecánico válido.' });
@@ -2843,34 +2842,13 @@ app.post('/api/appointments', requireAuth, (req, res) => {
 
     const mechanic = db
       .prepare(
-        `SELECT id FROM users WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
+        `SELECT id, name, email
+         FROM users
+         WHERE id = ? AND account_type = 'mecanico' AND certificate_status = 'validado'`
       )
       .get(parsedMechanicId);
     if (!mechanic) {
       return res.status(404).json({ error: 'El mecánico seleccionado no está disponible.' });
-    }
-
-    const mechanicWorkshop = db
-      .prepare(`SELECT id, owner_id FROM workshops WHERE owner_id = ? LIMIT 1`)
-      .get(parsedMechanicId);
-
-    if (normalizedVisitType === 'presencial') {
-      if (!normalizedWorkshopId) {
-        return res.status(400).json({ error: 'Selecciona un taller para la visita presencial.' });
-      }
-
-      const workshop = db
-        .prepare(`SELECT id, owner_id FROM workshops WHERE id = ? LIMIT 1`)
-        .get(normalizedWorkshopId);
-
-      if (!workshop || Number(workshop.owner_id) !== parsedMechanicId) {
-        return res.status(400).json({ error: 'El taller seleccionado no coincide con el mecánico elegido.' });
-      }
-    } else if (
-      normalizedWorkshopId &&
-      (!mechanicWorkshop || String(mechanicWorkshop.id) !== String(normalizedWorkshopId))
-    ) {
-      return res.status(400).json({ error: 'El taller seleccionado no coincide con el mecánico elegido.' });
     }
 
     const parseCoordinate = (value) => {
@@ -2941,7 +2919,6 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       `INSERT INTO appointments (
         client_id,
         mechanic_id,
-        workshop_id,
         service,
         visit_type,
         scheduled_for,
@@ -2949,18 +2926,12 @@ app.post('/api/appointments', requireAuth, (req, res) => {
         notes,
         client_latitude,
         client_longitude
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
-
-    const resolvedWorkshopId =
-      normalizedVisitType === 'presencial'
-        ? normalizedWorkshopId
-        : mechanicWorkshop?.id || normalizedWorkshopId || null;
 
     const result = insert.run(
       currentUser.id,
       parsedMechanicId,
-      resolvedWorkshopId,
       normalizedService,
       normalizedVisitType,
       scheduledValue,
@@ -2969,6 +2940,26 @@ app.post('/api/appointments', requireAuth, (req, res) => {
       parseCoordinate(clientLatitude),
       parseCoordinate(clientLongitude)
     );
+
+    // 👉 Intentar enviar correo al mecánico avisando de la nueva solicitud
+    try {
+      if (mechanic.email) {
+        const fechaFormateada =
+          formatNotificationDate(scheduledValue, { includeTime: false }) || dateKey;
+
+        await sendNewAppointmentRequestEmail({
+          to: mechanic.email,
+          nombreMecanico: mechanic.name,
+          nombreCliente: currentUser.name || 'Cliente MechApp',
+          servicio: normalizedService,
+          fecha: fechaFormateada,
+          hora: scheduledSlot,
+        });
+      }
+    } catch (emailError) {
+      console.error('Error enviando correo de nueva solicitud al mecánico:', emailError);
+      // No rompemos la API si falla el correo
+    }
 
     res.status(201).json({
       message: 'Cita agendada correctamente.',
@@ -2979,6 +2970,8 @@ app.post('/api/appointments', requireAuth, (req, res) => {
     res.status(500).json({ error: 'Ocurrió un error al agendar la cita.' });
   }
 });
+
+
 
 const APPOINTMENT_REQUEST_BASE_QUERY = `
   SELECT

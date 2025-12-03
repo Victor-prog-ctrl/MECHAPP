@@ -101,9 +101,149 @@ function buildAppointmentConfirmedEmail({
   </div>`;
 }
 
+// 👉 NUEVA plantilla: nueva solicitud para el mecánico
+function buildNewAppointmentRequestEmail({
+  mechanicName,
+  clientName,
+  service,
+  dateLabel,
+}) {
+  const safeMechanic = mechanicName || "mecánico";
+  const safeClient = clientName || "un cliente";
+
+  return `
+  <div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background-color:#f3f4f6;padding:24px;">
+    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,0.15);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <img
+          src="https://raw.githubusercontent.com/Victor-prog-ctrl/MECHAPP/refs/heads/main/assets/logo-rojo.png"
+          alt="MechApp"
+          style="height:32px;width:auto;display:block;border-radius:8px;"
+        />
+        <div style="font-weight:700;font-size:18px;">MechApp</div>
+      </div>
+
+      <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
+        Nueva solicitud de cita pendiente 🕒
+      </h1>
+
+      <p style="margin:0 0 8px;color:#4b5563;">
+        Hola ${safeMechanic}, tienes una <strong>nueva solicitud de cita</strong> en MechApp.
+      </p>
+
+      <div style="margin-top:12px;padding:12px;border-radius:12px;background-color:#f8fafc;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 6px;color:#4b5563;">
+          <strong>Cliente:</strong> ${safeClient}
+        </p>
+        <p style="margin:0 0 6px;color:#4b5563;">
+          <strong>Servicio solicitado:</strong> ${service || "Sin detalle"}
+        </p>
+        <p style="margin:0 0 6px;color:#4b5563;">
+          <strong>Fecha preferida:</strong> ${dateLabel || "Por definir"}
+        </p>
+      </div>
+
+      <p style="margin:16px 0 0;color:#4b5563;">
+        Ingresa a tu perfil de <strong>MechApp</strong> para <strong>aceptar o rechazar</strong> esta solicitud
+        y revisar los detalles completos de la cita.
+      </p>
+
+      <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
+        © ${new Date().getFullYear()} MechApp
+      </p>
+    </div>
+  </div>`;
+}
+
+// 👉 Plantilla para rechazo de solicitud
+function buildRequestRejectedEmail({ clientName, service, dateLabel }) {
+  const safeName = clientName || "cliente";
+
+  return `
+  <div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background-color:#f3f4f6;padding:24px;">
+    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,0.15);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <img
+          src="https://raw.githubusercontent.com/Victor-prog-ctrl/MECHAPP/refs/heads/main/assets/logo-rojo.png"
+          alt="MechApp"
+          style="height:32px;width:auto;display:block;border-radius:8px;"
+        />
+        <div style="font-weight:700;font-size:18px;">MechApp</div>
+      </div>
+
+      <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
+        Tu solicitud fue rechazada ❌
+      </h1>
+
+      <p style="margin:0 0 8px;color:#4b5563;">
+        Hola ${safeName}, el taller no pudo aceptar tu solicitud para
+        <strong>${service || "tu servicio"}</strong>.
+      </p>
+
+      ${
+        dateLabel
+          ? `<p style="margin:0 0 8px;color:#4b5563;">Fecha solicitada: ${dateLabel}</p>`
+          : ""
+      }
+
+      <p style="margin:0 0 8px;color:#4b5563;">
+        Te invitamos a ingresar nuevamente a MechApp para elegir otra fecha u otro taller disponible.
+      </p>
+
+      <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
+        © ${new Date().getFullYear()} MechApp
+      </p>
+    </div>
+  </div>`;
+}
+
+// 👉 Plantilla para abono pagado (correo al mecánico)
+function buildDepositPaidEmail({ mechanicName, clientName, service, dateLabel }) {
+  const safeMechanic = mechanicName || "mecánico";
+  const safeClient = clientName || "un cliente";
+
+  return `
+  <div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background-color:#f3f4f6;padding:24px;">
+    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,0.15);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <img
+          src="https://raw.githubusercontent.com/Victor-prog-ctrl/MECHAPP/refs/heads/main/assets/logo-rojo.png"
+          alt="MechApp"
+          style="height:32px;width:auto;display:block;border-radius:8px;"
+        />
+        <div style="font-weight:700;font-size:18px;">MechApp</div>
+      </div>
+
+      <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
+        Un cliente pagó el abono 💳
+      </h1>
+
+      <p style="margin:0 0 8px;color:#4b5563;">
+        Hola ${safeMechanic}, ${safeClient} ha pagado el <strong>abono de su cita</strong> en MechApp.
+      </p>
+
+      <div style="margin-top:12px;padding:12px;border-radius:12px;background-color:#f8fafc;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 6px;color:#4b5563;">
+          <strong>Servicio:</strong> ${service || "Sin detalle"}
+        </p>
+        <p style="margin:0 0 6px;color:#4b5563;">
+          <strong>Fecha de la cita:</strong> ${dateLabel || "Por confirmar"}
+        </p>
+      </div>
+
+      <p style="margin:16px 0 0;color:#4b5563;">
+        Ingresa a tu perfil de MechApp para revisar los detalles de la cita y prepararte para la atención.
+      </p>
+
+      <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
+        © ${new Date().getFullYear()} MechApp
+      </p>
+    </div>
+  </div>`;
+}
+
 // ====================== CONFIG GMAIL OAuth2 ======================
 
-// ⚠️ Para local está bien, pero en producción esto debería ir en variables de entorno
 const GMAIL_USER = "ke.aviles@duocuc.cl";
 const CLIENT_ID =
   "555481087487-7frp39qun9doobe34kq7t8pdem3kfoo7.apps.googleusercontent.com";
@@ -114,7 +254,7 @@ const REFRESH_TOKEN =
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
-  "urn:ietf:wg:oauth:2.0:oob" // mismo redirect que usaste para el token
+  "urn:ietf:wg:oauth:2.0:oob"
 );
 
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
@@ -169,7 +309,6 @@ async function sendRequestAcceptedEmail({
   direccion,
   servicio,
 }) {
-  // armamos un texto tipo "27 nov 2025 a las 15:00"
   const dateLabel = fecha
     ? hora
       ? `${fecha} a las ${hora}`
@@ -195,59 +334,21 @@ async function sendRequestAcceptedEmail({
 async function sendRequestRejectedEmail({
   to,
   nombreCliente,
-  nombreTaller,
-  fecha,
   servicio,
-  motivo,
+  fecha,
+  hora,
 }) {
-  const safeClient = nombreCliente || "cliente";
-  const safeWorkshop = nombreTaller || "el taller seleccionado";
+  const dateLabel = fecha
+    ? hora
+      ? `${fecha} a las ${hora}`
+      : fecha
+    : hora || "Por definir";
 
-  const html = `
-  <div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background-color:#f3f4f6;padding:24px;">
-    <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,0.15);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <img
-          src="https://raw.githubusercontent.com/Victor-prog-ctrl/MECHAPP/refs/heads/main/assets/logo-rojo.png"
-          alt="MechApp"
-          style="height:32px;width:auto;display:block;border-radius:8px;"
-        />
-        <div style="font-weight:700;font-size:18px;">MechApp</div>
-      </div>
-
-      <h1 style="margin:0 0 12px;font-size:22px;color:#111827;">
-        Tu solicitud fue rechazada ❌
-      </h1>
-
-      <p style="margin:0 0 8px;color:#4b5563;">
-        Hola ${safeClient}, el taller <strong>${safeWorkshop}</strong> ha rechazado tu solicitud.
-      </p>
-
-      <div style="margin-top:12px;padding:12px;border-radius:12px;background-color:#fef2f2;border:1px solid #fecaca;">
-        <p style="margin:0 0 6px;color:#4b5563;">
-          <strong>Servicio:</strong> ${servicio || "Servicio solicitado"}
-        </p>
-        ${
-          fecha
-            ? `<p style="margin:0 0 6px;color:#4b5563;"><strong>Fecha solicitada:</strong> ${fecha}</p>`
-            : ""
-        }
-        ${
-          motivo
-            ? `<p style="margin:8px 0 0;color:#991b1b;"><strong>Motivo:</strong> ${motivo}</p>`
-            : ""
-        }
-      </div>
-
-      <p style="margin:16px 0 0;color:#4b5563;">
-        Puedes intentar agendar nuevamente con otra fecha u otro taller disponible en MechApp.
-      </p>
-
-      <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
-        © ${new Date().getFullYear()} MechApp
-      </p>
-    </div>
-  </div>`;
+  const html = buildRequestRejectedEmail({
+    clientName: nombreCliente,
+    service: servicio,
+    dateLabel,
+  });
 
   return baseSendMail({
     to,
@@ -257,69 +358,59 @@ async function sendRequestRejectedEmail({
 }
 
 // 4) Abono pagado (correo al mecánico)
-async function sendDepositPaidEmailToMechanic({
+async function sendDepositPaidEmail({
   to,
   nombreMecanico,
   nombreCliente,
   servicio,
   fecha,
-  monto,
-  moneda,
+  hora,
 }) {
-  const safeMechanic = nombreMecanico || "mecánico";
-  const safeClient = nombreCliente || "cliente";
+  const dateLabel = fecha
+    ? hora
+      ? `${fecha} a las ${hora}`
+      : fecha
+    : hora || "Por definir";
 
-  const html = `
-  <div style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background-color:#0f172a;padding:24px;">
-    <div style="max-width:600px;margin:0 auto;background-color:#020617;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,0.45);border:1px solid rgba(148,163,184,0.5);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <img
-          src="https://raw.githubusercontent.com/Victor-prog-ctrl/MECHAPP/refs/heads/main/assets/logo-rojo.png"
-          alt="MechApp"
-          style="height:32px;width:auto;display:block;border-radius:8px;"
-        />
-        <div style="font-weight:700;font-size:18px;color:#e5e7eb;">MechApp</div>
-      </div>
-
-      <h1 style="margin:0 0 12px;font-size:20px;color:#e5e7eb;">
-        Nuevo abono confirmado 💳
-      </h1>
-
-      <p style="margin:0 0 8px;color:#cbd5f5;">
-        Hola ${safeMechanic}, el cliente <strong>${safeClient}</strong> ha pagado el abono de su cita.
-      </p>
-
-      <div style="margin-top:12px;padding:12px;border-radius:12px;background-color:#020617;border:1px solid #334155;">
-        <p style="margin:0 0 6px;color:#e5e7eb;">
-          <strong>Servicio:</strong> ${servicio || "Servicio agendado"}
-        </p>
-        ${
-          fecha
-            ? `<p style="margin:0 0 6px;color:#e5e7eb;"><strong>Fecha y hora:</strong> ${fecha}</p>`
-            : ""
-        }
-        ${
-          monto
-            ? `<p style="margin:0;color:#e5e7eb;"><strong>Abono pagado:</strong> ${monto} ${
-                moneda || ""
-              }</p>`
-            : ""
-        }
-      </div>
-
-      <p style="margin:16px 0 0;color:#9ca3af;font-size:13px;">
-        Te recomendamos revisar tu agenda en MechApp para preparar la visita.
-      </p>
-
-      <p style="margin:24px 0 0;color:#6b7280;font-size:11px;text-align:center;">
-        © ${new Date().getFullYear()} MechApp
-      </p>
-    </div>
-  </div>`;
+  const html = buildDepositPaidEmail({
+    mechanicName: nombreMecanico,
+    clientName: nombreCliente,
+    service: servicio,
+    dateLabel,
+  });
 
   return baseSendMail({
     to,
-    subject: "Un cliente pagó el abono de su cita 💳",
+    subject: "Un cliente pagó el abono 💳",
+    html,
+  });
+}
+
+// 5) NUEVA solicitud de cita pendiente (correo al mecánico)
+async function sendNewAppointmentRequestEmail({
+  to,
+  nombreMecanico,
+  nombreCliente,
+  servicio,
+  fecha,
+  hora,
+}) {
+  const dateLabel = fecha
+    ? hora
+      ? `${fecha} a las ${hora}`
+      : fecha
+    : hora || "Por definir";
+
+  const html = buildNewAppointmentRequestEmail({
+    mechanicName: nombreMecanico,
+    clientName: nombreCliente,
+    service: servicio,
+    dateLabel,
+  });
+
+  return baseSendMail({
+    to,
+    subject: "Tienes una nueva solicitud de cita 🕒",
     html,
   });
 }
@@ -332,5 +423,6 @@ module.exports = {
   sendWelcomeEmail,
   sendRequestAcceptedEmail,
   sendRequestRejectedEmail,
-  sendDepositPaidEmailToMechanic,
+  sendDepositPaidEmail,
+  sendNewAppointmentRequestEmail,
 };
